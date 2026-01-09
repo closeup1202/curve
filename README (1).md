@@ -1,8 +1,7 @@
 # Common Event Library
 > Kafka에 종속되지 않는 **조직 표준 이벤트 발행 라이브러리**
 
-이 프로젝트는 단순한 Kafka Producer 래퍼가 아니라,  
-**MSA 환경에서 이벤트를 '조직 자산'으로 관리하기 위한 공통 이벤트 라이브러리**입니다.
+**MSA 환경에서 이벤트를 '조직 자산'으로 관리하기 위한 공통 이벤트 라이브러리**
 
 ---
 
@@ -17,8 +16,8 @@
 
 ## ❓ 왜 새로 만들었는가?
 
-Spring Kafka, Spring Cloud Stream 등 훌륭한 라이브러리는 이미 존재합니다.  
-하지만 기업 환경에서는 다음과 같은 문제가 반복됩니다.
+Spring Kafka, Spring Cloud Stream 등 훌륭한 라이브러리는 이미 존재
+하지만 기업 환경에서는 다음과 같은 문제가 반복
 
 - 이벤트마다 메타데이터 형식이 제각각
 - 개인정보가 포함된 이벤트가 그대로 Kafka로 유출
@@ -34,21 +33,21 @@ Spring Kafka, Spring Cloud Stream 등 훌륭한 라이브러리는 이미 존재
 ## 🧱 전체 구조
 
 ```
-common-event-core/
+core/
  ├─ DomainEvent
  ├─ EventMetadata
  ├─ EventPublisher
  ├─ EventPolicy
  └─ EventPolicyValidator
 
-common-event-kafka/
+kafka/
  ├─ KafkaEventPublisher
  ├─ KafkaProducerConfig
  └─ EventSerializer
 ```
 
-- 비즈니스 서비스 → `common-event-core`만 의존
-- Kafka 관련 코드는 `common-event-kafka`에만 존재
+- 비즈니스 서비스 → `core`만 의존
+- Kafka 관련 코드는 `kafka`에만 존재
 
 ---
 
