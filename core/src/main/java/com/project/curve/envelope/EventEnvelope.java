@@ -1,9 +1,10 @@
 package com.project.curve.envelope;
 
 import com.project.curve.payload.DomainEventPayload;
+import com.project.curve.port.ClockProvider;
+import com.project.curve.port.IdGenerator;
 import com.project.curve.type.EventSeverity;
 import com.project.curve.type.EventType;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -16,7 +17,7 @@ import java.util.Map;
 public final class EventEnvelope<T extends DomainEventPayload> {
 
     private final String specVersion;
-    private final String eventId;
+    private final Long eventId;
     private final String eventType;
     private final EventSeverity severity;
 
@@ -33,7 +34,7 @@ public final class EventEnvelope<T extends DomainEventPayload> {
 
     // 내부 생성자: 팩토리 메서드를 통해서만 생성을 허용
     private EventEnvelope(
-            String eventId,
+            Long eventId,
             EventType eventType,
             EventSeverity severity,
             EventSource source,
@@ -71,11 +72,12 @@ public final class EventEnvelope<T extends DomainEventPayload> {
             EventSchema schema,
             T data,
             Map<String, String> tags,
-            ClockProvider clock
+            ClockProvider clock,
+            IdGenerator idGenerator
     ) {
         Instant now = clock.now();
         return new EventEnvelope<>(
-                IdGenerator.generate(), // ID 자동 생성
+                idGenerator.generate(),
                 eventType,
                 severity,
                 source,
@@ -84,8 +86,8 @@ public final class EventEnvelope<T extends DomainEventPayload> {
                 schema,
                 data,
                 tags,
-                now, // 발생 시점
-                now  // 발행 시점 (초기엔 동일)
+                now,
+                now
         );
     }
 }

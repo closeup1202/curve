@@ -2,3 +2,4 @@ rootProject.name = 'curve'
 
 include 'core'
 include 'kafka'
+include 'spring-boot-starter'
