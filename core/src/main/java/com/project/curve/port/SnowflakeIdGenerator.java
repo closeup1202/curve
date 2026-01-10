@@ -6,6 +6,7 @@ public class SnowflakeIdGenerator implements IdGenerator {
 
     private long lastTimestamp = -1L;
     private long sequence = 0L;
+    private static final long epoch = 1704067200000L;
 
     public SnowflakeIdGenerator(long workerId) {
         long maxWorkerId = ~(-1L << workerIdBits);
@@ -36,9 +37,6 @@ public class SnowflakeIdGenerator implements IdGenerator {
         }
 
         lastTimestamp = timestamp;
-
-        // 예: 2024-01-01 기점 (커스텀 가능)
-        long epoch = 1704067200000L;
 
         return ((timestamp - epoch) << (workerIdBits + sequenceBits))
                 | (workerId << sequenceBits)

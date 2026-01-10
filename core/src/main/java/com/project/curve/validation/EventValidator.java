@@ -9,11 +9,11 @@ public class EventValidator {
         if (envelope == null) {
             throw new InvalidEventException("Envelope cannot be null");
         }
-        if (envelope.getEventId() == null || envelope.getEventId().isBlank()) {
+        if (envelope.eventId() == null) {
             throw new InvalidEventException("Event ID is mandatory");
         }
-        if (envelope.getSource() == null) {
-            throw new InvalidEventException("Source cannot be null");
+        if (envelope.metadata() == null) {
+            throw new InvalidEventException("Metadata cannot be null");
         }
     }
 }

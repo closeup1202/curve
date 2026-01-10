@@ -1,13 +1,21 @@
 package com.project.curve.envelope;
 
-import com.project.curve.type.EventSeverity;
-
-import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
 
 public record EventMetadata(
-        String eventType,
-        String version,
-        EventSeverity severity,
-        Instant timestamp
+        EventSource source,
+        EventActor actor,
+        EventTrace trace,
+        EventSchema schema,
+        Map<String, String> tags
 ) {
+
+    public EventMetadata {
+        if (source == null) throw new IllegalArgumentException("source is required");
+        if (actor == null) throw new IllegalArgumentException("actor is required");
+        if (trace == null) throw new IllegalArgumentException("trace is required");
+        if (schema == null) throw new IllegalArgumentException("schema is required");
+        tags = (tags != null) ? Map.copyOf(tags) : Collections.emptyMap();
+    }
 }

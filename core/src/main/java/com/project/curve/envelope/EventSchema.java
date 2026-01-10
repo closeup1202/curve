@@ -14,7 +14,6 @@ public record EventSchema(
         }
     }
 
-    // 편의를 위한 정적 팩토리 메서드
     public static EventSchema of(String name, int version) {
         return new EventSchema(name, version, null);
     }
