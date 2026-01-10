@@ -10,7 +10,7 @@ import com.project.curve.validation.EventValidator;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public abstract class AbstractEventProducer implements EventProducer {
+public abstract class AbstractEventPublisher implements EventProducer {
 
     private final EventEnvelopeFactory envelopeFactory;
     private final EventContextProvider eventContextProvider;

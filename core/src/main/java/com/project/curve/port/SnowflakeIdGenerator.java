@@ -1,6 +1,9 @@
 package com.project.curve.port;
 
-public class SnowflakeIdGenerator implements IdGenerator {
+import com.project.curve.envelope.EventId;
+
+public final class SnowflakeIdGenerator implements IdGenerator {
+
     private final long workerId;
     private final long workerIdBits = 10L;
 
@@ -17,7 +20,7 @@ public class SnowflakeIdGenerator implements IdGenerator {
     }
 
     @Override
-    public synchronized Long generate() {
+    public synchronized EventId generate() {
         long timestamp = System.currentTimeMillis();
 
         if (timestamp < lastTimestamp) {
@@ -38,8 +41,10 @@ public class SnowflakeIdGenerator implements IdGenerator {
 
         lastTimestamp = timestamp;
 
-        return ((timestamp - epoch) << (workerIdBits + sequenceBits))
+        long id = ((timestamp - epoch) << (workerIdBits + sequenceBits))
                 | (workerId << sequenceBits)
                 | sequence;
+
+        return EventId.of(String.valueOf(id));
     }
 }

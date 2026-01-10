@@ -3,17 +3,31 @@ package com.project.curve.validation;
 import com.project.curve.envelope.EventEnvelope;
 import com.project.curve.exception.InvalidEventException;
 
-public class EventValidator {
+public final class EventValidator {
 
-    public static void validate(EventEnvelope<?> envelope) {
-        if (envelope == null) {
-            throw new InvalidEventException("Envelope cannot be null");
+    private EventValidator() {}
+
+    public static void validate(EventEnvelope<?> event) {
+        if (event == null) {
+            throw new InvalidEventException("event must not be null");
         }
-        if (envelope.eventId() == null) {
-            throw new InvalidEventException("Event ID is mandatory");
+        if (event.eventId() == null) {
+            throw new InvalidEventException("eventId is required");
         }
-        if (envelope.metadata() == null) {
-            throw new InvalidEventException("Metadata cannot be null");
+        if (event.eventType() == null) {
+            throw new InvalidEventException("eventType is required");
+        }
+        if (event.metadata() == null) {
+            throw new InvalidEventException("metadata is required");
+        }
+        if (event.payload() == null) {
+            throw new InvalidEventException("payload is required");
+        }
+        if (event.occurredAt() == null || event.publishedAt() == null) {
+            throw new InvalidEventException("event timestamps are required");
+        }
+        if (event.occurredAt().isAfter(event.publishedAt())) {
+            throw new InvalidEventException("occurredAt must be <= publishedAt");
         }
     }
 }

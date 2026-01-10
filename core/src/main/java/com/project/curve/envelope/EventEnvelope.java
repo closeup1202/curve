@@ -7,7 +7,7 @@ import com.project.curve.type.EventType;
 import java.time.Instant;
 
 public record EventEnvelope<T extends DomainEventPayload>(
-        Long eventId,
+        EventId eventId,
         EventType eventType,
         EventSeverity severity,
         EventMetadata metadata,
@@ -17,7 +17,7 @@ public record EventEnvelope<T extends DomainEventPayload>(
 ) {
 
     public static <T extends DomainEventPayload> EventEnvelope<T> of(
-            Long eventId,
+            EventId eventId,
             EventType eventType,
             EventSeverity severity,
             EventMetadata metadata,
