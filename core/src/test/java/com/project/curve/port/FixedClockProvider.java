@@ -1,5 +1,7 @@
 package com.project.curve.port;
 
+import com.project.curve.core.port.ClockProvider;
+
 import java.time.Instant;
 
 public final class FixedClockProvider implements ClockProvider {
