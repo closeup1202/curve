@@ -1,6 +1,6 @@
 package com.project.curve.spring.publisher;
 
-import com.project.curve.spring.context.EventContextProvider;
+import com.project.curve.core.context.EventContextProvider;
 import com.project.curve.core.envelope.EventEnvelope;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
 import com.project.curve.core.payload.DomainEventPayload;

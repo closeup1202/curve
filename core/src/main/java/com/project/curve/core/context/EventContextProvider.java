@@ -1,4 +1,4 @@
-package com.project.curve.spring.context;
+package com.project.curve.core.context;
 
 import com.project.curve.core.envelope.EventMetadata;
 import com.project.curve.core.payload.DomainEventPayload;
