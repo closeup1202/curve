@@ -3,6 +3,7 @@ package com.project.curve.spring.aop;
 import com.project.curve.core.port.EventProducer;
 import com.project.curve.core.type.EventSeverity;
 import com.project.curve.spring.annotation.Auditable;
+import com.project.curve.spring.exception.AuditEventPublishException;
 import com.project.curve.spring.payload.AuditEventPayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,6 +65,11 @@ public class AuditableAspect {
 
         } catch (Exception e) {
             log.error("Failed to publish audit event for method: {}", joinPoint.getSignature(), e);
+
+            if (auditable.failOnError()) {
+                throw new AuditEventPublishException(
+                        "Failed to publish audit event for method: " + joinPoint.getSignature(), e);
+            }
         }
     }
 

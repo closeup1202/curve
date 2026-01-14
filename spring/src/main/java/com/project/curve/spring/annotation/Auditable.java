@@ -38,6 +38,14 @@ public @interface Auditable {
     Phase phase() default Phase.AFTER_RETURNING;
 
     /**
+     * 이벤트 발행 실패 시 예외 전파 여부
+     * <p>
+     * true: 이벤트 발행 실패 시 예외를 던져 비즈니스 로직도 실패
+     * false: 이벤트 발행 실패해도 비즈니스 로직은 정상 진행 (기본값)
+     */
+    boolean failOnError() default false;
+
+    /**
      * 이벤트 발행 시점
      */
     enum Phase {

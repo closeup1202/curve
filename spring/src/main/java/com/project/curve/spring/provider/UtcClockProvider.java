@@ -1,4 +1,6 @@
-package com.project.curve.core.port;
+package com.project.curve.spring.provider;
+
+import com.project.curve.core.port.ClockProvider;
 
 import java.time.Clock;
 import java.time.Instant;

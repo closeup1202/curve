@@ -10,7 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "curve")
 public class CurveProperties {
 
-    private final boolean enabled = true;
+    private boolean enabled = true;
 
     private final Kafka kafka = new Kafka();
 

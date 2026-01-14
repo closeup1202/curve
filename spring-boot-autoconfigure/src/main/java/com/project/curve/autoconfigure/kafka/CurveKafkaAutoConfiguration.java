@@ -9,6 +9,8 @@ import com.project.curve.spring.factory.EventEnvelopeFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +18,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.retry.support.RetryTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,32 +34,30 @@ public class CurveKafkaAutoConfiguration {
             EventContextProvider eventContextProvider,
             KafkaTemplate<String, String> kafkaTemplate,
             ObjectMapper objectMapper,
-            CurveProperties properties
+            CurveProperties properties,
+            @Autowired(required = false) @Qualifier("curveRetryTemplate") RetryTemplate retryTemplate
     ) {
         var kafkaConfig = properties.getKafka();
         String topic = kafkaConfig.getTopic();
         String dlqTopic = kafkaConfig.getDlqTopic();
 
-        if (dlqTopic != null && !dlqTopic.isBlank()) {
-            log.info("Initializing KafkaEventProducer with topic: {} and DLQ: {}", topic, dlqTopic);
-            return new KafkaEventProducer(
-                    envelopeFactory,
-                    eventContextProvider,
-                    kafkaTemplate,
-                    objectMapper,
-                    topic,
-                    dlqTopic
-            );
-        } else {
-            log.info("Initializing KafkaEventProducer with topic: {} (DLQ disabled)", topic);
-            return new KafkaEventProducer(
-                    envelopeFactory,
-                    eventContextProvider,
-                    kafkaTemplate,
-                    objectMapper,
-                    topic
-            );
-        }
+        boolean hasDlq = dlqTopic != null && !dlqTopic.isBlank();
+        boolean hasRetry = retryTemplate != null && properties.getRetry().isEnabled();
+
+        log.info("Initializing KafkaEventProducer: topic={}, dlq={}, retry={}",
+                topic,
+                hasDlq ? dlqTopic : "disabled",
+                hasRetry ? "enabled" : "disabled");
+
+        return new KafkaEventProducer(
+                envelopeFactory,
+                eventContextProvider,
+                kafkaTemplate,
+                objectMapper,
+                topic,
+                hasDlq ? dlqTopic : null,
+                hasRetry ? retryTemplate : null
+        );
     }
 
     @Bean
@@ -64,7 +65,7 @@ public class CurveKafkaAutoConfiguration {
     public KafkaTemplate<String, String> kafkaTemplate(
             ProducerFactory<String, String> producerFactory
     ) {
-        log.info("Creating default KafkaTemplate with retry configuration");
+        log.info("Creating default KafkaTemplate");
         return new KafkaTemplate<>(producerFactory);
     }
 
@@ -86,7 +87,7 @@ public class CurveKafkaAutoConfiguration {
         props.put(ProducerConfig.ACKS_CONFIG, "all");
         props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
 
-        log.info("ProducerFactory configured with retries={}, retryBackoffMs={}, requestTimeoutMs={}",
+        log.info("ProducerFactory configured: retries={}, retryBackoffMs={}, requestTimeoutMs={}",
                 kafkaConfig.getRetries(), kafkaConfig.getRetryBackoffMs(), kafkaConfig.getRequestTimeoutMs());
 
         return new DefaultKafkaProducerFactory<>(props);
