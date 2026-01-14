@@ -3,7 +3,13 @@ package com.project.curve.spring.generator;
 import com.project.curve.core.envelope.EventId;
 import com.project.curve.core.exception.ClockMovedBackwardsException;
 import com.project.curve.core.port.IdGenerator;
+import lombok.extern.slf4j.Slf4j;
 
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
+
+@Slf4j
 public final class SnowflakeIdGenerator implements IdGenerator {
 
     private static final long EPOCH = 1704067200000L; // 2024-01-01 00:00:00 UTC
@@ -21,12 +27,54 @@ public final class SnowflakeIdGenerator implements IdGenerator {
     private long lastTimestamp = -1L;
     private long sequence = 0L;
 
+    /**
+     * Worker ID를 명시적으로 지정하는 생성자
+     *
+     * @param workerId 0 ~ 1023 사이의 고유 Worker ID
+     */
     public SnowflakeIdGenerator(long workerId) {
         if (workerId > MAX_WORKER_ID || workerId < 0) {
             throw new IllegalArgumentException(
                     String.format("Worker ID must be between 0 and %d, but got %d", MAX_WORKER_ID, workerId));
         }
         this.workerId = workerId;
+        log.info("SnowflakeIdGenerator initialized with workerId: {}", workerId);
+    }
+
+    /**
+     * MAC 주소 기반으로 Worker ID를 자동 생성하는 생성자
+     * 주의: 네트워크 환경에 따라 충돌 가능성이 있음
+     */
+    public static SnowflakeIdGenerator createWithAutoWorkerId() {
+        long generatedWorkerId = generateWorkerIdFromMacAddress();
+        log.warn("Worker ID auto-generated from MAC address: {} (collision possible in distributed environment)",
+                generatedWorkerId);
+        return new SnowflakeIdGenerator(generatedWorkerId);
+    }
+
+    /**
+     * MAC 주소를 기반으로 Worker ID를 생성
+     * MAC 주소의 하위 10비트를 사용 (0 ~ 1023)
+     */
+    private static long generateWorkerIdFromMacAddress() {
+        try {
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            while (networkInterfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = networkInterfaces.nextElement();
+                byte[] mac = networkInterface.getHardwareAddress();
+
+                if (mac != null && mac.length >= 6) {
+                    // MAC 주소의 마지막 2바이트를 사용하여 Worker ID 생성
+                    long workerId = ((0x000000FF & (long) mac[mac.length - 2]) << 2)
+                            | ((0x000000FF & (long) mac[mac.length - 1]) >> 6);
+                    return workerId & MAX_WORKER_ID;
+                }
+            }
+        } catch (SocketException e) {
+            log.warn("Failed to get MAC address, using default worker ID: 1", e);
+        }
+        // MAC 주소를 가져올 수 없는 경우 기본값 1 반환
+        return 1L;
     }
 
     @Override

@@ -18,6 +18,8 @@ public class CurveProperties {
 
     private final Aop aop = new Aop();
 
+    private final IdGenerator idGenerator = new IdGenerator();
+
     @Data
     public static class Kafka {
         /**
@@ -46,6 +48,19 @@ public class CurveProperties {
          * 요청 타임아웃(ms) (기본값: 30000ms = 30초)
          */
         private int requestTimeoutMs = 30000;
+
+        /**
+         * 비동기 전송 모드 활성화 여부 (기본값: false - 동기 전송)
+         * true: 비동기 전송 (높은 성능, 전송 실패 시 콜백 처리)
+         * false: 동기 전송 (낮은 성능, 전송 보장)
+         */
+        private boolean asyncMode = false;
+
+        /**
+         * 비동기 전송 타임아웃(ms) (기본값: 5000ms = 5초)
+         * asyncMode=true일 때만 사용
+         */
+        private long asyncTimeoutMs = 5000L;
     }
 
     @Data
@@ -83,5 +98,22 @@ public class CurveProperties {
          * @Auditable AOP 활성화 여부 (기본값: true)
          */
         private boolean enabled = true;
+    }
+
+    @Data
+    public static class IdGenerator {
+        /**
+         * Snowflake ID Generator의 Worker ID (0 ~ 1023)
+         * 분산 환경에서 각 인스턴스마다 고유한 값을 설정해야 함
+         * 기본값: 1
+         */
+        private long workerId = 1L;
+
+        /**
+         * Worker ID 자동 생성 모드 (기본값: false)
+         * true: MAC 주소 기반으로 자동 생성 (충돌 가능성 있음)
+         * false: workerId 설정값 사용
+         */
+        private boolean autoGenerate = false;
     }
 }

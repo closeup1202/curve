@@ -1,0 +1,172 @@
+# Curve 이벤트 발행 라이브러리 설정 예시
+
+# =====================================
+# 기본 설정 (프로덕션 환경)
+# =====================================
+curve:
+  # Curve 활성화 여부 (기본값: true)
+  enabled: true
+
+  # ===== ID Generator 설정 =====
+  id-generator:
+    # Snowflake Worker ID (0 ~ 1023)
+    # 분산 환경에서 각 인스턴스마다 고유한 값을 설정해야 함
+    worker-id: 1
+
+    # Worker ID 자동 생성 (MAC 주소 기반)
+    # 주의: 가상 환경에서는 충돌 가능성이 있으므로 프로덕션에서는 권장하지 않음
+    auto-generate: false
+
+  # ===== Kafka 설정 =====
+  kafka:
+    # 메인 이벤트 토픽
+    topic: event.audit.v1
+
+    # Dead Letter Queue 토픽 (선택사항)
+    # 설정하지 않으면 DLQ 기능이 비활성화됨
+    dlq-topic: event.audit.dlq.v1
+
+    # Kafka Producer 재시도 횟수
+    retries: 3
+
+    # 재시도 백오프 시간 (ms)
+    retry-backoff-ms: 1000
+
+    # 요청 타임아웃 (ms)
+    request-timeout-ms: 30000
+
+    # ===== 비동기 전송 설정 =====
+    # 비동기 모드 활성화 여부
+    # true: 비동기 전송 (높은 성능, non-blocking)
+    # false: 동기 전송 (낮은 성능, 전송 보장)
+    async-mode: false
+
+    # 비동기 전송 타임아웃 (ms)
+    # async-mode가 true일 때만 사용
+    async-timeout-ms: 5000
+
+  # ===== Retry 설정 =====
+  retry:
+    # 재시도 활성화 여부
+    enabled: true
+
+    # 최대 재시도 횟수
+    max-attempts: 3
+
+    # 초기 재시도 지연 시간 (ms)
+    initial-interval: 1000
+
+    # 재시도 지연 시간 배수 (Exponential Backoff)
+    # 예: 1초 -> 2초 -> 4초
+    multiplier: 2.0
+
+    # 최대 재시도 지연 시간 (ms)
+    max-interval: 10000
+
+  # ===== AOP 설정 =====
+  aop:
+    # @Auditable 어노테이션 AOP 활성화 여부
+    enabled: true
+
+---
+# =====================================
+# 개발 환경 설정
+# =====================================
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+curve:
+  id-generator:
+    worker-id: 1
+    auto-generate: false
+
+  kafka:
+    topic: event.audit.dev.v1
+    dlq-topic: event.audit.dlq.dev.v1
+    async-mode: true  # 개발 환경에서는 빠른 테스트를 위해 비동기
+    async-timeout-ms: 3000
+    retries: 3
+
+  retry:
+    enabled: true
+    max-attempts: 3
+    initial-interval: 500
+    multiplier: 1.5
+    max-interval: 5000
+
+---
+# =====================================
+# 고성능 환경 설정
+# =====================================
+spring:
+  config:
+    activate:
+      on-profile: high-performance
+
+curve:
+  id-generator:
+    worker-id: ${WORKER_ID:1}  # 환경변수에서 주입
+    auto-generate: false
+
+  kafka:
+    topic: event.audit.v1
+    dlq-topic: event.audit.dlq.v1
+    async-mode: true  # 비동기 전송으로 높은 처리량 확보
+    async-timeout-ms: 5000
+    retries: 1  # 최소 재시도로 레이턴시 감소
+
+  retry:
+    enabled: false  # 재시도 비활성화 (성능 우선)
+
+---
+# =====================================
+# 안정성 우선 환경 설정
+# =====================================
+spring:
+  config:
+    activate:
+      on-profile: high-reliability
+
+curve:
+  id-generator:
+    worker-id: ${WORKER_ID:1}
+    auto-generate: false
+
+  kafka:
+    topic: event.audit.v1
+    dlq-topic: event.audit.dlq.v1
+    async-mode: false  # 동기 전송으로 전송 보장
+    retries: 5
+    retry-backoff-ms: 2000
+    request-timeout-ms: 60000
+
+  retry:
+    enabled: true
+    max-attempts: 5
+    initial-interval: 2000
+    multiplier: 2.0
+    max-interval: 30000
+
+---
+# =====================================
+# Kubernetes 환경 설정 예시
+# =====================================
+spring:
+  config:
+    activate:
+      on-profile: k8s
+
+curve:
+  id-generator:
+    # Pod Ordinal을 Worker ID로 사용 (StatefulSet)
+    # 예: my-app-0 -> 0, my-app-1 -> 1
+    worker-id: ${POD_ORDINAL:1}
+    auto-generate: false
+
+  kafka:
+    topic: event.audit.v1
+    dlq-topic: event.audit.dlq.v1
+    async-mode: true
+    async-timeout-ms: 5000

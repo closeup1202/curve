@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
  * - 이벤트를 JSON으로 직렬화하여 Kafka 토픽에 발행
  * - RetryTemplate을 통한 재시도 지원
  * - 전송 실패 시 DLQ(Dead Letter Queue)로 동기 전송하여 이벤트 손실 방지
+ * - 동기/비동기 전송 모드 지원
  */
 @Slf4j
 public class KafkaEventProducer extends AbstractEventPublisher {
@@ -34,6 +35,8 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     private final String dlqTopic;
     private final boolean dlqEnabled;
     private final RetryTemplate retryTemplate;
+    private final boolean asyncMode;
+    private final long asyncTimeoutMs;
 
     public KafkaEventProducer(
             EventEnvelopeFactory envelopeFactory,
@@ -42,7 +45,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             ObjectMapper objectMapper,
             String topic
     ) {
-        this(envelopeFactory, eventContextProvider, kafkaTemplate, objectMapper, topic, null, null);
+        this(envelopeFactory, eventContextProvider, kafkaTemplate, objectMapper, topic, null, null, false, 5000L);
     }
 
     public KafkaEventProducer(
@@ -53,7 +56,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             String topic,
             String dlqTopic
     ) {
-        this(envelopeFactory, eventContextProvider, kafkaTemplate, objectMapper, topic, dlqTopic, null);
+        this(envelopeFactory, eventContextProvider, kafkaTemplate, objectMapper, topic, dlqTopic, null, false, 5000L);
     }
 
     public KafkaEventProducer(
@@ -65,6 +68,20 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             String dlqTopic,
             RetryTemplate retryTemplate
     ) {
+        this(envelopeFactory, eventContextProvider, kafkaTemplate, objectMapper, topic, dlqTopic, retryTemplate, false, 5000L);
+    }
+
+    public KafkaEventProducer(
+            EventEnvelopeFactory envelopeFactory,
+            EventContextProvider eventContextProvider,
+            KafkaTemplate<String, String> kafkaTemplate,
+            ObjectMapper objectMapper,
+            String topic,
+            String dlqTopic,
+            RetryTemplate retryTemplate,
+            boolean asyncMode,
+            long asyncTimeoutMs
+    ) {
         super(envelopeFactory, eventContextProvider);
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = objectMapper;
@@ -72,13 +89,11 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         this.dlqTopic = dlqTopic;
         this.dlqEnabled = dlqTopic != null && !dlqTopic.isBlank();
         this.retryTemplate = retryTemplate;
+        this.asyncMode = asyncMode;
+        this.asyncTimeoutMs = asyncTimeoutMs;
 
-        if (dlqEnabled) {
-            log.info("DLQ enabled for topic: {} -> DLQ: {}", topic, dlqTopic);
-        }
-        if (retryTemplate != null) {
-            log.info("Retry enabled for KafkaEventProducer");
-        }
+        log.info("KafkaEventProducer initialized: topic={}, asyncMode={}, dlq={}, retry={}",
+                topic, asyncMode, dlqEnabled ? dlqTopic : "disabled", retryTemplate != null ? "enabled" : "disabled");
     }
 
     @Override
@@ -93,12 +108,16 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             throw new EventSerializationException("Failed to serialize EventEnvelope. eventId=" + eventId, e);
         }
 
-        log.debug("Sending event to Kafka: eventId={}, topic={}", eventId, topic);
+        log.debug("Sending event to Kafka: eventId={}, topic={}, mode={}", eventId, topic, asyncMode ? "async" : "sync");
 
-        if (retryTemplate != null) {
-            sendWithRetry(eventId, value);
+        if (asyncMode) {
+            sendAsync(eventId, value);
         } else {
-            sendWithoutRetry(eventId, value);
+            if (retryTemplate != null) {
+                sendWithRetry(eventId, value);
+            } else {
+                sendWithoutRetry(eventId, value);
+            }
         }
     }
 
@@ -123,6 +142,31 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             log.error("Failed to send event to Kafka: eventId={}, topic={}", eventId, topic, e);
             handleSendFailure(eventId, value, e);
         }
+    }
+
+    /**
+     * 비동기 전송 - CompletableFuture 기반
+     * 전송 성공/실패를 콜백으로 처리하며, 메인 스레드를 블로킹하지 않음
+     */
+    private void sendAsync(String eventId, String value) {
+        kafkaTemplate.send(topic, eventId, value)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Async send failed: eventId={}, topic={}", eventId, topic, ex);
+                        handleSendFailure(eventId, value, ex);
+                    } else {
+                        handleSendSuccess(eventId, result);
+                    }
+                })
+                .orTimeout(asyncTimeoutMs, TimeUnit.MILLISECONDS)
+                .exceptionally(ex -> {
+                    log.error("Async send timeout: eventId={}, topic={}, timeout={}ms",
+                            eventId, topic, asyncTimeoutMs, ex);
+                    handleSendFailure(eventId, value, ex);
+                    return null;
+                });
+
+        log.debug("Event sent asynchronously (non-blocking): eventId={}, topic={}", eventId, topic);
     }
 
     private SendResult<String, String> doSendSync(String eventId, String value) throws Exception {

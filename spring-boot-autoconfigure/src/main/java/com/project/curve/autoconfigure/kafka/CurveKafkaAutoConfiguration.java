@@ -40,12 +40,16 @@ public class CurveKafkaAutoConfiguration {
         var kafkaConfig = properties.getKafka();
         String topic = kafkaConfig.getTopic();
         String dlqTopic = kafkaConfig.getDlqTopic();
+        boolean asyncMode = kafkaConfig.isAsyncMode();
+        long asyncTimeoutMs = kafkaConfig.getAsyncTimeoutMs();
 
         boolean hasDlq = dlqTopic != null && !dlqTopic.isBlank();
         boolean hasRetry = retryTemplate != null && properties.getRetry().isEnabled();
 
-        log.info("Initializing KafkaEventProducer: topic={}, dlq={}, retry={}",
+        log.info("Initializing KafkaEventProducer: topic={}, asyncMode={}, asyncTimeout={}ms, dlq={}, retry={}",
                 topic,
+                asyncMode,
+                asyncTimeoutMs,
                 hasDlq ? dlqTopic : "disabled",
                 hasRetry ? "enabled" : "disabled");
 
@@ -56,7 +60,9 @@ public class CurveKafkaAutoConfiguration {
                 objectMapper,
                 topic,
                 hasDlq ? dlqTopic : null,
-                hasRetry ? retryTemplate : null
+                hasRetry ? retryTemplate : null,
+                asyncMode,
+                asyncTimeoutMs
         );
     }
 
