@@ -1,36 +1,32 @@
 services:
   kafka:
-    image: bitnami/kafka:4.0.0
-    container_name: kafka-test
+    image: apache/kafka:latest
+    container_name: apache-kafka
     networks:
       - kafka-net
     ports:
-      - "9093:9092"
+      - "9094:9094"
     volumes:
-      - kafka-1-data:/bitnami/kafka
+      - kafka-1-data:/apache/kafka
     environment:
-      KAFKA_ENABLE_KRAFT: 'yes'
-      KAFKA_CFG_PROCESS_ROLES: 'broker,controller'
-      KAFKA_CFG_NODE_ID: 1
-      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: '1@kafka-test:9091'
-      KAFKA_CFG_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:9091,EXTERNAL://0.0.0.0:9092'
-      KAFKA_CFG_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-test:29092,EXTERNAL://localhost:9093'
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT'
-      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
-      KAFKA_CLUSTER_ID: "test-cluster-id"
-      KAFKA_BROKER_ID: 1
-      KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: 'true'
-      KAFKA_CFG_NUM_PARTITIONS: 1
-      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 1
-      ALLOW_PLAINTEXT_LISTENER: 'yes'
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9094,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://apache-kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@apache-kafka:9093
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
-    container_name: kafka-test-ui
+    container_name: apache-kafka-test-ui
     networks:
       - kafka-net
     depends_on:
@@ -39,7 +35,7 @@ services:
       - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-test:29092
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: apache-kafka:9092
 
 networks:
   kafka-net:

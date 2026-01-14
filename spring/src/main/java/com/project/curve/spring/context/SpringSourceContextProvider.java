@@ -3,16 +3,13 @@ package com.project.curve.spring.context;
 import com.project.curve.core.context.SourceContextProvider;
 import com.project.curve.core.envelope.EventSource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.UUID;
 
 @Slf4j
-@Component
 public class SpringSourceContextProvider implements SourceContextProvider {
 
     private final String service;
@@ -21,10 +18,7 @@ public class SpringSourceContextProvider implements SourceContextProvider {
     private final String host;
     private final String version;
 
-    public SpringSourceContextProvider(
-            @Value("${spring.application.name:unknown-service}") String service,
-            Environment env,
-            @Value("${curve.source.version:1.0.0}") String version) {
+    public SpringSourceContextProvider(String service, Environment env, String version) {
         this.service = service;
         this.environment = determineEnvironment(env);
         this.instanceId = generateInstanceId();
@@ -51,7 +45,7 @@ public class SpringSourceContextProvider implements SourceContextProvider {
         if (hostname != null && !hostname.isBlank()) {
             return hostname;
         }
-        // 그 외에는 UUID 생성
+
         return UUID.randomUUID().toString();
     }
 

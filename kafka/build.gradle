@@ -1,6 +1,7 @@
 dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'org.springframework.kafka:spring-kafka'
+    implementation 'org.slf4j:slf4j-api'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
     implementation project(':core')
     implementation project(':spring')

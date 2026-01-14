@@ -2,7 +2,6 @@ package com.project.curve.spring.context;
 
 import com.project.curve.core.context.SchemaContextProvider;
 import com.project.curve.core.envelope.EventSchema;
-import org.springframework.stereotype.Component;
 
 /**
  * Spring 기반 스키마 컨텍스트 제공자
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Component;
  * 3. Schema Registry (Confluent, AWS Glue 등) 연동
  * 4. 어노테이션 기반 스키마 정보 정의 (@EventSchema)
  */
-@Component
 public class SpringSchemaContextProvider implements SchemaContextProvider {
 
     private static final String DEFAULT_SCHEMA_NAME = "DomainEvent";

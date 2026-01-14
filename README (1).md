@@ -1,4 +1,5 @@
 # Common Event Library
+
 > Kafka에 종속되지 않는 **조직 표준 이벤트 발행 라이브러리**
 
 **MSA 환경에서 이벤트를 '조직 자산'으로 관리하기 위한 공통 이벤트 라이브러리**
@@ -39,11 +40,25 @@ core/
  ├─ EventPublisher
  ├─ EventPolicy
  └─ EventPolicyValidator
+ 
+spring/
+ ├─annotation
+ ├─aop
+ ├─context
+ ├─factory
+ ├─payload
+ ├─publisher
+ ├─serde
+ └─type
 
 kafka/
- ├─ KafkaEventPublisher
- ├─ KafkaProducerConfig
- └─ EventSerializer
+ └─producer
+ 
+ spring-boot-autoconfigure/
+ ├─aop
+ ├─context
+ ├─envelope
+ └─kafka
 ```
 
 - 비즈니스 서비스 → `core`만 의존
@@ -58,14 +73,16 @@ kafka/
 ```java
 public interface DomainEvent {
     EventMetadata metadata();
+
     Object payload();
 }
 ```
 
 모든 이벤트는 반드시:
+
 - 메타데이터
 - 비즈니스 payload  
-를 함께 가져야 합니다.
+  를 함께 가져야 합니다.
 
 ---
 
@@ -78,16 +95,17 @@ public record EventMetadata(
         String producer,
         Instant occurredAt,
         String traceId
-) {}
+) {
+}
 ```
 
-| 필드 | 목적 |
-|----|----|
-| eventId | 중복/재처리 추적 |
-| eventType | 이벤트 식별 |
-| producer | 발행 서비스 |
-| occurredAt | 감사 로그 |
-| traceId | 분산 추적 |
+| 필드         | 목적        |
+|------------|-----------|
+| eventId    | 중복/재처리 추적 |
+| eventType  | 이벤트 식별    |
+| producer   | 발행 서비스    |
+| occurredAt | 감사 로그     |
+| traceId    | 분산 추적     |
 
 👉 **메타데이터 없는 이벤트는 발행 불가**
 
@@ -152,25 +170,30 @@ event:
 > 개인정보 이벤트의 무분별한 외부 전파 방지
 
 #### 어노테이션 정의
+
 ```java
 @PII           // 필드 레벨
 @ContainsPII   // payload 전체
 ```
 
 #### 예시
+
 ```java
 public record UserCreatedPayload(
         String userId,
         @PII String email
-) {}
+) {
+}
 ```
 
 ```java
+
 @ContainsPII
 public record IdentityPayload(
         String name,
         String residentNumber
-) {}
+) {
+}
 ```
 
 - 기본 설정: **PII 이벤트 차단**
@@ -181,6 +204,7 @@ public record IdentityPayload(
 ## 🚀 Kafka 구현체 (Infra Layer)
 
 ```java
+
 @Component
 @RequiredArgsConstructor
 public class KafkaEventPublisher implements EventPublisher {
@@ -192,9 +216,9 @@ public class KafkaEventPublisher implements EventPublisher {
     public void publish(DomainEvent event) {
         policyValidator.validate(event);
         kafkaTemplate.send(
-            "event-topic",
-            event.metadata().eventId(),
-            event
+                "event-topic",
+                event.metadata().eventId(),
+                event
         );
     }
 }
@@ -212,8 +236,10 @@ public class KafkaEventPublisher implements EventPublisher {
 
 ```java
 assertThrows(
-    EventPolicyViolationException.class,
-    () -> policy.validate(event)
+        EventPolicyViolationException .class,
+    () ->policy.
+
+validate(event)
 );
 ```
 
@@ -224,19 +250,21 @@ assertThrows(
 ## 🎤 면접에서 이렇게 설명합니다
 
 > “이벤트를 기술적으로 보내는 것이 아니라  
-조직 표준과 보안 정책을 코드로 강제하는 라이브러리를 만들었습니다.  
-Kafka 의존성은 완전히 분리했고,  
-정책 위반 이벤트는 발행 이전에 차단됩니다.”
+> 조직 표준과 보안 정책을 코드로 강제하는 라이브러리를 만들었습니다.  
+> Kafka 의존성은 완전히 분리했고,  
+> 정책 위반 이벤트는 발행 이전에 차단됩니다.”
 
 ---
 
 ## 🧭 한계와 다음 확장 방향
 
 ### 현재 범위 (의도적 제한)
+
 - Consumer / 플랫폼 기능 제외
 - 단일 Kafka 구현체만 제공
 
 ### 다음 확장 단계
+
 - Audit 대상 이벤트 전용 토픽 라우팅
 - Event Versioning (`v1`, `v2`)
 - Outbox Pattern 연동
@@ -247,6 +275,7 @@ Kafka 의존성은 완전히 분리했고,
 ## 🏁 정리
 
 이 프로젝트는:
+
 - Kafka wrapper ❌
 - 조직 표준 이벤트 라이브러리 ⭕
 

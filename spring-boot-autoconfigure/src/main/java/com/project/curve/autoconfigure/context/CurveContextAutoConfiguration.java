@@ -1,15 +1,12 @@
 package com.project.curve.autoconfigure.context;
 
 import com.project.curve.core.context.*;
-import com.project.curve.core.port.ClockProvider;
-import com.project.curve.core.port.IdGenerator;
-import com.project.curve.core.port.SnowflakeIdGenerator;
-import com.project.curve.core.port.UtcClockProvider;
 import com.project.curve.spring.context.*;
-import com.project.curve.spring.factory.EventEnvelopeFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
 @Configuration
 public class CurveContextAutoConfiguration {
@@ -34,8 +31,12 @@ public class CurveContextAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(SourceContextProvider.class)
-    public SourceContextProvider sourceContextProvider() {
-        return new SpringSourceContextProvider();
+    public SourceContextProvider sourceContextProvider(
+            @Value("${spring.application.name:unknown-service}") String service,
+            Environment env,
+            @Value("${curve.source.version:1.0.0}") String version
+    ) {
+        return new SpringSourceContextProvider(service, env, version);
     }
 
     @Bean

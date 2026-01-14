@@ -1,0 +1,10 @@
+package com.project.curve.spring.type;
+
+import com.project.curve.core.type.EventType;
+
+public record AuditEventType(String name) implements EventType {
+    @Override
+    public String getValue() {
+        return name;
+    }
+}

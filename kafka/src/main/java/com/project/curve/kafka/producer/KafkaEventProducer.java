@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.curve.core.context.EventContextProvider;
 import com.project.curve.core.envelope.EventEnvelope;
-import com.project.curve.spring.factory.EventEnvelopeFactory;
+import com.project.curve.core.exception.EventSerializationException;
 import com.project.curve.core.payload.DomainEventPayload;
+import com.project.curve.kafka.dlq.FailedEventRecord;
+import com.project.curve.spring.factory.EventEnvelopeFactory;
 import com.project.curve.spring.publisher.AbstractEventPublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -15,10 +17,10 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Kafka 기반 이벤트 발행자
- *
+ * <p>
  * - 이벤트를 JSON으로 직렬화하여 Kafka 토픽에 발행
  * - 비동기 전송 결과 처리 (성공/실패 로깅)
- * - 전송 실패 시 예외 발생
+ * - 전송 실패 시 DLQ(Dead Letter Queue)로 전송하여 이벤트 손실 방지
  */
 @Slf4j
 public class KafkaEventProducer extends AbstractEventPublisher {
@@ -26,6 +28,8 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
     private final String topic;
+    private final String dlqTopic;
+    private final boolean dlqEnabled;
 
     public KafkaEventProducer(
             EventEnvelopeFactory envelopeFactory,
@@ -34,10 +38,27 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             ObjectMapper objectMapper,
             String topic
     ) {
+        this(envelopeFactory, eventContextProvider, kafkaTemplate, objectMapper, topic, null);
+    }
+
+    public KafkaEventProducer(
+            EventEnvelopeFactory envelopeFactory,
+            EventContextProvider eventContextProvider,
+            KafkaTemplate<String, String> kafkaTemplate,
+            ObjectMapper objectMapper,
+            String topic,
+            String dlqTopic
+    ) {
         super(envelopeFactory, eventContextProvider);
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = objectMapper;
         this.topic = topic;
+        this.dlqTopic = dlqTopic;
+        this.dlqEnabled = dlqTopic != null && !dlqTopic.isBlank();
+
+        if (dlqEnabled) {
+            log.info("DLQ enabled for topic: {} -> DLQ: {}", topic, dlqTopic);
+        }
     }
 
     @Override
@@ -46,11 +67,10 @@ public class KafkaEventProducer extends AbstractEventPublisher {
 
         try {
             String value = serializeToJson(envelope);
-            String key = eventId;
 
             log.debug("Sending event to Kafka: eventId={}, topic={}", eventId, topic);
 
-            CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(topic, key, value);
+            CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(topic, eventId, value);
 
             future.whenComplete((result, ex) -> {
                 if (ex != null) {
@@ -79,16 +99,42 @@ public class KafkaEventProducer extends AbstractEventPublisher {
 
     private void handleSendFailure(String eventId, Throwable ex) {
         log.error("Failed to send event to Kafka: eventId={}, topic={}", eventId, topic, ex);
-        // 비동기 전송이므로 여기서 예외를 던져도 호출자에게 전달되지 않음
-        // 추후 DLQ(Dead Letter Queue) 전송, 알림, 재시도 등의 처리 추가 가능
+
+        if (dlqEnabled) {
+            sendToDlq(eventId, ex);
+        } else {
+            log.warn("DLQ not configured. Event may be lost: eventId={}", eventId);
+        }
     }
 
-    /**
-     * 이벤트 직렬화 실패 예외
-     */
-    public static class EventSerializationException extends RuntimeException {
-        public EventSerializationException(String message, Throwable cause) {
-            super(message, cause);
+    private void sendToDlq(String eventId, Throwable originalException) {
+        try {
+            log.warn("Sending failed event to DLQ: eventId={}, dlqTopic={}", eventId, dlqTopic);
+
+            // DLQ 메시지에 원본 이벤트 정보와 실패 원인을 포함
+            FailedEventRecord failedRecord = new FailedEventRecord(
+                    eventId,
+                    topic,
+                    originalException.getClass().getName(),
+                    originalException.getMessage(),
+                    System.currentTimeMillis()
+            );
+
+            String dlqValue = objectMapper.writeValueAsString(failedRecord);
+
+            CompletableFuture<SendResult<String, String>> dlqFuture = kafkaTemplate.send(dlqTopic, eventId, dlqValue);
+
+            dlqFuture.whenComplete((result, dlqEx) -> {
+                if (dlqEx != null) {
+                    log.error("CRITICAL: Failed to send event to DLQ. Event is lost: eventId={}, dlqTopic={}",
+                            eventId, dlqTopic, dlqEx);
+                } else {
+                    log.info("Event sent to DLQ successfully: eventId={}, dlqTopic={}", eventId, dlqTopic);
+                }
+            });
+
+        } catch (Exception e) {
+            log.error("CRITICAL: Failed to serialize DLQ message. Event is lost: eventId={}", eventId, e);
         }
     }
 }

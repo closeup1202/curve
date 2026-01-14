@@ -26,6 +26,12 @@ public class CurveProperties {
         private String topic = "event.audit.v1";
 
         /**
+         * Dead Letter Queue 토픽 이름 (선택사항)
+         * 설정하지 않으면 DLQ 기능이 비활성화됨
+         */
+        private String dlqTopic;
+
+        /**
          * Kafka Producer 재시도 횟수 (기본값: 3)
          * Kafka Producer 자체 재시도 설정 (spring.kafka.producer.retries 우선)
          */

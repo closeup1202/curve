@@ -9,11 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
-/**
- * Curve AOP 자동 구성
- *
- * @Auditable 어노테이션을 통한 자동 이벤트 발행 기능을 활성화합니다.
- */
 @Slf4j
 @Configuration
 @EnableAspectJAutoProxy
