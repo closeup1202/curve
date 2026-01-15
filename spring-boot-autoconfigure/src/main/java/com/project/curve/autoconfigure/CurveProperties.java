@@ -20,6 +20,8 @@ public class CurveProperties {
 
     private final IdGenerator idGenerator = new IdGenerator();
 
+    private final Security security = new Security();
+
     @Data
     public static class Kafka {
         /**
@@ -115,5 +117,23 @@ public class CurveProperties {
          * false: workerId 설정값 사용
          */
         private boolean autoGenerate = false;
+    }
+
+    @Data
+    public static class Security {
+        /**
+         * X-Forwarded-For 헤더 사용 여부 (기본값: false)
+         * true: Spring Boot의 ForwardedHeaderFilter 사용 권장
+         * false: request.getRemoteAddr()만 사용 (가장 안전)
+         *
+         * 프록시/로드밸런서 뒤에서 실행되는 경우:
+         * server.forward-headers-strategy=framework 설정 필수
+         *
+         * 보안 주의사항:
+         * - 신뢰할 수 없는 프록시 환경에서는 false로 설정
+         * - X-Forwarded-For 헤더 스푸핑 공격에 주의
+         * - 프로덕션 환경에서는 server.tomcat.remoteip.internal-proxies 설정 필수
+         */
+        private boolean useForwardedHeaders = false;
     }
 }

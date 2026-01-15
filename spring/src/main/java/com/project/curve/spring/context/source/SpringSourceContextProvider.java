@@ -7,6 +7,7 @@ import org.springframework.core.env.Environment;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -21,7 +22,7 @@ public class SpringSourceContextProvider implements SourceContextProvider {
     public SpringSourceContextProvider(String service, Environment env, String version) {
         this.service = service;
         this.environment = determineEnvironment(env);
-        this.instanceId = generateInstanceId();
+        this.instanceId = resolveInstanceId();
         this.host = resolveHost();
         this.version = version;
     }
@@ -39,14 +40,13 @@ public class SpringSourceContextProvider implements SourceContextProvider {
         return env.getProperty("spring.profiles.default", "default");
     }
 
-    private String generateInstanceId() {
-        // 컨테이너 환경에서는 호스트네임이 인스턴스 ID로 사용될 수 있음
-        String hostname = System.getenv("HOSTNAME");
-        if (hostname != null && !hostname.isBlank()) {
-            return hostname;
-        }
-
-        return UUID.randomUUID().toString();
+    private String resolveInstanceId() {
+        return Optional.ofNullable(System.getenv("HOSTNAME"))
+                .filter(h -> !h.isBlank())
+                .orElseGet(() -> {
+                    log.warn("HOSTNAME not set, using UUID for instance ID");
+                    return UUID.randomUUID().toString();
+                });
     }
 
     private String resolveHost() {

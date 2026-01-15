@@ -14,6 +14,11 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.retry.support.RetryTemplate;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -185,7 +190,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
 
     private void handleSendSuccess(String eventId, SendResult<String, String> result) {
         var metadata = result.getRecordMetadata();
-        log.info("Event sent successfully: eventId={}, topic={}, partition={}, offset={}",
+        log.debug("Event sent successfully: eventId={}, topic={}, partition={}, offset={}",
                 eventId, metadata.topic(), metadata.partition(), metadata.offset());
     }
 
@@ -235,8 +240,17 @@ public class KafkaEventProducer extends AbstractEventPublisher {
      * DLQ 전송도 실패한 경우 로컬 파일에 백업
      */
     private void backupToLocalFile(String eventId, String originalValue, Exception exception) {
-        // 로그에 전체 이벤트 데이터 기록 (운영 환경에서는 파일 또는 DB 백업 권장)
-        log.error("BACKUP: eventId={}, payload={}, exception={}",
-                eventId, originalValue, exception.getMessage());
+        try {
+            Path backupDir = Paths.get("./dlq-backup");
+            Files.createDirectories(backupDir);
+
+            Path backupFile = backupDir.resolve(eventId + ".json");
+            Files.writeString(backupFile, originalValue, StandardOpenOption.CREATE);
+            log.error("Event backed up to file: {}", backupFile);
+            log.error("BACKUP: eventId={}, payloadSize={}, exception={}", eventId, originalValue.length(), exception.getMessage());
+        } catch (IOException e) {
+            log.error("Failed to backup event to file: eventId={}", eventId, e);
+            log.error("BACKUP_FALLBACK: eventId={}, payloadSize={}", eventId, originalValue.length());
+        }
     }
 }

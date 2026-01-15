@@ -8,7 +8,9 @@ public record SpringEventContextProvider(
         ActorContextProvider actorProvider,
         TraceContextProvider traceProvider,
         SourceContextProvider sourceProvider,
-        SchemaContextProvider schemaProvider) implements EventContextProvider {
+        SchemaContextProvider schemaProvider,
+        TagsContextProvider tagsContextProvider
+) implements EventContextProvider {
 
     @Override
     public EventMetadata currentMetadata(DomainEventPayload payload) {
@@ -17,7 +19,7 @@ public record SpringEventContextProvider(
                 actorProvider.getActor(),
                 traceProvider.getTrace(),
                 schemaProvider.getSchemaFor(payload),
-                null
+                tagsContextProvider.getTags()
         );
     }
 }

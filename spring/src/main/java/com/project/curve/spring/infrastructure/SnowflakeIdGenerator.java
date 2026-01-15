@@ -21,7 +21,7 @@ public final class SnowflakeIdGenerator implements IdGenerator {
     /**
      * 시간 역행 시 대기할 최대 시간 (밀리초)
      */
-    private static final long MAX_BACKWARD_MS = 5L;
+    private static final long MAX_BACKWARD_MS = 100L;
 
     private final long workerId;
     private long lastTimestamp = -1L;

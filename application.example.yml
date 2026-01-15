@@ -68,6 +68,32 @@ curve:
     # @Auditable 어노테이션 AOP 활성화 여부
     enabled: true
 
+  # ===== 보안 설정 =====
+  security:
+    # X-Forwarded-For 헤더 사용 여부 (기본값: false)
+    # 프록시/로드밸런서 뒤에서 실행되는 경우에만 true로 설정
+    # 주의: 신뢰할 수 없는 환경에서는 false로 유지 (보안 취약점)
+    use-forwarded-headers: false
+
+# =====================================
+# Spring Boot 기본 설정
+# =====================================
+server:
+  # 프록시 헤더 처리 전략
+  # - none: 프록시 헤더 무시 (기본값, 가장 안전)
+  # - native: 서버의 네이티브 프록시 헤더 처리 사용
+  # - framework: Spring의 ForwardedHeaderFilter 사용 (권장)
+  forward-headers-strategy: none
+
+# Kafka 설정
+spring:
+  kafka:
+    bootstrap-servers: localhost:9094
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
 ---
 # =====================================
 # 개발 환경 설정
@@ -170,3 +196,81 @@ curve:
     dlq-topic: event.audit.dlq.v1
     async-mode: true
     async-timeout-ms: 5000
+
+---
+# =====================================
+# 프록시 환경 설정 (Nginx, AWS ALB, GCP Load Balancer 등)
+# =====================================
+spring:
+  config:
+    activate:
+      on-profile: behind-proxy
+
+curve:
+  security:
+    # 프록시 뒤에서 실행되므로 X-Forwarded-For 헤더 사용
+    use-forwarded-headers: true
+
+# Spring Boot의 ForwardedHeaderFilter 활성화
+server:
+  forward-headers-strategy: framework
+
+  # Tomcat 프록시 설정 (프로덕션 필수)
+  tomcat:
+    remoteip:
+      # 신뢰할 수 있는 프록시 IP 패턴 (정규식)
+      # 예: 10.0.0.0/8, 192.168.0.0/16, 172.16.0.0/12
+      internal-proxies: 10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3}|172\\.(1[6-9]|2[0-9]|3[0-1])\\.\\d{1,3}\\.\\d{1,3}
+
+      # X-Forwarded-Proto 헤더 이름
+      protocol-header: X-Forwarded-Proto
+
+      # X-Forwarded-For 헤더 이름
+      remote-ip-header: X-Forwarded-For
+
+      # 포트 헤더 이름 (선택)
+      port-header: X-Forwarded-Port
+
+---
+# =====================================
+# AWS 환경 설정 (ALB/ELB 뒤)
+# =====================================
+spring:
+  config:
+    activate:
+      on-profile: aws
+
+curve:
+  id-generator:
+    worker-id: ${AWS_CONTAINER_CREDENTIALS_RELATIVE_URI:1}  # ECS Task ID 사용
+    auto-generate: false
+
+  security:
+    use-forwarded-headers: true
+
+server:
+  forward-headers-strategy: framework
+  tomcat:
+    remoteip:
+      # AWS ALB/ELB의 프라이빗 IP 대역
+      internal-proxies: 10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|172\\.(1[6-9]|2[0-9]|3[0-1])\\.\\d{1,3}\\.\\d{1,3}
+      protocol-header: X-Forwarded-Proto
+      remote-ip-header: X-Forwarded-For
+
+---
+# =====================================
+# 로컬 개발 환경 (프록시 없음)
+# =====================================
+spring:
+  config:
+    activate:
+      on-profile: local
+
+curve:
+  security:
+    # 로컬 환경에서는 프록시 헤더 사용 안 함
+    use-forwarded-headers: false
+
+server:
+  # 로컬에서는 프록시 헤더 처리 비활성화
+  forward-headers-strategy: none
