@@ -1,4 +1,4 @@
-package com.project.curve.spring.context;
+package com.project.curve.spring.context.source;
 
 import com.project.curve.core.context.SourceContextProvider;
 import com.project.curve.core.envelope.EventSource;

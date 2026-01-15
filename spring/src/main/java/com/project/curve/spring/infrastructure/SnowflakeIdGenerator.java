@@ -1,4 +1,4 @@
-package com.project.curve.spring.generator;
+package com.project.curve.spring.infrastructure;
 
 import com.project.curve.core.envelope.EventId;
 import com.project.curve.core.exception.ClockMovedBackwardsException;

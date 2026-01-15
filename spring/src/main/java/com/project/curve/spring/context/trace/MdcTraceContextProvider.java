@@ -1,4 +1,4 @@
-package com.project.curve.spring.context;
+package com.project.curve.spring.context.trace;
 
 import com.project.curve.core.context.TraceContextProvider;
 import com.project.curve.core.envelope.EventTrace;

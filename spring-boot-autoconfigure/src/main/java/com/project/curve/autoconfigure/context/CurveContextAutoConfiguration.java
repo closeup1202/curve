@@ -1,7 +1,11 @@
 package com.project.curve.autoconfigure.context;
 
 import com.project.curve.core.context.*;
-import com.project.curve.spring.context.*;
+import com.project.curve.spring.context.SpringEventContextProvider;
+import com.project.curve.spring.context.actor.SpringSecurityActorContextProvider;
+import com.project.curve.spring.context.schema.AnnotationBasedSchemaContextProvider;
+import com.project.curve.spring.context.source.SpringSourceContextProvider;
+import com.project.curve.spring.context.trace.MdcTraceContextProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -20,13 +24,13 @@ public class CurveContextAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(ActorContextProvider.class)
     public ActorContextProvider actorContextProvider() {
-        return new SpringSecurityActorProvider();
+        return new SpringSecurityActorContextProvider();
     }
 
     @Bean
     @ConditionalOnMissingBean(SchemaContextProvider.class)
     public SchemaContextProvider schemaContextProvider() {
-        return new SpringSchemaContextProvider();
+        return new AnnotationBasedSchemaContextProvider();
     }
 
     @Bean

@@ -1,4 +1,4 @@
-package com.project.curve.spring.context;
+package com.project.curve.spring.context.actor;
 
 import com.project.curve.core.context.ActorContextProvider;
 import com.project.curve.core.envelope.EventActor;
@@ -8,7 +8,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-public class SpringSecurityActorProvider implements ActorContextProvider {
+public class SpringSecurityActorContextProvider implements ActorContextProvider {
 
     private static final String DEFAULT_IP = "127.0.0.1";
 

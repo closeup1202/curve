@@ -16,7 +16,7 @@ public record SpringEventContextProvider(
                 sourceProvider.getSource(),
                 actorProvider.getActor(),
                 traceProvider.getTrace(),
-                schemaProvider.getSchema(),
+                schemaProvider.getSchemaFor(payload),
                 null
         );
     }

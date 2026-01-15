@@ -1,4 +1,4 @@
-package com.project.curve.spring.provider;
+package com.project.curve.spring.infrastructure;
 
 import com.project.curve.core.port.ClockProvider;
 
