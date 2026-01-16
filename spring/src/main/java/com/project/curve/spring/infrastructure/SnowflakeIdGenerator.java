@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Slf4j
 public final class SnowflakeIdGenerator implements IdGenerator {
@@ -24,6 +26,7 @@ public final class SnowflakeIdGenerator implements IdGenerator {
     private static final long MAX_BACKWARD_MS = 100L;
 
     private final long workerId;
+    private final Lock lock = new ReentrantLock();
     private long lastTimestamp = -1L;
     private long sequence = 0L;
 
@@ -78,38 +81,43 @@ public final class SnowflakeIdGenerator implements IdGenerator {
     }
 
     @Override
-    public synchronized EventId generate() {
-        long timestamp = currentTimeMillis();
+    public EventId generate() {
+        lock.lock();
+        try {
+            long timestamp = currentTimeMillis();
 
-        // 시간이 역행한 경우
-        if (timestamp < lastTimestamp) {
-            long backwardMs = lastTimestamp - timestamp;
+            // 시간이 역행한 경우
+            if (timestamp < lastTimestamp) {
+                long backwardMs = lastTimestamp - timestamp;
 
-            // 작은 역행(5ms 이하)은 대기 후 재시도
-            if (backwardMs <= MAX_BACKWARD_MS) {
-                timestamp = waitUntilNextMillis(lastTimestamp);
+                // 작은 역행(100ms 이하)은 대기 후 재시도
+                if (backwardMs <= MAX_BACKWARD_MS) {
+                    timestamp = waitUntilNextMillis(lastTimestamp);
+                } else {
+                    // 큰 역행은 예외 발생
+                    throw new ClockMovedBackwardsException(lastTimestamp, timestamp);
+                }
+            }
+
+            if (lastTimestamp == timestamp) {
+                sequence = (sequence + 1) & SEQUENCE_MASK;
+                if (sequence == 0) {
+                    timestamp = waitUntilNextMillis(timestamp);
+                }
             } else {
-                // 큰 역행은 예외 발생
-                throw new ClockMovedBackwardsException(lastTimestamp, timestamp);
+                sequence = 0L;
             }
+
+            lastTimestamp = timestamp;
+
+            long id = ((timestamp - EPOCH) << (WORKER_ID_BITS + SEQUENCE_BITS))
+                    | (workerId << SEQUENCE_BITS)
+                    | sequence;
+
+            return EventId.of(String.valueOf(id));
+        } finally {
+            lock.unlock();
         }
-
-        if (lastTimestamp == timestamp) {
-            sequence = (sequence + 1) & SEQUENCE_MASK;
-            if (sequence == 0) {
-                timestamp = waitUntilNextMillis(timestamp);
-            }
-        } else {
-            sequence = 0L;
-        }
-
-        lastTimestamp = timestamp;
-
-        long id = ((timestamp - EPOCH) << (WORKER_ID_BITS + SEQUENCE_BITS))
-                | (workerId << SEQUENCE_BITS)
-                | sequence;
-
-        return EventId.of(String.valueOf(id));
     }
 
     private long waitUntilNextMillis(long lastTimestamp) {

@@ -8,7 +8,9 @@ dependencies {
     implementation 'org.springframework:spring-aspects'
     implementation 'org.springframework.boot:spring-boot-configuration-processor'
     implementation 'org.springframework.boot:spring-boot-autoconfigure-processor'
-    implementation project(':core')
-    implementation project(':spring')
-    implementation project(':kafka')
+
+    // API로 노출하여 의존하는 모듈에서 사용 가능하도록 설정
+    api project(':core')
+    api project(':spring')
+    api project(':kafka')
 }

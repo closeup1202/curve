@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: sample-order-service
+  kafka:
+    bootstrap-servers: localhost:9094
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+server:
+  port: 8081
+  forward-headers-strategy: none
+
+curve:
+  enabled: true
+
+  id-generator:
+    worker-id: 1
+    auto-generate: false
+
+  kafka:
+    topic: event.audit.v1
+    dlq-topic: event.audit.dlq.v1
+    retries: 3
+    retry-backoff-ms: 1000
+    request-timeout-ms: 30000
+    async-mode: true
+    async-timeout-ms: 5000
+    dlq-executor-threads: 2
+
+  retry:
+    enabled: true
+    max-attempts: 3
+    initial-interval: 1000
+    multiplier: 2.0
+    max-interval: 10000
+
+  aop:
+    enabled: true
+
+  security:
+    use-forwarded-headers: false
+
+  pii:
+    enabled: true
+
+# 로깅 설정
+logging:
+  level:
+    com.example.orderservice: DEBUG
+    com.project.curve: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"

@@ -45,6 +45,10 @@ curve:
     # async-mode가 true일 때만 사용
     async-timeout-ms: 5000
 
+    # DLQ 전송 전용 스레드 풀 크기 (기본값: 2)
+    # 비동기 모드에서 DLQ 전송 시 콜백 스레드 블로킹 방지
+    dlq-executor-threads: 2
+
   # ===== Retry 설정 =====
   retry:
     # 재시도 활성화 여부

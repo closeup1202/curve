@@ -4,8 +4,6 @@ import com.project.curve.core.context.TagsContextProvider;
 import org.slf4j.MDC;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * MDC(Mapped Diagnostic Context) 기반 Tags Context Provider
@@ -41,14 +39,12 @@ import java.util.stream.Stream;
  *   <li>빈 맵인 경우에도 안전하게 처리됨</li>
  * </ul>
  */
-public class MdcTagsContextProvider implements TagsContextProvider {
+public record MdcTagsContextProvider(List<String> tagKeys) implements TagsContextProvider {
 
     /**
      * MDC에서 추출할 키 목록 (기본값: region, tenant)
      */
     private static final List<String> DEFAULT_TAG_KEYS = List.of("region", "tenant");
-
-    private final List<String> tagKeys;
 
     /**
      * 기본 생성자 (region, tenant 사용)

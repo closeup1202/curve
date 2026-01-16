@@ -77,6 +77,12 @@ public class CurveProperties {
          * DLQ 전송도 실패한 경우 이벤트를 로컬 파일로 백업
          */
         private String dlqBackupPath = "./dlq-backup";
+
+        /**
+         * DLQ 전송 전용 ExecutorService 스레드 풀 크기 (기본값: 2)
+         * 비동기 모드에서 DLQ 전송 시 메인 콜백 스레드 블로킹을 방지하기 위한 별도 스레드 풀
+         */
+        private int dlqExecutorThreads = 2;
     }
 
     @Data

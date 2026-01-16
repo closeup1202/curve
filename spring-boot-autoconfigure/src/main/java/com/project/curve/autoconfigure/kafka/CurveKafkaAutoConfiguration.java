@@ -22,10 +22,41 @@ import org.springframework.retry.support.RetryTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Configuration
 public class CurveKafkaAutoConfiguration {
+
+    /**
+     * DLQ 전송 전용 ExecutorService
+     * - 비동기 Kafka 전송 콜백에서 DLQ 동기 전송 시 스레드 블로킹 방지
+     * - 고정 크기 스레드 풀 사용 (기본값: 2)
+     * - Daemon 스레드로 설정하여 애플리케이션 종료 시 자동 종료
+     */
+    @Bean(name = "curveDlqExecutor", destroyMethod = "shutdown")
+    @ConditionalOnMissingBean(name = "curveDlqExecutor")
+    public ExecutorService dlqExecutor(CurveProperties properties) {
+        int threadPoolSize = properties.getKafka().getDlqExecutorThreads();
+
+        ThreadFactory threadFactory = new ThreadFactory() {
+            private final AtomicInteger threadNumber = new AtomicInteger(1);
+
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r, "curve-dlq-" + threadNumber.getAndIncrement());
+                thread.setDaemon(true);
+                return thread;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(threadPoolSize, threadFactory);
+        log.info("DLQ ExecutorService created with {} threads", threadPoolSize);
+        return executor;
+    }
 
     @Bean
     @ConditionalOnMissingBean(EventProducer.class)
@@ -35,7 +66,8 @@ public class CurveKafkaAutoConfiguration {
             KafkaTemplate<String, String> kafkaTemplate,
             ObjectMapper objectMapper,
             CurveProperties properties,
-            @Autowired(required = false) @Qualifier("curveRetryTemplate") RetryTemplate retryTemplate
+            @Autowired(required = false) @Qualifier("curveRetryTemplate") RetryTemplate retryTemplate,
+            @Autowired(required = false) @Qualifier("curveDlqExecutor") ExecutorService dlqExecutor
     ) {
         var kafkaConfig = properties.getKafka();
         boolean hasRetry = retryTemplate != null && properties.getRetry().isEnabled();
@@ -52,6 +84,7 @@ public class CurveKafkaAutoConfiguration {
                 .asyncTimeoutMs(kafkaConfig.getAsyncTimeoutMs())
                 .syncTimeoutSeconds(kafkaConfig.getSyncTimeoutSeconds())
                 .dlqBackupPath(kafkaConfig.getDlqBackupPath())
+                .dlqExecutor(dlqExecutor)
                 .build();
     }
 

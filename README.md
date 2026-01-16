@@ -641,6 +641,6 @@ public class TenantFilter implements Filter {
 
 ## 📖 문서
 
-- [CONFIGURATION.md](CONFIGURATION.md) - 상세 설정 가이드
+- [CONFIGURATION.md](docs/CONFIGURATION.md) - 상세 설정 가이드
 - [application.example.yml](application.example.yml) - 설정 예시
 - [Architecture Decision Records (ADR)](#) - 설계 의도 (작성 예정)

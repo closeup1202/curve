@@ -21,6 +21,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -43,6 +47,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     private final long asyncTimeoutMs;
     private final long syncTimeoutSeconds;
     private final String dlqBackupPath;
+    private final ExecutorService dlqExecutor;
 
     @Builder
     public KafkaEventProducer(
@@ -56,7 +61,8 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             Boolean asyncMode,
             Long asyncTimeoutMs,
             Long syncTimeoutSeconds,
-            String dlqBackupPath
+            String dlqBackupPath,
+            ExecutorService dlqExecutor
     ) {
         super(envelopeFactory, eventContextProvider);
         this.kafkaTemplate = kafkaTemplate;
@@ -69,12 +75,14 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         this.asyncTimeoutMs = asyncTimeoutMs != null ? asyncTimeoutMs : 5000L;
         this.syncTimeoutSeconds = syncTimeoutSeconds != null ? syncTimeoutSeconds : 30L;
         this.dlqBackupPath = dlqBackupPath != null ? dlqBackupPath : "./dlq-backup";
+        this.dlqExecutor = dlqExecutor;
 
-        log.info("KafkaEventProducer initialized: topic={}, asyncMode={}, syncTimeout={}s, asyncTimeout={}ms, dlq={}, retry={}, backupPath={}",
+        log.info("KafkaEventProducer initialized: topic={}, asyncMode={}, syncTimeout={}s, asyncTimeout={}ms, dlq={}, retry={}, backupPath={}, dlqExecutor={}",
                 this.topic, this.asyncMode, this.syncTimeoutSeconds, this.asyncTimeoutMs,
                 this.dlqEnabled ? this.dlqTopic : "disabled",
                 this.retryTemplate != null ? "enabled" : "disabled",
-                this.dlqBackupPath);
+                this.dlqBackupPath,
+                this.dlqExecutor != null ? "enabled" : "disabled");
     }
 
     @Override
@@ -100,6 +108,11 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                 sendWithoutRetry(eventId, value);
             }
         }
+    }
+
+    private <T extends DomainEventPayload> String serializeToJson(EventEnvelope<T> envelope)
+            throws JsonProcessingException {
+        return objectMapper.writeValueAsString(envelope);
     }
 
     private void sendWithRetry(String eventId, String value) {
@@ -159,11 +172,6 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         return result;
     }
 
-    private <T extends DomainEventPayload> String serializeToJson(EventEnvelope<T> envelope)
-            throws JsonProcessingException {
-        return objectMapper.writeValueAsString(envelope);
-    }
-
     private void handleSendSuccess(String eventId, SendResult<String, String> result) {
         var metadata = result.getRecordMetadata();
         log.debug("Event sent successfully: eventId={}, topic={}, partition={}, offset={}",
@@ -172,10 +180,48 @@ public class KafkaEventProducer extends AbstractEventPublisher {
 
     private void handleSendFailure(String eventId, String originalValue, Throwable ex) {
         if (dlqEnabled) {
-            sendToDlqSync(eventId, originalValue, ex);
+            if (dlqExecutor != null) {  // ExecutorService가 있으면 비동기로, 없으면 동기로 DLQ 전송
+                sendToDlqAsync(eventId, originalValue, ex);
+            } else {
+                sendToDlqSync(eventId, originalValue, ex);
+            }
         } else {
             log.warn("DLQ not configured. Event may be lost: eventId={}", eventId);
         }
+    }
+
+    /**
+     * DLQ로 비동기 전송 - 별도 ExecutorService를 사용하여 콜백 스레드 블로킹 방지
+     */
+    private void sendToDlqAsync(String eventId, String originalValue, Throwable originalException) {
+        dlqExecutor.submit(() -> {
+            try {
+                log.warn("Sending failed event to DLQ (async): eventId={}, dlqTopic={}", eventId, dlqTopic);
+
+                FailedEventRecord failedRecord = new FailedEventRecord(
+                        eventId,
+                        topic,
+                        originalValue,
+                        originalException.getClass().getName(),
+                        originalException.getMessage(),
+                        System.currentTimeMillis()
+                );
+
+                String dlqValue = objectMapper.writeValueAsString(failedRecord);
+
+                // 비동기 전송 (ExecutorService 스레드에서 동기 대기)
+                SendResult<String, String> result = kafkaTemplate
+                        .send(dlqTopic, eventId, dlqValue)
+                        .get(syncTimeoutSeconds, TimeUnit.SECONDS);
+
+                log.info("Event sent to DLQ successfully (async): eventId={}, dlqTopic={}, partition={}, offset={}",
+                        eventId, dlqTopic, result.getRecordMetadata().partition(), result.getRecordMetadata().offset());
+
+            } catch (Exception e) {
+                log.error("Failed to send event to DLQ (async): eventId={}, dlqTopic={}", eventId, dlqTopic, e);
+                backupToLocalFile(eventId, originalValue);
+            }
+        });
     }
 
     /**
@@ -183,7 +229,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
      */
     private void sendToDlqSync(String eventId, String originalValue, Throwable originalException) {
         try {
-            log.warn("Sending failed event to DLQ: eventId={}, dlqTopic={}", eventId, dlqTopic);
+            log.warn("Sending failed event to DLQ (sync): eventId={}, dlqTopic={}", eventId, dlqTopic);
 
             FailedEventRecord failedRecord = new FailedEventRecord(
                     eventId,
@@ -201,32 +247,42 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                     .send(dlqTopic, eventId, dlqValue)
                     .get(syncTimeoutSeconds, TimeUnit.SECONDS);
 
-            log.info("Event sent to DLQ successfully: eventId={}, dlqTopic={}, partition={}, offset={}",
+            log.info("Event sent to DLQ successfully (sync): eventId={}, dlqTopic={}, partition={}, offset={}",
                     eventId, dlqTopic, result.getRecordMetadata().partition(), result.getRecordMetadata().offset());
 
         } catch (Exception e) {
-            log.error("CRITICAL: Failed to send event to DLQ. Event is lost: eventId={}, dlqTopic={}",
-                    eventId, dlqTopic, e);
-            // DLQ 전송 실패 시 로컬 백업
-            backupToLocalFile(eventId, originalValue, e);
+            log.error("Failed to send event to DLQ (sync): eventId={}, dlqTopic={}", eventId, dlqTopic, e);
+            backupToLocalFile(eventId, originalValue);
         }
     }
 
     /**
      * DLQ 전송도 실패한 경우 로컬 파일에 백업
+     * - POSIX 파일 권한 설정 (rw-------)으로 보안 강화
+     * - 민감 데이터 노출 방지를 위해 페이로드 정보는 로깅하지 않음
      */
-    private void backupToLocalFile(String eventId, String originalValue, Exception exception) {
+    private void backupToLocalFile(String eventId, String originalValue) {
         try {
             Path backupDir = Paths.get(dlqBackupPath);
             Files.createDirectories(backupDir);
 
             Path backupFile = backupDir.resolve(eventId + ".json");
-            Files.writeString(backupFile, originalValue, StandardOpenOption.CREATE);
-            log.error("Event backed up to file: {}", backupFile);
-            log.error("BACKUP: eventId={}, payloadSize={}, exception={}", eventId, originalValue.length(), exception.getMessage());
+
+            // POSIX 파일 시스템인 경우 파일 권한 설정 (rw-------)
+            try {
+                Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-------");
+                Files.writeString(backupFile, originalValue, StandardOpenOption.CREATE);
+                Files.setPosixFilePermissions(backupFile, perms);
+                log.error("Event backed up to file with restricted permissions: eventId={}, file={}", eventId, backupFile);
+            } catch (UnsupportedOperationException e) {
+                // Windows 등 POSIX를 지원하지 않는 시스템
+                Files.writeString(backupFile, originalValue, StandardOpenOption.CREATE);
+                log.error("Event backed up to file (POSIX not supported): eventId={}, file={}", eventId, backupFile);
+                log.warn("File permissions not set - consider manual security configuration on non-POSIX systems");
+            }
         } catch (IOException e) {
             log.error("Failed to backup event to file: eventId={}", eventId, e);
-            log.error("BACKUP_FALLBACK: eventId={}, payloadSize={}", eventId, originalValue.length());
+            log.error("CRITICAL: Event permanently lost - eventId={}", eventId);
         }
     }
 }
