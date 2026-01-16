@@ -1,8 +1,8 @@
-package com.project.curve.spring.payload;
+package com.project.curve.spring.audit.payload;
 
 import com.project.curve.core.payload.DomainEventPayload;
 import com.project.curve.core.type.EventType;
-import com.project.curve.spring.type.AuditEventType;
+import com.project.curve.spring.audit.type.AuditEventType;
 
 /**
  * @Auditable 어노테이션을 통해 자동 생성되는 감사 이벤트 페이로드

@@ -1,10 +1,10 @@
-package com.project.curve.spring.aop;
+package com.project.curve.spring.audit.aop;
 
 import com.project.curve.core.port.EventProducer;
 import com.project.curve.core.type.EventSeverity;
-import com.project.curve.spring.annotation.Auditable;
+import com.project.curve.spring.audit.annotation.Auditable;
 import com.project.curve.spring.exception.AuditEventPublishException;
-import com.project.curve.spring.payload.AuditEventPayload;
+import com.project.curve.spring.audit.payload.AuditEventPayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
@@ -22,7 +22,7 @@ public class AuditableAspect {
 
     private final EventProducer eventProducer;
 
-    @Pointcut("@annotation(com.project.curve.spring.annotation.Auditable)")
+    @Pointcut("@annotation(com.project.curve.spring.audit.annotation.Auditable)")
     public void auditableMethod() {
     }
 

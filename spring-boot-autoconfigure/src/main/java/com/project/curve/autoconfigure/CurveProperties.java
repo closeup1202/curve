@@ -22,6 +22,8 @@ public class CurveProperties {
 
     private final Security security = new Security();
 
+    private final Pii pii = new Pii();
+
     @Data
     public static class Kafka {
         /**
@@ -63,6 +65,18 @@ public class CurveProperties {
          * asyncMode=true일 때만 사용
          */
         private long asyncTimeoutMs = 5000L;
+
+        /**
+         * 동기 전송 타임아웃(초) (기본값: 30초)
+         * asyncMode=false일 때 사용
+         */
+        private long syncTimeoutSeconds = 30L;
+
+        /**
+         * DLQ 전송 실패 시 로컬 백업 디렉토리 경로 (기본값: ./dlq-backup)
+         * DLQ 전송도 실패한 경우 이벤트를 로컬 파일로 백업
+         */
+        private String dlqBackupPath = "./dlq-backup";
     }
 
     @Data
@@ -125,15 +139,45 @@ public class CurveProperties {
          * X-Forwarded-For 헤더 사용 여부 (기본값: false)
          * true: Spring Boot의 ForwardedHeaderFilter 사용 권장
          * false: request.getRemoteAddr()만 사용 (가장 안전)
-         *
+         * <p>
          * 프록시/로드밸런서 뒤에서 실행되는 경우:
          * server.forward-headers-strategy=framework 설정 필수
-         *
+         * <p>
          * 보안 주의사항:
          * - 신뢰할 수 없는 프록시 환경에서는 false로 설정
          * - X-Forwarded-For 헤더 스푸핑 공격에 주의
          * - 프로덕션 환경에서는 server.tomcat.remoteip.internal-proxies 설정 필수
          */
         private boolean useForwardedHeaders = false;
+    }
+
+    @Data
+    public static class Pii {
+        /**
+         * PII 처리 기능 활성화 여부 (기본값: true)
+         */
+        private boolean enabled = true;
+
+        /**
+         * 암호화/해싱 설정
+         */
+        private final Crypto crypto = new Crypto();
+
+        @Data
+        public static class Crypto {
+            /**
+             * 기본 암호화 키 (Base64 인코딩된 AES-256 키)
+             * 환경변수 PII_ENCRYPTION_KEY 사용 권장
+             * 미설정 시 암호화 기능 사용 불가
+             */
+            private String defaultKey;
+
+            /**
+             * 해싱에 사용할 솔트
+             * 환경변수 PII_HASH_SALT 사용 권장
+             * 미설정 시 솔트 없이 해싱
+             */
+            private String salt;
+        }
     }
 }

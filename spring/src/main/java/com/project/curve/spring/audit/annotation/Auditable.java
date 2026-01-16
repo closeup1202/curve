@@ -1,4 +1,4 @@
-package com.project.curve.spring.annotation;
+package com.project.curve.spring.audit.annotation;
 
 import com.project.curve.core.type.EventSeverity;
 

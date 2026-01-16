@@ -1,7 +1,7 @@
 package com.project.curve.autoconfigure.aop;
 
 import com.project.curve.core.port.EventProducer;
-import com.project.curve.spring.aop.AuditableAspect;
+import com.project.curve.spring.audit.aop.AuditableAspect;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

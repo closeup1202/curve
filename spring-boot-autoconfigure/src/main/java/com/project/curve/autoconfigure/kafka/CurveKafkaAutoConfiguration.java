@@ -38,32 +38,21 @@ public class CurveKafkaAutoConfiguration {
             @Autowired(required = false) @Qualifier("curveRetryTemplate") RetryTemplate retryTemplate
     ) {
         var kafkaConfig = properties.getKafka();
-        String topic = kafkaConfig.getTopic();
-        String dlqTopic = kafkaConfig.getDlqTopic();
-        boolean asyncMode = kafkaConfig.isAsyncMode();
-        long asyncTimeoutMs = kafkaConfig.getAsyncTimeoutMs();
-
-        boolean hasDlq = dlqTopic != null && !dlqTopic.isBlank();
         boolean hasRetry = retryTemplate != null && properties.getRetry().isEnabled();
 
-        log.info("Initializing KafkaEventProducer: topic={}, asyncMode={}, asyncTimeout={}ms, dlq={}, retry={}",
-                topic,
-                asyncMode,
-                asyncTimeoutMs,
-                hasDlq ? dlqTopic : "disabled",
-                hasRetry ? "enabled" : "disabled");
-
-        return new KafkaEventProducer(
-                envelopeFactory,
-                eventContextProvider,
-                kafkaTemplate,
-                objectMapper,
-                topic,
-                hasDlq ? dlqTopic : null,
-                hasRetry ? retryTemplate : null,
-                asyncMode,
-                asyncTimeoutMs
-        );
+        return KafkaEventProducer.builder()
+                .envelopeFactory(envelopeFactory)
+                .eventContextProvider(eventContextProvider)
+                .kafkaTemplate(kafkaTemplate)
+                .objectMapper(objectMapper)
+                .topic(kafkaConfig.getTopic())
+                .dlqTopic(kafkaConfig.getDlqTopic())
+                .retryTemplate(hasRetry ? retryTemplate : null)
+                .asyncMode(kafkaConfig.isAsyncMode())
+                .asyncTimeoutMs(kafkaConfig.getAsyncTimeoutMs())
+                .syncTimeoutSeconds(kafkaConfig.getSyncTimeoutSeconds())
+                .dlqBackupPath(kafkaConfig.getDlqBackupPath())
+                .build();
     }
 
     @Bean

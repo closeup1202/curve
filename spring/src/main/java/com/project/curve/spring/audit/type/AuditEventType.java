@@ -1,4 +1,4 @@
-package com.project.curve.spring.type;
+package com.project.curve.spring.audit.type;
 
 import com.project.curve.core.type.EventType;
 

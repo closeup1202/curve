@@ -9,6 +9,8 @@ import com.project.curve.core.payload.DomainEventPayload;
 import com.project.curve.kafka.dlq.FailedEventRecord;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
 import com.project.curve.spring.publisher.AbstractEventPublisher;
+import lombok.Builder;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
@@ -23,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Kafka 기반 이벤트 발행자
- * <p>
  * - 이벤트를 JSON으로 직렬화하여 Kafka 토픽에 발행
  * - RetryTemplate을 통한 재시도 지원
  * - 전송 실패 시 DLQ(Dead Letter Queue)로 동기 전송하여 이벤트 손실 방지
@@ -31,8 +32,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class KafkaEventProducer extends AbstractEventPublisher {
-
-    private static final long SEND_TIMEOUT_SECONDS = 30;
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
@@ -42,50 +41,22 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     private final RetryTemplate retryTemplate;
     private final boolean asyncMode;
     private final long asyncTimeoutMs;
+    private final long syncTimeoutSeconds;
+    private final String dlqBackupPath;
 
+    @Builder
     public KafkaEventProducer(
-            EventEnvelopeFactory envelopeFactory,
-            EventContextProvider eventContextProvider,
-            KafkaTemplate<String, String> kafkaTemplate,
-            ObjectMapper objectMapper,
-            String topic
-    ) {
-        this(envelopeFactory, eventContextProvider, kafkaTemplate, objectMapper, topic, null, null, false, 5000L);
-    }
-
-    public KafkaEventProducer(
-            EventEnvelopeFactory envelopeFactory,
-            EventContextProvider eventContextProvider,
-            KafkaTemplate<String, String> kafkaTemplate,
-            ObjectMapper objectMapper,
-            String topic,
-            String dlqTopic
-    ) {
-        this(envelopeFactory, eventContextProvider, kafkaTemplate, objectMapper, topic, dlqTopic, null, false, 5000L);
-    }
-
-    public KafkaEventProducer(
-            EventEnvelopeFactory envelopeFactory,
-            EventContextProvider eventContextProvider,
-            KafkaTemplate<String, String> kafkaTemplate,
-            ObjectMapper objectMapper,
-            String topic,
-            String dlqTopic,
-            RetryTemplate retryTemplate
-    ) {
-        this(envelopeFactory, eventContextProvider, kafkaTemplate, objectMapper, topic, dlqTopic, retryTemplate, false, 5000L);
-    }
-
-    public KafkaEventProducer(
-            EventEnvelopeFactory envelopeFactory,
-            EventContextProvider eventContextProvider,
-            KafkaTemplate<String, String> kafkaTemplate,
-            ObjectMapper objectMapper,
-            String topic,
+            @NonNull EventEnvelopeFactory envelopeFactory,
+            @NonNull EventContextProvider eventContextProvider,
+            @NonNull KafkaTemplate<String, String> kafkaTemplate,
+            @NonNull ObjectMapper objectMapper,
+            @NonNull String topic,
             String dlqTopic,
             RetryTemplate retryTemplate,
-            boolean asyncMode,
-            long asyncTimeoutMs
+            Boolean asyncMode,
+            Long asyncTimeoutMs,
+            Long syncTimeoutSeconds,
+            String dlqBackupPath
     ) {
         super(envelopeFactory, eventContextProvider);
         this.kafkaTemplate = kafkaTemplate;
@@ -94,11 +65,16 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         this.dlqTopic = dlqTopic;
         this.dlqEnabled = dlqTopic != null && !dlqTopic.isBlank();
         this.retryTemplate = retryTemplate;
-        this.asyncMode = asyncMode;
-        this.asyncTimeoutMs = asyncTimeoutMs;
+        this.asyncMode = asyncMode != null ? asyncMode : false;
+        this.asyncTimeoutMs = asyncTimeoutMs != null ? asyncTimeoutMs : 5000L;
+        this.syncTimeoutSeconds = syncTimeoutSeconds != null ? syncTimeoutSeconds : 30L;
+        this.dlqBackupPath = dlqBackupPath != null ? dlqBackupPath : "./dlq-backup";
 
-        log.info("KafkaEventProducer initialized: topic={}, asyncMode={}, dlq={}, retry={}",
-                topic, asyncMode, dlqEnabled ? dlqTopic : "disabled", retryTemplate != null ? "enabled" : "disabled");
+        log.info("KafkaEventProducer initialized: topic={}, asyncMode={}, syncTimeout={}s, asyncTimeout={}ms, dlq={}, retry={}, backupPath={}",
+                this.topic, this.asyncMode, this.syncTimeoutSeconds, this.asyncTimeoutMs,
+                this.dlqEnabled ? this.dlqTopic : "disabled",
+                this.retryTemplate != null ? "enabled" : "disabled",
+                this.dlqBackupPath);
     }
 
     @Override
@@ -177,7 +153,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     private SendResult<String, String> doSendSync(String eventId, String value) throws Exception {
         SendResult<String, String> result = kafkaTemplate
                 .send(topic, eventId, value)
-                .get(SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                .get(syncTimeoutSeconds, TimeUnit.SECONDS);
 
         handleSendSuccess(eventId, result);
         return result;
@@ -223,7 +199,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             // 동기 전송 - DLQ는 반드시 성공해야 함
             SendResult<String, String> result = kafkaTemplate
                     .send(dlqTopic, eventId, dlqValue)
-                    .get(SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                    .get(syncTimeoutSeconds, TimeUnit.SECONDS);
 
             log.info("Event sent to DLQ successfully: eventId={}, dlqTopic={}, partition={}, offset={}",
                     eventId, dlqTopic, result.getRecordMetadata().partition(), result.getRecordMetadata().offset());
@@ -241,7 +217,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
      */
     private void backupToLocalFile(String eventId, String originalValue, Exception exception) {
         try {
-            Path backupDir = Paths.get("./dlq-backup");
+            Path backupDir = Paths.get(dlqBackupPath);
             Files.createDirectories(backupDir);
 
             Path backupFile = backupDir.resolve(eventId + ".json");

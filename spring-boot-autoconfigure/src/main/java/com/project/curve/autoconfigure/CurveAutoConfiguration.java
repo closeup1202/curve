@@ -5,6 +5,7 @@ import com.project.curve.autoconfigure.context.CurveContextAutoConfiguration;
 import com.project.curve.autoconfigure.envelope.CurveEnvelopeAutoConfiguration;
 import com.project.curve.autoconfigure.jackson.CurveJacksonAutoConfiguration;
 import com.project.curve.autoconfigure.kafka.CurveKafkaAutoConfiguration;
+import com.project.curve.autoconfigure.pii.CurvePiiAutoConfiguration;
 import com.project.curve.autoconfigure.retry.CurveRetryAutoConfiguration;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
         CurveEnvelopeAutoConfiguration.class,
         CurveContextAutoConfiguration.class,
         CurveAopAutoConfiguration.class,
+        CurvePiiAutoConfiguration.class,
 })
 public class CurveAutoConfiguration {
 
