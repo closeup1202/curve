@@ -1,6 +1,7 @@
 dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
+    // Security는 선택적 의존성으로 변경 - 필요한 프로젝트만 추가
+    compileOnly 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation project(':core')

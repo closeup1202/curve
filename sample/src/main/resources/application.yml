@@ -46,9 +46,9 @@ curve:
     enabled: true
 
 # 로깅 설정
-logging:
-  level:
-    com.example.orderservice: DEBUG
-    com.project.curve: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+#logging:
+#  level:
+#    com.example.orderservice: DEBUG
+#    com.project.curve: DEBUG
+#  pattern:
+#    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"

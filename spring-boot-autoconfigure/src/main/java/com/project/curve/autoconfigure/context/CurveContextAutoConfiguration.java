@@ -2,13 +2,16 @@ package com.project.curve.autoconfigure.context;
 
 import com.project.curve.core.context.*;
 import com.project.curve.spring.context.SpringEventContextProvider;
+import com.project.curve.spring.context.actor.DefaultActorContextProvider;
 import com.project.curve.spring.context.actor.SpringSecurityActorContextProvider;
 import com.project.curve.spring.context.schema.AnnotationBasedSchemaContextProvider;
 import com.project.curve.spring.context.source.SpringSourceContextProvider;
 import com.project.curve.spring.context.tag.MdcTagsContextProvider;
 import com.project.curve.spring.context.trace.MdcTraceContextProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -22,10 +25,24 @@ public class CurveContextAutoConfiguration {
         return new MdcTraceContextProvider();
     }
 
+    /**
+     * Spring Security가 있는 경우 사용되는 Actor Context Provider
+     */
     @Bean
+    @ConditionalOnClass(name = "org.springframework.security.core.context.SecurityContextHolder")
     @ConditionalOnMissingBean(ActorContextProvider.class)
-    public ActorContextProvider actorContextProvider() {
+    public ActorContextProvider springSecurityActorContextProvider() {
         return new SpringSecurityActorContextProvider();
+    }
+
+    /**
+     * Spring Security가 없는 경우 사용되는 기본 Actor Context Provider
+     */
+    @Bean
+    @ConditionalOnMissingClass("org.springframework.security.core.context.SecurityContextHolder")
+    @ConditionalOnMissingBean(ActorContextProvider.class)
+    public ActorContextProvider defaultActorContextProvider() {
+        return new DefaultActorContextProvider();
     }
 
     @Bean
