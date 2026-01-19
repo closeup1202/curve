@@ -5,8 +5,10 @@ import com.project.curve.core.type.EventSeverity;
 import com.project.curve.spring.audit.annotation.Auditable;
 import com.project.curve.spring.exception.AuditEventPublishException;
 import com.project.curve.spring.audit.payload.AuditEventPayload;
+import com.project.curve.spring.metrics.CurveMetricsCollector;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -21,6 +23,9 @@ import java.lang.reflect.Method;
 public class AuditableAspect {
 
     private final EventProducer eventProducer;
+
+    @Autowired(required = false)
+    private CurveMetricsCollector metricsCollector;
 
     @Pointcut("@annotation(com.project.curve.spring.audit.annotation.Auditable)")
     public void auditableMethod() {
@@ -48,9 +53,12 @@ public class AuditableAspect {
     }
 
     private void publishEvent(JoinPoint joinPoint, Auditable auditable, Object returnValue) {
+        String eventType = null;
+        long startTime = System.currentTimeMillis();
+
         try {
             // 이벤트 타입 결정
-            String eventType = determineEventType(joinPoint, auditable);
+            eventType = determineEventType(joinPoint, auditable);
 
             // 페이로드 추출
             Object payloadData = extractPayload(joinPoint, auditable, returnValue);
@@ -63,12 +71,34 @@ public class AuditableAspect {
             eventProducer.publish(payload, severity);
             log.debug("Audit event published: eventType={}, severity={}", eventType, severity);
 
+            // 성공 메트릭 기록
+            if (metricsCollector != null) {
+                long duration = System.currentTimeMillis() - startTime;
+                metricsCollector.recordEventPublished(eventType, true, duration);
+            }
+
         } catch (Exception e) {
-            log.error("Failed to publish audit event for method: {}", joinPoint.getSignature(), e);
+            log.error("Failed to publish audit event for method: {}, eventType={}, errorType={}",
+                    joinPoint.getSignature(), eventType, e.getClass().getSimpleName(), e);
+
+            // 실패 메트릭 기록
+            if (metricsCollector != null) {
+                long duration = System.currentTimeMillis() - startTime;
+                metricsCollector.recordEventPublished(eventType != null ? eventType : "unknown", false, duration);
+                metricsCollector.recordAuditFailure(
+                        eventType != null ? eventType : "unknown",
+                        e.getClass().getSimpleName()
+                );
+            }
 
             if (auditable.failOnError()) {
                 throw new AuditEventPublishException(
                         "Failed to publish audit event for method: " + joinPoint.getSignature(), e);
+            } else {
+                // failOnError=false인 경우에도 실패 이벤트를 추적
+                log.warn("Audit event publish failed but continuing execution (failOnError=false): " +
+                        "eventType={}, method={}, errorType={}, errorMessage={}",
+                        eventType, joinPoint.getSignature(), e.getClass().getSimpleName(), e.getMessage());
             }
         }
     }

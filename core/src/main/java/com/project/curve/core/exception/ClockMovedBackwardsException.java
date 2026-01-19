@@ -21,6 +21,18 @@ public class ClockMovedBackwardsException extends RuntimeException {
         this.currentTimestamp = currentTimestamp;
     }
 
+    public ClockMovedBackwardsException(String message) {
+        super(message);
+        this.lastTimestamp = -1;
+        this.currentTimestamp = -1;
+    }
+
+    public ClockMovedBackwardsException(String message, Throwable cause) {
+        super(message, cause);
+        this.lastTimestamp = -1;
+        this.currentTimestamp = -1;
+    }
+
     public long getDifferenceMs() {
         return lastTimestamp - currentTimestamp;
     }

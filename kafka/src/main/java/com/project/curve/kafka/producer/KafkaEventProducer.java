@@ -8,6 +8,7 @@ import com.project.curve.core.exception.EventSerializationException;
 import com.project.curve.core.payload.DomainEventPayload;
 import com.project.curve.kafka.dlq.FailedEventRecord;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
+import com.project.curve.spring.metrics.CurveMetricsCollector;
 import com.project.curve.spring.publisher.AbstractEventPublisher;
 import lombok.Builder;
 import lombok.NonNull;
@@ -48,6 +49,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     private final long syncTimeoutSeconds;
     private final String dlqBackupPath;
     private final ExecutorService dlqExecutor;
+    private final CurveMetricsCollector metricsCollector;
 
     @Builder
     public KafkaEventProducer(
@@ -62,7 +64,8 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             Long asyncTimeoutMs,
             Long syncTimeoutSeconds,
             String dlqBackupPath,
-            ExecutorService dlqExecutor
+            ExecutorService dlqExecutor,
+            CurveMetricsCollector metricsCollector
     ) {
         super(envelopeFactory, eventContextProvider);
         this.kafkaTemplate = kafkaTemplate;
@@ -76,6 +79,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         this.syncTimeoutSeconds = syncTimeoutSeconds != null ? syncTimeoutSeconds : 30L;
         this.dlqBackupPath = dlqBackupPath != null ? dlqBackupPath : "./dlq-backup";
         this.dlqExecutor = dlqExecutor;
+        this.metricsCollector = metricsCollector;
 
         log.info("KafkaEventProducer initialized: topic={}, asyncMode={}, syncTimeout={}s, asyncTimeout={}ms, dlq={}, retry={}, backupPath={}, dlqExecutor={}",
                 this.topic, this.asyncMode, this.syncTimeoutSeconds, this.asyncTimeoutMs,
@@ -88,25 +92,38 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     @Override
     protected <T extends DomainEventPayload> void send(EventEnvelope<T> envelope) {
         String eventId = envelope.eventId().value();
+        String eventType = envelope.eventType().fullName();
+        long startTime = System.currentTimeMillis();
         String value;
 
         try {
             value = serializeToJson(envelope);
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize EventEnvelope: eventId={}", eventId, e);
+            if (metricsCollector != null) {
+                metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
+                metricsCollector.recordKafkaError("SerializationException");
+            }
             throw new EventSerializationException("Failed to serialize EventEnvelope. eventId=" + eventId, e);
         }
 
         log.debug("Sending event to Kafka: eventId={}, topic={}, mode={}", eventId, topic, asyncMode ? "async" : "sync");
 
-        if (asyncMode) {
-            sendAsync(eventId, value);
-        } else {
-            if (retryTemplate != null) {
-                sendWithRetry(eventId, value);
+        try {
+            if (asyncMode) {
+                sendAsync(eventId, eventType, value, startTime);
             } else {
-                sendWithoutRetry(eventId, value);
+                if (retryTemplate != null) {
+                    sendWithRetry(eventId, eventType, value, startTime);
+                } else {
+                    sendWithoutRetry(eventId, eventType, value, startTime);
+                }
             }
+        } catch (Exception e) {
+            if (metricsCollector != null) {
+                metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
+            }
+            throw e;
         }
     }
 
@@ -115,26 +132,35 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         return objectMapper.writeValueAsString(envelope);
     }
 
-    private void sendWithRetry(String eventId, String value) {
+    private void sendWithRetry(String eventId, String eventType, String value, long startTime) {
         try {
             retryTemplate.execute(context -> {
                 if (context.getRetryCount() > 0) {
                     log.warn("Retrying event send: eventId={}, attempt={}", eventId, context.getRetryCount() + 1);
+                    if (metricsCollector != null) {
+                        metricsCollector.recordRetry(eventType, context.getRetryCount(), "in_progress");
+                    }
                 }
-                return doSendSync(eventId, value);
+                return doSendSync(eventId, eventType, value, startTime);
             });
         } catch (Exception e) {
             log.error("All retry attempts exhausted for event: eventId={}", eventId, e);
-            handleSendFailure(eventId, value, e);
+            if (metricsCollector != null) {
+                metricsCollector.recordRetry(eventType, 3, "failure");
+            }
+            handleSendFailure(eventId, eventType, value, e);
         }
     }
 
-    private void sendWithoutRetry(String eventId, String value) {
+    private void sendWithoutRetry(String eventId, String eventType, String value, long startTime) {
         try {
-            doSendSync(eventId, value);
+            doSendSync(eventId, eventType, value, startTime);
         } catch (Exception e) {
             log.error("Failed to send event to Kafka: eventId={}, topic={}", eventId, topic, e);
-            handleSendFailure(eventId, value, e);
+            if (metricsCollector != null) {
+                metricsCollector.recordKafkaError(e.getClass().getSimpleName());
+            }
+            handleSendFailure(eventId, eventType, value, e);
         }
     }
 
@@ -142,13 +168,20 @@ public class KafkaEventProducer extends AbstractEventPublisher {
      * 비동기 전송 - CompletableFuture 기반
      * 전송 성공/실패를 콜백으로 처리하며, 메인 스레드를 블로킹하지 않음
      */
-    private void sendAsync(String eventId, String value) {
+    private void sendAsync(String eventId, String eventType, String value, long startTime) {
         kafkaTemplate.send(topic, eventId, value)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Async send failed: eventId={}, topic={}", eventId, topic, ex);
-                        handleSendFailure(eventId, value, ex);
+                        if (metricsCollector != null) {
+                            metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
+                            metricsCollector.recordKafkaError(ex.getClass().getSimpleName());
+                        }
+                        handleSendFailure(eventId, eventType, value, ex);
                     } else {
+                        if (metricsCollector != null) {
+                            metricsCollector.recordEventPublished(eventType, true, System.currentTimeMillis() - startTime);
+                        }
                         handleSendSuccess(eventId, result);
                     }
                 })
@@ -156,18 +189,25 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                 .exceptionally(ex -> {
                     log.error("Async send timeout: eventId={}, topic={}, timeout={}ms",
                             eventId, topic, asyncTimeoutMs, ex);
-                    handleSendFailure(eventId, value, ex);
+                    if (metricsCollector != null) {
+                        metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
+                        metricsCollector.recordKafkaError("TimeoutException");
+                    }
+                    handleSendFailure(eventId, eventType, value, ex);
                     return null;
                 });
 
         log.debug("Event sent asynchronously (non-blocking): eventId={}, topic={}", eventId, topic);
     }
 
-    private SendResult<String, String> doSendSync(String eventId, String value) throws Exception {
+    private SendResult<String, String> doSendSync(String eventId, String eventType, String value, long startTime) throws Exception {
         SendResult<String, String> result = kafkaTemplate
                 .send(topic, eventId, value)
                 .get(syncTimeoutSeconds, TimeUnit.SECONDS);
 
+        if (metricsCollector != null) {
+            metricsCollector.recordEventPublished(eventType, true, System.currentTimeMillis() - startTime);
+        }
         handleSendSuccess(eventId, result);
         return result;
     }
@@ -178,8 +218,11 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                 eventId, metadata.topic(), metadata.partition(), metadata.offset());
     }
 
-    private void handleSendFailure(String eventId, String originalValue, Throwable ex) {
+    private void handleSendFailure(String eventId, String eventType, String originalValue, Throwable ex) {
         if (dlqEnabled) {
+            if (metricsCollector != null) {
+                metricsCollector.recordDlqEvent(eventType, ex.getClass().getSimpleName());
+            }
             if (dlqExecutor != null) {  // ExecutorService가 있으면 비동기로, 없으면 동기로 DLQ 전송
                 sendToDlqAsync(eventId, originalValue, ex);
             } else {

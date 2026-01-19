@@ -5,4 +5,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation project(':core')
+
+    // Micrometer for metrics collection
+    implementation 'io.micrometer:micrometer-core'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 }

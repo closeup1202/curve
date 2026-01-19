@@ -25,6 +25,12 @@ public final class SnowflakeIdGenerator implements IdGenerator {
      */
     private static final long MAX_BACKWARD_MS = 100L;
 
+    /**
+     * waitUntilNextMillis 메서드의 타임아웃 (밀리초)
+     * 무한 대기를 방지하기 위한 안전 장치
+     */
+    private static final long WAIT_TIMEOUT_MS = 1000L;
+
     private final long workerId;
     private final Lock lock = new ReentrantLock();
     private long lastTimestamp = -1L;
@@ -121,8 +127,26 @@ public final class SnowflakeIdGenerator implements IdGenerator {
     }
 
     private long waitUntilNextMillis(long lastTimestamp) {
+        long startTime = System.currentTimeMillis();
         long timestamp = currentTimeMillis();
+
         while (timestamp <= lastTimestamp) {
+            // 타임아웃 체크
+            if (System.currentTimeMillis() - startTime > WAIT_TIMEOUT_MS) {
+                throw new ClockMovedBackwardsException(
+                        String.format("Timeout waiting for clock to advance. " +
+                                        "Waited for %dms but clock is still at or before %d. Current time: %d",
+                                WAIT_TIMEOUT_MS, lastTimestamp, timestamp));
+            }
+
+            // CPU 스핀을 줄이기 위한 짧은 대기
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ClockMovedBackwardsException("Interrupted while waiting for clock to advance", e);
+            }
+
             timestamp = currentTimeMillis();
         }
         return timestamp;
