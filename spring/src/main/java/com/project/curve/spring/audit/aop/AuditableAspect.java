@@ -53,53 +53,66 @@ public class AuditableAspect {
     }
 
     private void publishEvent(JoinPoint joinPoint, Auditable auditable, Object returnValue) {
-        String eventType = null;
         long startTime = System.currentTimeMillis();
 
         try {
-            // 이벤트 타입 결정
-            eventType = determineEventType(joinPoint, auditable);
-
-            // 페이로드 추출
+            String eventType = determineEventType(joinPoint, auditable);
             Object payloadData = extractPayload(joinPoint, auditable, returnValue);
-
-            // AuditEventPayload로 래핑
             AuditEventPayload payload = createAuditPayload(eventType, joinPoint, payloadData);
 
-            // 이벤트 발행
-            EventSeverity severity = auditable.severity();
-            eventProducer.publish(payload, severity);
-            log.debug("Audit event published: eventType={}, severity={}", eventType, severity);
-
-            // 성공 메트릭 기록
-            if (metricsCollector != null) {
-                long duration = System.currentTimeMillis() - startTime;
-                metricsCollector.recordEventPublished(eventType, true, duration);
-            }
+            publishAndRecordSuccess(eventType, payload, auditable, startTime);
 
         } catch (Exception e) {
-            log.error("Failed to publish audit event for method: {}, eventType={}, errorType={}",
-                    joinPoint.getSignature(), eventType, e.getClass().getSimpleName(), e);
+            handlePublishFailure(joinPoint, auditable, startTime, e);
+        }
+    }
 
-            // 실패 메트릭 기록
-            if (metricsCollector != null) {
-                long duration = System.currentTimeMillis() - startTime;
-                metricsCollector.recordEventPublished(eventType != null ? eventType : "unknown", false, duration);
-                metricsCollector.recordAuditFailure(
-                        eventType != null ? eventType : "unknown",
-                        e.getClass().getSimpleName()
-                );
-            }
+    private void publishAndRecordSuccess(String eventType, AuditEventPayload payload, Auditable auditable, long startTime) {
+        EventSeverity severity = auditable.severity();
+        eventProducer.publish(payload, severity);
+        log.debug("Audit event published: eventType={}, severity={}", eventType, severity);
 
-            if (auditable.failOnError()) {
-                throw new AuditEventPublishException(
-                        "Failed to publish audit event for method: " + joinPoint.getSignature(), e);
-            } else {
-                // failOnError=false인 경우에도 실패 이벤트를 추적
-                log.warn("Audit event publish failed but continuing execution (failOnError=false): " +
-                        "eventType={}, method={}, errorType={}, errorMessage={}",
-                        eventType, joinPoint.getSignature(), e.getClass().getSimpleName(), e.getMessage());
-            }
+        recordSuccessMetrics(eventType, startTime);
+    }
+
+    private void handlePublishFailure(JoinPoint joinPoint, Auditable auditable, long startTime, Exception e) {
+        String eventType = determineEventTypeForFailure(joinPoint, auditable);
+
+        log.error("Failed to publish audit event for method: {}, eventType={}, errorType={}",
+                joinPoint.getSignature(), eventType, e.getClass().getSimpleName(), e);
+
+        recordFailureMetrics(eventType, e, startTime);
+
+        if (auditable.failOnError()) {
+            throw new AuditEventPublishException(
+                    "Failed to publish audit event for method: " + joinPoint.getSignature(), e);
+        } else {
+            log.warn("Audit event publish failed but continuing execution (failOnError=false): " +
+                    "eventType={}, method={}, errorType={}, errorMessage={}",
+                    eventType, joinPoint.getSignature(), e.getClass().getSimpleName(), e.getMessage());
+        }
+    }
+
+    private String determineEventTypeForFailure(JoinPoint joinPoint, Auditable auditable) {
+        try {
+            return determineEventType(joinPoint, auditable);
+        } catch (Exception ex) {
+            return "unknown";
+        }
+    }
+
+    private void recordSuccessMetrics(String eventType, long startTime) {
+        if (metricsCollector != null) {
+            long duration = System.currentTimeMillis() - startTime;
+            metricsCollector.recordEventPublished(eventType, true, duration);
+        }
+    }
+
+    private void recordFailureMetrics(String eventType, Exception e, long startTime) {
+        if (metricsCollector != null) {
+            long duration = System.currentTimeMillis() - startTime;
+            metricsCollector.recordEventPublished(eventType, false, duration);
+            metricsCollector.recordAuditFailure(eventType, e.getClass().getSimpleName());
         }
     }
 

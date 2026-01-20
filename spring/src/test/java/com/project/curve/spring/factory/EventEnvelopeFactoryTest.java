@@ -36,7 +36,7 @@ class EventEnvelopeFactoryTest {
         // Given
         Instant now = Instant.parse("2024-01-01T00:00:00Z");
         EventId eventId = EventId.of("12345");
-        EventType eventType = EventType.of("test", "event");
+        EventType eventType = new TestEventType();
         EventSeverity severity = EventSeverity.INFO;
         EventMetadata metadata = mock(EventMetadata.class);
         TestPayload payload = new TestPayload("test-data");
@@ -55,7 +55,7 @@ class EventEnvelopeFactoryTest {
         assertThat(envelope.metadata()).isEqualTo(metadata);
         assertThat(envelope.payload()).isEqualTo(payload);
         assertThat(envelope.occurredAt()).isEqualTo(now);
-        assertThat(envelope.recordedAt()).isEqualTo(now);
+        assertThat(envelope.publishedAt()).isEqualTo(now);
     }
 
     @Test
@@ -68,7 +68,7 @@ class EventEnvelopeFactoryTest {
 
         // When
         EventEnvelope<TestPayload> envelope = factory.create(
-                EventType.of("test", "event"),
+                new TestEventType(),
                 EventSeverity.INFO,
                 mock(EventMetadata.class),
                 new TestPayload("data")
@@ -77,7 +77,7 @@ class EventEnvelopeFactoryTest {
         // Then
         verify(clockProvider, times(1)).now();
         assertThat(envelope.occurredAt()).isEqualTo(now);
-        assertThat(envelope.recordedAt()).isEqualTo(now);
+        assertThat(envelope.publishedAt()).isEqualTo(now);
     }
 
     @Test
@@ -90,7 +90,7 @@ class EventEnvelopeFactoryTest {
 
         // When
         EventEnvelope<TestPayload> envelope = factory.create(
-                EventType.of("test", "event"),
+                new TestEventType(),
                 EventSeverity.INFO,
                 mock(EventMetadata.class),
                 new TestPayload("data")
@@ -109,7 +109,7 @@ class EventEnvelopeFactoryTest {
         when(idGenerator.generate()).thenReturn(EventId.of("123"));
         EventMetadata metadata = mock(EventMetadata.class);
         TestPayload payload = new TestPayload("data");
-        EventType eventType = EventType.of("test", "event");
+        EventType eventType = new TestEventType();
 
         // When & Then
         for (EventSeverity severity : EventSeverity.values()) {
@@ -128,27 +128,20 @@ class EventEnvelopeFactoryTest {
 
         // When
         EventEnvelope<TestPayload> envelope1 = factory.create(
-                EventType.of("test", "event"),
+                new TestEventType(),
                 EventSeverity.INFO,
                 metadata,
                 new TestPayload("data1")
         );
         EventEnvelope<AnotherPayload> envelope2 = factory.create(
-                EventType.of("test", "event"),
+                new TestEventType(),
                 EventSeverity.INFO,
                 metadata,
-                new AnotherPayload(42)
+                new AnotherPayload("data-another")
         );
 
         // Then
         assertThat(envelope1.payload()).isInstanceOf(TestPayload.class);
         assertThat(envelope2.payload()).isInstanceOf(AnotherPayload.class);
-    }
-
-    // Test payload classes
-    private record TestPayload(String data) implements DomainEventPayload {
-    }
-
-    private record AnotherPayload(int value) implements DomainEventPayload {
     }
 }

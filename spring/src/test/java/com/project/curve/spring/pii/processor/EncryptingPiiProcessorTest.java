@@ -149,7 +149,7 @@ class EncryptingPiiProcessorTest {
     private PiiField createPiiField(String encryptKey) {
         PiiField piiField = mock(PiiField.class);
         when(piiField.type()).thenReturn(PiiType.CUSTOM);
-        when(piiField.level()).thenReturn(MaskingLevel.FULL);
+        when(piiField.level()).thenReturn(MaskingLevel.STRONG);
         when(piiField.strategy()).thenReturn(PiiStrategy.ENCRYPT);
         when(piiField.encryptKey()).thenReturn(encryptKey);
         return piiField;

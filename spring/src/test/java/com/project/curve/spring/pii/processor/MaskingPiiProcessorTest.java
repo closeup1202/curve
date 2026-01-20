@@ -47,7 +47,7 @@ class MaskingPiiProcessorTest {
     void process_email_shouldMask() {
         // Given
         String email = "test@example.com";
-        PiiField piiField = createPiiField(PiiType.EMAIL, MaskingLevel.PARTIAL);
+        PiiField piiField = createPiiField(PiiType.EMAIL, MaskingLevel.NORMAL);
 
         // When
         String masked = processor.process(email, piiField);
@@ -62,7 +62,7 @@ class MaskingPiiProcessorTest {
     void process_phone_shouldMask() {
         // Given
         String phone = "010-1234-5678";
-        PiiField piiField = createPiiField(PiiType.PHONE, MaskingLevel.PARTIAL);
+        PiiField piiField = createPiiField(PiiType.PHONE, MaskingLevel.NORMAL);
 
         // When
         String masked = processor.process(phone, piiField);
@@ -76,7 +76,7 @@ class MaskingPiiProcessorTest {
     @DisplayName("null을 마스킹하면 null을 반환한다")
     void process_null_shouldReturnNull() {
         // Given
-        PiiField piiField = createPiiField(PiiType.EMAIL, MaskingLevel.PARTIAL);
+        PiiField piiField = createPiiField(PiiType.EMAIL, MaskingLevel.NORMAL);
 
         // When
         String masked = processor.process(null, piiField);
@@ -89,7 +89,7 @@ class MaskingPiiProcessorTest {
     @DisplayName("빈 문자열을 마스킹하면 빈 문자열을 반환한다")
     void process_emptyString_shouldReturnEmpty() {
         // Given
-        PiiField piiField = createPiiField(PiiType.EMAIL, MaskingLevel.PARTIAL);
+        PiiField piiField = createPiiField(PiiType.EMAIL, MaskingLevel.NORMAL);
 
         // When
         String masked = processor.process("", piiField);

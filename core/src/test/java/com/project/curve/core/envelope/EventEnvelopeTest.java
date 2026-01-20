@@ -72,135 +72,111 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventValidator - eventId가 null인 경우 검증 실패")
-    void validateEnvelopeWithNullEventId_shouldThrowException() {
-        // given
-        EventEnvelope<TestPayload> envelope = new EventEnvelope<>(
-                null,
-                new TestEventType("TEST"),
-                EventSeverity.INFO,
-                createValidMetadata(),
-                new TestPayload("test"),
-                Instant.now(),
-                Instant.now()
-        );
-
+    @DisplayName("EventEnvelope - eventId가 null인 경우 생성 실패")
+    void createEnvelopeWithNullEventId_shouldThrowNullPointerException() {
         // when & then
-        InvalidEventException exception = assertThrows(
-                InvalidEventException.class,
-                () -> EventValidator.validate(envelope)
+        assertThrows(
+                NullPointerException.class,
+                () -> new EventEnvelope<>(
+                        null,
+                        new TestEventType("TEST"),
+                        EventSeverity.INFO,
+                        createValidMetadata(),
+                        new TestPayload("test"),
+                        Instant.now(),
+                        Instant.now()
+                )
         );
-        assertEquals("eventId is required", exception.getMessage());
     }
 
     @Test
-    @DisplayName("EventValidator - eventType이 null인 경우 검증 실패")
-    void validateEnvelopeWithNullEventType_shouldThrowException() {
-        // given
-        EventEnvelope<TestPayload> envelope = new EventEnvelope<>(
-                EventId.of("test-123"),
-                null,
-                EventSeverity.INFO,
-                createValidMetadata(),
-                new TestPayload("test"),
-                Instant.now(),
-                Instant.now()
-        );
-
+    @DisplayName("EventEnvelope - eventType이 null인 경우 생성 실패")
+    void createEnvelopeWithNullEventType_shouldThrowNullPointerException() {
         // when & then
-        InvalidEventException exception = assertThrows(
-                InvalidEventException.class,
-                () -> EventValidator.validate(envelope)
+        assertThrows(
+                NullPointerException.class,
+                () -> new EventEnvelope<>(
+                        EventId.of("test-123"),
+                        null,
+                        EventSeverity.INFO,
+                        createValidMetadata(),
+                        new TestPayload("test"),
+                        Instant.now(),
+                        Instant.now()
+                )
         );
-        assertEquals("eventType is required", exception.getMessage());
     }
 
     @Test
-    @DisplayName("EventValidator - metadata가 null인 경우 검증 실패")
-    void validateEnvelopeWithNullMetadata_shouldThrowException() {
-        // given
-        EventEnvelope<TestPayload> envelope = new EventEnvelope<>(
-                EventId.of("test-123"),
-                new TestEventType("TEST"),
-                EventSeverity.INFO,
-                null,
-                new TestPayload("test"),
-                Instant.now(),
-                Instant.now()
-        );
-
+    @DisplayName("EventEnvelope - metadata가 null인 경우 생성 실패")
+    void createEnvelopeWithNullMetadata_shouldThrowNullPointerException() {
         // when & then
-        InvalidEventException exception = assertThrows(
-                InvalidEventException.class,
-                () -> EventValidator.validate(envelope)
+        assertThrows(
+                NullPointerException.class,
+                () -> new EventEnvelope<>(
+                        EventId.of("test-123"),
+                        new TestEventType("TEST"),
+                        EventSeverity.INFO,
+                        null,
+                        new TestPayload("test"),
+                        Instant.now(),
+                        Instant.now()
+                )
         );
-        assertEquals("metadata is required", exception.getMessage());
     }
 
     @Test
-    @DisplayName("EventValidator - payload가 null인 경우 검증 실패")
-    void validateEnvelopeWithNullPayload_shouldThrowException() {
-        // given
-        EventEnvelope<TestPayload> envelope = new EventEnvelope<>(
-                EventId.of("test-123"),
-                new TestEventType("TEST"),
-                EventSeverity.INFO,
-                createValidMetadata(),
-                null,
-                Instant.now(),
-                Instant.now()
-        );
-
+    @DisplayName("EventEnvelope - payload가 null인 경우 생성 실패")
+    void createEnvelopeWithNullPayload_shouldThrowNullPointerException() {
         // when & then
-        InvalidEventException exception = assertThrows(
-                InvalidEventException.class,
-                () -> EventValidator.validate(envelope)
+        assertThrows(
+                NullPointerException.class,
+                () -> new EventEnvelope<>(
+                        EventId.of("test-123"),
+                        new TestEventType("TEST"),
+                        EventSeverity.INFO,
+                        createValidMetadata(),
+                        null,
+                        Instant.now(),
+                        Instant.now()
+                )
         );
-        assertEquals("payload is required", exception.getMessage());
     }
 
     @Test
-    @DisplayName("EventValidator - occurredAt이 null인 경우 검증 실패")
-    void validateEnvelopeWithNullOccurredAt_shouldThrowException() {
-        // given
-        EventEnvelope<TestPayload> envelope = new EventEnvelope<>(
-                EventId.of("test-123"),
-                new TestEventType("TEST"),
-                EventSeverity.INFO,
-                createValidMetadata(),
-                new TestPayload("test"),
-                null,
-                Instant.now()
-        );
-
+    @DisplayName("EventEnvelope - occurredAt이 null인 경우 생성 실패")
+    void createEnvelopeWithNullOccurredAt_shouldThrowNullPointerException() {
         // when & then
-        InvalidEventException exception = assertThrows(
-                InvalidEventException.class,
-                () -> EventValidator.validate(envelope)
+        assertThrows(
+                NullPointerException.class,
+                () -> new EventEnvelope<>(
+                        EventId.of("test-123"),
+                        new TestEventType("TEST"),
+                        EventSeverity.INFO,
+                        createValidMetadata(),
+                        new TestPayload("test"),
+                        null,
+                        Instant.now()
+                )
         );
-        assertEquals("event timestamps are required", exception.getMessage());
     }
 
     @Test
-    @DisplayName("EventValidator - publishedAt이 null인 경우 검증 실패")
-    void validateEnvelopeWithNullPublishedAt_shouldThrowException() {
-        // given
-        EventEnvelope<TestPayload> envelope = new EventEnvelope<>(
-                EventId.of("test-123"),
-                new TestEventType("TEST"),
-                EventSeverity.INFO,
-                createValidMetadata(),
-                new TestPayload("test"),
-                Instant.now(),
-                null
-        );
-
+    @DisplayName("EventEnvelope - publishedAt이 null인 경우 생성 실패")
+    void createEnvelopeWithNullPublishedAt_shouldThrowNullPointerException() {
         // when & then
-        InvalidEventException exception = assertThrows(
-                InvalidEventException.class,
-                () -> EventValidator.validate(envelope)
+        assertThrows(
+                NullPointerException.class,
+                () -> new EventEnvelope<>(
+                        EventId.of("test-123"),
+                        new TestEventType("TEST"),
+                        EventSeverity.INFO,
+                        createValidMetadata(),
+                        new TestPayload("test"),
+                        Instant.now(),
+                        null
+                )
         );
-        assertEquals("event timestamps are required", exception.getMessage());
     }
 
     @Test

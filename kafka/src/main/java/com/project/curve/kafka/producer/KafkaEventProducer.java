@@ -92,38 +92,51 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     @Override
     protected <T extends DomainEventPayload> void send(EventEnvelope<T> envelope) {
         String eventId = envelope.eventId().value();
-        String eventType = envelope.eventType().fullName();
+        String eventType = envelope.eventType().getValue();
         long startTime = System.currentTimeMillis();
-        String value;
 
         try {
-            value = serializeToJson(envelope);
+            String value = serializeToJson(envelope);
+            doSend(eventId, eventType, value, startTime);
         } catch (JsonProcessingException e) {
-            log.error("Failed to serialize EventEnvelope: eventId={}", eventId, e);
-            if (metricsCollector != null) {
-                metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
-                metricsCollector.recordKafkaError("SerializationException");
-            }
-            throw new EventSerializationException("Failed to serialize EventEnvelope. eventId=" + eventId, e);
+            handleSerializationError(eventId, eventType, startTime, e);
+        } catch (Exception e) {
+            handleSendError(eventType, startTime, e);
         }
+    }
 
+    private void doSend(String eventId, String eventType, String value, long startTime) {
         log.debug("Sending event to Kafka: eventId={}, topic={}, mode={}", eventId, topic, asyncMode ? "async" : "sync");
 
-        try {
-            if (asyncMode) {
-                sendAsync(eventId, eventType, value, startTime);
-            } else {
-                if (retryTemplate != null) {
-                    sendWithRetry(eventId, eventType, value, startTime);
-                } else {
-                    sendWithoutRetry(eventId, eventType, value, startTime);
-                }
-            }
-        } catch (Exception e) {
-            if (metricsCollector != null) {
-                metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
-            }
-            throw e;
+        if (asyncMode) {
+            sendAsync(eventId, eventType, value, startTime);
+        } else {
+            sendSync(eventId, eventType, value, startTime);
+        }
+    }
+
+    private void sendSync(String eventId, String eventType, String value, long startTime) {
+        if (retryTemplate != null) {
+            sendWithRetry(eventId, eventType, value, startTime);
+        } else {
+            sendWithoutRetry(eventId, eventType, value, startTime);
+        }
+    }
+
+    private void handleSerializationError(String eventId, String eventType, long startTime, JsonProcessingException e) {
+        log.error("Failed to serialize EventEnvelope: eventId={}", eventId, e);
+        recordErrorMetrics(eventType, startTime, "SerializationException");
+        throw new EventSerializationException("Failed to serialize EventEnvelope. eventId=" + eventId, e);
+    }
+
+    private void handleSendError(String eventType, long startTime, Exception e) {
+        recordErrorMetrics(eventType, startTime, e.getClass().getSimpleName());
+    }
+
+    private void recordErrorMetrics(String eventType, long startTime, String errorType) {
+        if (metricsCollector != null) {
+            metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
+            metricsCollector.recordKafkaError(errorType);
         }
     }
 
@@ -237,66 +250,55 @@ public class KafkaEventProducer extends AbstractEventPublisher {
      * DLQ로 비동기 전송 - 별도 ExecutorService를 사용하여 콜백 스레드 블로킹 방지
      */
     private void sendToDlqAsync(String eventId, String originalValue, Throwable originalException) {
-        dlqExecutor.submit(() -> {
-            try {
-                log.warn("Sending failed event to DLQ (async): eventId={}, dlqTopic={}", eventId, dlqTopic);
-
-                FailedEventRecord failedRecord = new FailedEventRecord(
-                        eventId,
-                        topic,
-                        originalValue,
-                        originalException.getClass().getName(),
-                        originalException.getMessage(),
-                        System.currentTimeMillis()
-                );
-
-                String dlqValue = objectMapper.writeValueAsString(failedRecord);
-
-                // 비동기 전송 (ExecutorService 스레드에서 동기 대기)
-                SendResult<String, String> result = kafkaTemplate
-                        .send(dlqTopic, eventId, dlqValue)
-                        .get(syncTimeoutSeconds, TimeUnit.SECONDS);
-
-                log.info("Event sent to DLQ successfully (async): eventId={}, dlqTopic={}, partition={}, offset={}",
-                        eventId, dlqTopic, result.getRecordMetadata().partition(), result.getRecordMetadata().offset());
-
-            } catch (Exception e) {
-                log.error("Failed to send event to DLQ (async): eventId={}, dlqTopic={}", eventId, dlqTopic, e);
-                backupToLocalFile(eventId, originalValue);
-            }
-        });
+        dlqExecutor.submit(() -> sendToDlq(eventId, originalValue, originalException, true));
     }
 
     /**
      * DLQ로 동기 전송 - 이벤트 손실 방지를 위해 동기 방식으로 전송
      */
     private void sendToDlqSync(String eventId, String originalValue, Throwable originalException) {
+        sendToDlq(eventId, originalValue, originalException, false);
+    }
+
+    /**
+     * DLQ 전송 로직 - 동기/비동기 공통 처리
+     */
+    private void sendToDlq(String eventId, String originalValue, Throwable originalException, boolean isAsync) {
         try {
-            log.warn("Sending failed event to DLQ (sync): eventId={}, dlqTopic={}", eventId, dlqTopic);
+            log.warn("Sending failed event to DLQ ({}): eventId={}, dlqTopic={}",
+                    isAsync ? "async" : "sync", eventId, dlqTopic);
 
-            FailedEventRecord failedRecord = new FailedEventRecord(
-                    eventId,
-                    topic,
-                    originalValue,
-                    originalException.getClass().getName(),
-                    originalException.getMessage(),
-                    System.currentTimeMillis()
-            );
+            String dlqValue = createDlqPayload(eventId, originalValue, originalException);
 
-            String dlqValue = objectMapper.writeValueAsString(failedRecord);
-
-            // 동기 전송 - DLQ는 반드시 성공해야 함
             SendResult<String, String> result = kafkaTemplate
                     .send(dlqTopic, eventId, dlqValue)
                     .get(syncTimeoutSeconds, TimeUnit.SECONDS);
 
-            log.info("Event sent to DLQ successfully (sync): eventId={}, dlqTopic={}, partition={}, offset={}",
-                    eventId, dlqTopic, result.getRecordMetadata().partition(), result.getRecordMetadata().offset());
+            log.info("Event sent to DLQ successfully ({}): eventId={}, dlqTopic={}, partition={}, offset={}",
+                    isAsync ? "async" : "sync", eventId, dlqTopic,
+                    result.getRecordMetadata().partition(), result.getRecordMetadata().offset());
 
         } catch (Exception e) {
-            log.error("Failed to send event to DLQ (sync): eventId={}, dlqTopic={}", eventId, dlqTopic, e);
+            log.error("Failed to send event to DLQ ({}): eventId={}, dlqTopic={}",
+                    isAsync ? "async" : "sync", eventId, dlqTopic, e);
             backupToLocalFile(eventId, originalValue);
         }
+    }
+
+    /**
+     * DLQ 페이로드 생성 - FailedEventRecord를 JSON으로 직렬화
+     */
+    private String createDlqPayload(String eventId, String originalValue, Throwable originalException)
+            throws JsonProcessingException {
+        FailedEventRecord failedRecord = new FailedEventRecord(
+                eventId,
+                topic,
+                originalValue,
+                originalException.getClass().getName(),
+                originalException.getMessage(),
+                System.currentTimeMillis()
+        );
+        return objectMapper.writeValueAsString(failedRecord);
     }
 
     /**
