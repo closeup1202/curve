@@ -4,7 +4,7 @@ import com.project.curve.core.port.EventProducer;
 import com.project.curve.core.type.EventSeverity;
 import com.project.curve.spring.audit.annotation.PublishEvent;
 import com.project.curve.spring.exception.EventPublishException;
-import com.project.curve.spring.audit.payload.AuditEventPayload;
+import com.project.curve.spring.audit.payload.EventPayload;
 import com.project.curve.spring.metrics.CurveMetricsCollector;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +58,7 @@ public class PublishEventAspect {
         try {
             String eventType = determineEventType(joinPoint, publishEvent);
             Object payloadData = extractPayload(joinPoint, publishEvent, returnValue);
-            AuditEventPayload payload = createAuditPayload(eventType, joinPoint, payloadData);
+            EventPayload payload = createEventPayload(eventType, joinPoint, payloadData);
 
             publishAndRecordSuccess(eventType, payload, publishEvent, startTime);
 
@@ -67,7 +67,7 @@ public class PublishEventAspect {
         }
     }
 
-    private void publishAndRecordSuccess(String eventType, AuditEventPayload payload, PublishEvent publishEvent, long startTime) {
+    private void publishAndRecordSuccess(String eventType, EventPayload payload, PublishEvent publishEvent, long startTime) {
         EventSeverity severity = publishEvent.severity();
         eventProducer.publish(payload, severity);
         log.debug("Event published: eventType={}, severity={}", eventType, severity);
@@ -121,7 +121,7 @@ public class PublishEventAspect {
             return publishEvent.eventType();
         }
 
-        // 기본값: 클래스명.메서드명
+        // Default: 클래스명.메서드명
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         String className = signature.getDeclaringType().getSimpleName();
         String methodName = signature.getName();
@@ -146,13 +146,13 @@ public class PublishEventAspect {
         }
     }
 
-    private AuditEventPayload createAuditPayload(String eventType, JoinPoint joinPoint, Object payloadData) {
+    private EventPayload createEventPayload(String eventType, JoinPoint joinPoint, Object payloadData) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
         String className = signature.getDeclaringType().getName();
         String methodName = method.getName();
 
-        return new AuditEventPayload(
+        return new EventPayload(
                 eventType,
                 className,
                 methodName,

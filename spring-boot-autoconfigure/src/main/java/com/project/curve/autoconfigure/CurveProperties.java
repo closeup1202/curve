@@ -83,6 +83,13 @@ public class CurveProperties {
          * 비동기 모드에서 DLQ 전송 시 메인 콜백 스레드 블로킹을 방지하기 위한 별도 스레드 풀
          */
         private int dlqExecutorThreads = 2;
+
+        /**
+         * DLQ ExecutorService 우아한 종료 타임아웃(초) (기본값: 30초)
+         * 애플리케이션 종료 시 실행 중인 DLQ 작업 완료를 대기하는 시간
+         * 타임아웃 초과 시 강제 종료
+         */
+        private long dlqExecutorShutdownTimeoutSeconds = 30L;
     }
 
     @Data

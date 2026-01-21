@@ -28,13 +28,6 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    /**
-     * 주문 생성
-     * POST /api/orders
-     *
-     * @param request 주문 생성 요청
-     * @return 생성된 주문 정보
-     */
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(@RequestBody CreateOrderRequest request) {
         log.info("Received order creation request: customerId={}, product={}",
@@ -73,13 +66,6 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * 주문 조회
-     * GET /api/orders/{orderId}
-     *
-     * @param orderId 주문 ID
-     * @return 주문 정보
-     */
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderResponse> getOrder(@PathVariable String orderId) {
         log.info("Getting order: orderId={}", orderId);
@@ -101,14 +87,6 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 주문 취소
-     * POST /api/orders/{orderId}/cancel
-     *
-     * @param orderId 주문 ID
-     * @param request 취소 요청
-     * @return 취소된 주문 정보
-     */
     @PostMapping("/{orderId}/cancel")
     public ResponseEntity<OrderResponse> cancelOrder(
             @PathVariable String orderId,
@@ -137,14 +115,6 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 주문 상태 업데이트
-     * PATCH /api/orders/{orderId}/status
-     *
-     * @param orderId 주문 ID
-     * @param newStatus 새로운 상태
-     * @return 업데이트된 주문 정보
-     */
     @PatchMapping("/{orderId}/status")
     public ResponseEntity<OrderResponse> updateOrderStatus(
             @PathVariable String orderId,

@@ -3,7 +3,7 @@ package com.project.curve.spring.audit.aop;
 import com.project.curve.core.port.EventProducer;
 import com.project.curve.core.type.EventSeverity;
 import com.project.curve.spring.audit.annotation.PublishEvent;
-import com.project.curve.spring.audit.payload.AuditEventPayload;
+import com.project.curve.spring.audit.payload.EventPayload;
 import com.project.curve.spring.exception.EventPublishException;
 import com.project.curve.spring.metrics.CurveMetricsCollector;
 import org.aspectj.lang.JoinPoint;
@@ -43,7 +43,7 @@ class PublishEventAspectTest {
     private PublishEvent publishEvent;
 
     @Captor
-    private ArgumentCaptor<AuditEventPayload> payloadCaptor;
+    private ArgumentCaptor<EventPayload> payloadCaptor;
 
     @Captor
     private ArgumentCaptor<EventSeverity> severityCaptor;
@@ -83,7 +83,7 @@ class PublishEventAspectTest {
             // Then
             verify(eventProducer).publish(payloadCaptor.capture(), severityCaptor.capture());
 
-            AuditEventPayload payload = payloadCaptor.getValue();
+            EventPayload payload = payloadCaptor.getValue();
             assertThat(payload.getEventType()).isEqualTo("TEST_EVENT");
             assertThat(payload.getData()).isEqualTo("testData");
             assertThat(severityCaptor.getValue()).isEqualTo(EventSeverity.INFO);
@@ -123,7 +123,7 @@ class PublishEventAspectTest {
             // Then
             verify(eventProducer).publish(payloadCaptor.capture(), eq(EventSeverity.INFO));
 
-            AuditEventPayload payload = payloadCaptor.getValue();
+            EventPayload payload = payloadCaptor.getValue();
             assertThat(payload.getEventType()).isEqualTo("ORDER_CREATED");
             assertThat(payload.getData()).isEqualTo(returnValue);
         }

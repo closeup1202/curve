@@ -2,10 +2,7 @@ package com.project.curve.spring.context.actor;
 
 import com.project.curve.core.context.ActorContextProvider;
 import com.project.curve.core.envelope.EventActor;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import com.project.curve.spring.util.ClientIpExtractor;
 
 /**
  * 기본 Actor Context Provider
@@ -29,44 +26,16 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  *       remote-ip-header: X-Forwarded-For
  * </pre>
  *
+ * @see ClientIpExtractor
  * @see <a href="https://docs.spring.io/spring-boot/docs/current/reference/html/howto.html#howto.webserver.use-behind-a-proxy-server">Spring Boot Proxy Configuration</a>
  */
-@Slf4j
 public class DefaultActorContextProvider implements ActorContextProvider {
 
-    private static final String DEFAULT_IP = "127.0.0.1";
-    private static final String UNKNOWN_IP = "unknown";
     private static final String SYSTEM_USER = "SYSTEM";
     private static final String SYSTEM_ROLE = "ROLE_SYSTEM";
 
     @Override
     public EventActor getActor() {
-        return new EventActor(SYSTEM_USER, SYSTEM_ROLE, getClientIp());
-    }
-
-    private String getClientIp() {
-        try {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-
-            if (attributes == null) {
-                log.debug("No request context available, using default IP");
-                return DEFAULT_IP;
-            }
-
-            HttpServletRequest request = attributes.getRequest();
-            String remoteAddr = request.getRemoteAddr();
-
-            // Spring의 ForwardedHeaderFilter가 처리한 IP 사용
-            if (remoteAddr != null && !remoteAddr.isEmpty() && !UNKNOWN_IP.equalsIgnoreCase(remoteAddr)) {
-                return remoteAddr;
-            }
-
-            log.warn("Remote address is null or unknown, using default IP");
-            return DEFAULT_IP;
-
-        } catch (Exception e) {
-            log.error("Failed to extract client IP, using default IP", e);
-            return DEFAULT_IP;
-        }
+        return new EventActor(SYSTEM_USER, SYSTEM_ROLE, ClientIpExtractor.getClientIp());
     }
 }

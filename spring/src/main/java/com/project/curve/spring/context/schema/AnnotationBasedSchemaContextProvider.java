@@ -41,11 +41,9 @@ public class AnnotationBasedSchemaContextProvider implements SchemaContextProvid
         PayloadSchema annotation = payloadClass.getAnnotation(PayloadSchema.class);
 
         if (annotation == null) {
-            // 어노테이션 없으면 클래스명 기반
             return EventSchema.of(payloadClass.getSimpleName(), DEFAULT_SCHEMA_VERSION);
         }
 
-        // 어노테이션에서 정보 추출
         String name = annotation.name().isBlank()
                 ? payloadClass.getSimpleName()
                 : annotation.name();

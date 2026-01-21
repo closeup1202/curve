@@ -10,7 +10,7 @@ import com.project.curve.core.port.ClockProvider;
 import com.project.curve.core.port.IdGenerator;
 import com.project.curve.core.type.EventSeverity;
 import com.project.curve.core.type.EventType;
-import com.project.curve.spring.audit.type.AuditEventType;
+import com.project.curve.spring.audit.type.DefaultEventType;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -32,7 +32,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -319,7 +318,7 @@ class KafkaEventProducerIntegrationTest {
     private record TestEventPayload(String data) implements DomainEventPayload {
         @Override
         public EventType getEventType() {
-            return new AuditEventType("TEST");
+            return new DefaultEventType("TEST");
         }
     }
 }

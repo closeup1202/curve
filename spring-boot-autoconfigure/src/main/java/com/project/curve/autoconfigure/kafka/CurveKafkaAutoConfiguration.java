@@ -6,6 +6,7 @@ import com.project.curve.core.context.EventContextProvider;
 import com.project.curve.core.port.EventProducer;
 import com.project.curve.kafka.producer.KafkaEventProducer;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
+import com.project.curve.spring.infrastructure.GracefulExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -32,15 +33,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class CurveKafkaAutoConfiguration {
 
     /**
-     * DLQ 전송 전용 ExecutorService
-     * - 비동기 Kafka 전송 콜백에서 DLQ 동기 전송 시 스레드 블로킹 방지
-     * - 고정 크기 스레드 풀 사용 (기본값: 2)
-     * - Daemon 스레드로 설정하여 애플리케이션 종료 시 자동 종료
+     * DLQ 전송 전용 ExecutorService (우아한 종료 지원)
+     * <p>
+     * <b>주요 기능:</b>
+     * <ul>
+     *   <li>비동기 Kafka 전송 콜백에서 DLQ 동기 전송 시 스레드 블로킹 방지</li>
+     *   <li>고정 크기 스레드 풀 사용 (기본값: 2)</li>
+     *   <li>애플리케이션 종료 시 실행 중인 작업 완료 대기 (30초 타임아웃)</li>
+     *   <li>타임아웃 초과 시 강제 종료 및 로깅</li>
+     * </ul>
+     * <p>
+     * {@link GracefulExecutorService}를 사용하여 우아한 종료를 보장합니다.
      */
     @Bean(name = "curveDlqExecutor", destroyMethod = "shutdown")
     @ConditionalOnMissingBean(name = "curveDlqExecutor")
     public ExecutorService dlqExecutor(CurveProperties properties) {
         int threadPoolSize = properties.getKafka().getDlqExecutorThreads();
+        long terminationTimeoutSeconds = properties.getKafka().getDlqExecutorShutdownTimeoutSeconds();
 
         ThreadFactory threadFactory = new ThreadFactory() {
             private final AtomicInteger threadNumber = new AtomicInteger(1);
@@ -48,14 +57,19 @@ public class CurveKafkaAutoConfiguration {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r, "curve-dlq-" + threadNumber.getAndIncrement());
-                thread.setDaemon(true);
+                // Non-daemon 스레드로 변경하여 종료 대기 가능하도록 설정
+                thread.setDaemon(false);
                 return thread;
             }
         };
 
-        ExecutorService executor = Executors.newFixedThreadPool(threadPoolSize, threadFactory);
-        log.info("DLQ ExecutorService created with {} threads", threadPoolSize);
-        return executor;
+        ExecutorService rawExecutor = Executors.newFixedThreadPool(threadPoolSize, threadFactory);
+        ExecutorService gracefulExecutor = new GracefulExecutorService(rawExecutor, terminationTimeoutSeconds);
+
+        log.info("DLQ ExecutorService created with {} threads (graceful shutdown timeout: {}s)",
+                threadPoolSize, terminationTimeoutSeconds);
+
+        return gracefulExecutor;
     }
 
     @Bean
