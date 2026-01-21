@@ -5,7 +5,7 @@ Curve 이벤트 발행 라이브러리를 실제로 활용하는 주문 서비�
 ## 주요 기능
 
 ### 1. **자동 이벤트 발행**
-- `@Auditable` 어노테이션만 추가하면 메서드 실행 시 자동으로 Kafka에 이벤트 발행
+- `@PublishEvent` 어노테이션만 추가하면 메서드 실행 시 자동으로 Kafka에 이벤트 발행
 - 별도의 이벤트 발행 코드 작성 불필요
 
 ### 2. **PII 데이터 자동 보호**
@@ -29,7 +29,7 @@ sample/
 │   ├── OrderCreatedPayload.java    # 주문 생성 이벤트
 │   └── OrderCancelledPayload.java  # 주문 취소 이벤트
 ├── service/
-│   └── OrderService.java       # 비즈니스 로직 (@Auditable 적용)
+│   └── OrderService.java       # 비즈니스 로직 (@PublishEvent 적용)
 ├── controller/
 │   └── OrderController.java    # REST API
 └── dto/
@@ -203,21 +203,21 @@ private String address;           // "서울시 강남구 테헤란로 123" → 
 애플리케이션 로그:
 ```
 INFO : Creating order: customer=customer-001, product=MacBook Pro 16, quantity=1, amount=3500000
-DEBUG: Audit event published: eventType=ORDER_CREATED, severity=INFO
+DEBUG: Event published: eventType=ORDER_CREATED, severity=INFO
 INFO : Order created successfully: orderId=550e8400-e29b-41d4-a716-446655440000
 DEBUG: Sending event to Kafka: eventId=123456789012345678, topic=event.audit.v1, mode=async
 DEBUG: Event sent successfully: eventId=123456789012345678, topic=event.audit.v1, partition=0, offset=123
 ```
 
-## @Auditable 어노테이션 옵션
+## @PublishEvent 어노테이션 옵션
 
 ### OrderService.java 예제
 
 ```java
-@Auditable(
+@PublishEvent(
     eventType = "ORDER_CREATED",           // 이벤트 타입 (필수)
     severity = EventSeverity.INFO,         // 이벤트 심각도 (INFO, WARNING, ERROR, CRITICAL)
-    phase = Auditable.Phase.AFTER_RETURNING,  // 실행 시점
+    phase = PublishEvent.Phase.AFTER_RETURNING,  // 실행 시점
     payloadIndex = -1,                     // -1: 반환값, 0~N: 파라미터 인덱스
     failOnError = false                    // 이벤트 발행 실패 시 예외 발생 여부
 )
@@ -302,7 +302,7 @@ curve:
 ### 3. 이벤트가 발행되지 않음
 
 **확인 사항**:
-- `@Auditable` 어노테이션이 올바르게 적용되었는지 확인
+- `@PublishEvent` 어노테이션이 올바르게 적용되었는지 확인
 - AOP가 활성화되어 있는지 확인: `curve.aop.enabled=true`
 - 메서드가 public인지 확인 (AOP는 public 메서드만 지원)
 

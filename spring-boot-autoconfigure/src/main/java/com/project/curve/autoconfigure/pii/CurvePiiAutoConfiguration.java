@@ -34,10 +34,30 @@ public class CurvePiiAutoConfiguration {
     @ConditionalOnMissingBean
     public PiiCryptoProvider piiCryptoProvider(CurveProperties properties) {
         CurveProperties.Pii.Crypto crypto = properties.getPii().getCrypto();
-        log.debug("PII 암호화 제공자 초기화 - 키 설정: {}, 솔트 설정: {}",
-                crypto.getDefaultKey() != null ? "있음" : "없음",
-                crypto.getSalt() != null ? "있음" : "없음");
-        return new DefaultPiiCryptoProvider(crypto.getDefaultKey(), crypto.getSalt());
+        String defaultKey = crypto.getDefaultKey();
+        String salt = crypto.getSalt();
+
+        boolean keyConfigured = defaultKey != null && !defaultKey.isBlank();
+        boolean saltConfigured = salt != null && !salt.isBlank();
+
+        if (!keyConfigured) {
+            log.warn("============================================================");
+            log.warn("PII 암호화 키가 설정되지 않았습니다!");
+            log.warn("@PiiField(strategy = PiiStrategy.ENCRYPT) 사용 시 예외가 발생합니다.");
+            log.warn("설정 방법: curve.pii.crypto.default-key 또는 환경변수 PII_ENCRYPTION_KEY");
+            log.warn("============================================================");
+        }
+
+        if (!saltConfigured) {
+            log.info("PII 해싱 솔트가 설정되지 않았습니다. 솔트 없이 해싱됩니다. " +
+                    "보안 강화를 위해 curve.pii.crypto.salt 설정을 권장합니다.");
+        }
+
+        log.debug("PII 암호화 제공자 초기화 - 암호화: {}, 솔트: {}",
+                keyConfigured ? "활성화" : "비활성화",
+                saltConfigured ? "설정됨" : "미설정");
+
+        return new DefaultPiiCryptoProvider(defaultKey, salt);
     }
 
     // 마스커 빈들

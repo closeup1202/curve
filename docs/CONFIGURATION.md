@@ -225,7 +225,7 @@ curve:
 
 ## AOP 설정
 
-`@Auditable` 어노테이션 기반 AOP 설정입니다.
+`@PublishEvent` 어노테이션 기반 AOP 설정입니다.
 
 ### AOP 활성화 (기본값)
 

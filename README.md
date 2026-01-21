@@ -44,7 +44,7 @@
 
 ### 1. **선언적 이벤트 발행**
 ```java
-@Auditable(eventType = "USER_LOGIN", severity = INFO)
+@PublishEvent(eventType = "USER_LOGIN", severity = INFO)
 public User login(String username) {
     // 비즈니스 로직만 작성
     return userRepository.findByUsername(username);
@@ -153,7 +153,7 @@ curve/
 │   └── exception/                 # 도메인 예외
 │
 ├── spring/                        # Spring Framework 어댑터
-│   ├── aop/                       # @Auditable Aspect
+│   ├── aop/                       # @PublishEvent Aspect
 │   ├── context/                   # Spring 기반 Context Provider 구현
 │   │   ├── actor/                 # SpringSecurityActorContextProvider
 │   │   ├── trace/                 # MdcTraceContextProvider
@@ -234,13 +234,13 @@ curve:
 ### 3. 이벤트 발행
 
 ```java
-import com.project.curve.spring.annotation.Auditable;
+import com.project.curve.spring.audit.annotation.PublishEvent;
 import com.project.curve.core.type.EventSeverity;
 
 @Service
 public class UserService {
 
-    @Auditable(
+    @PublishEvent(
         eventType = "USER_CREATED",
         severity = EventSeverity.INFO,
         phase = Phase.AFTER_RETURNING
@@ -298,11 +298,11 @@ docker-compose up -d
 
 ## 📚 사용법
 
-### 1. @Auditable 어노테이션
+### 1. @PublishEvent 어노테이션
 
 #### 기본 사용
 ```java
-@Auditable(eventType = "ORDER_CREATED")
+@PublishEvent(eventType = "ORDER_CREATED")
 public Order createOrder(OrderRequest request) {
     return orderRepository.save(new Order(request));
 }
@@ -310,7 +310,7 @@ public Order createOrder(OrderRequest request) {
 
 #### 고급 옵션
 ```java
-@Auditable(
+@PublishEvent(
     eventType = "PAYMENT_PROCESSED",
     severity = EventSeverity.CRITICAL,      // 심각도
     payloadIndex = 0,                       // 0번째 파라미터를 페이로드로 사용

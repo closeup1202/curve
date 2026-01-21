@@ -117,7 +117,7 @@ public class CurveProperties {
     @Data
     public static class Aop {
         /**
-         * @Auditable AOP 활성화 여부 (기본값: true)
+         * @PublishEvent AOP 활성화 여부 (기본값: true)
          */
         private boolean enabled = true;
     }

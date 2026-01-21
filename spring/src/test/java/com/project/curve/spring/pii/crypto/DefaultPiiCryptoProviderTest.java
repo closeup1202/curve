@@ -222,4 +222,113 @@ class DefaultPiiCryptoProviderTest {
         // Then
         assertThat(decrypted).isEqualTo(specialString);
     }
+
+    @Test
+    @DisplayName("키가 설정되면 암호화가 활성화된다")
+    void isEncryptionEnabled_withKey_shouldReturnTrue() {
+        // Given & When & Then
+        assertThat(cryptoProvider.isEncryptionEnabled()).isTrue();
+    }
+
+    @Test
+    @DisplayName("키가 null이면 암호화가 비활성화된다")
+    void isEncryptionEnabled_withNullKey_shouldReturnFalse() {
+        // Given
+        DefaultPiiCryptoProvider providerWithoutKey = new DefaultPiiCryptoProvider(null, salt);
+
+        // When & Then
+        assertThat(providerWithoutKey.isEncryptionEnabled()).isFalse();
+    }
+
+    @Test
+    @DisplayName("키가 빈 문자열이면 암호화가 비활성화된다")
+    void isEncryptionEnabled_withEmptyKey_shouldReturnFalse() {
+        // Given
+        DefaultPiiCryptoProvider providerWithEmptyKey = new DefaultPiiCryptoProvider("", salt);
+
+        // When & Then
+        assertThat(providerWithEmptyKey.isEncryptionEnabled()).isFalse();
+    }
+
+    @Test
+    @DisplayName("키가 공백만 있으면 암호화가 비활성화된다")
+    void isEncryptionEnabled_withBlankKey_shouldReturnFalse() {
+        // Given
+        DefaultPiiCryptoProvider providerWithBlankKey = new DefaultPiiCryptoProvider("   ", salt);
+
+        // When & Then
+        assertThat(providerWithBlankKey.isEncryptionEnabled()).isFalse();
+    }
+
+    @Test
+    @DisplayName("암호화가 비활성화된 상태에서 encrypt 호출 시 예외가 발생한다")
+    void encrypt_withoutKey_shouldThrowException() {
+        // Given
+        DefaultPiiCryptoProvider providerWithoutKey = new DefaultPiiCryptoProvider(null, salt);
+        String plainText = "sensitive-data";
+
+        // When & Then
+        assertThatThrownBy(() -> providerWithoutKey.encrypt(plainText, null))
+                .isInstanceOf(PiiCryptoException.class)
+                .hasMessageContaining("PII 암호화가 비활성화되어 있습니다")
+                .hasMessageContaining("curve.pii.crypto.default-key");
+    }
+
+    @Test
+    @DisplayName("암호화가 비활성화된 상태에서 decrypt 호출 시 예외가 발생한다")
+    void decrypt_withoutKey_shouldThrowException() {
+        // Given
+        DefaultPiiCryptoProvider providerWithoutKey = new DefaultPiiCryptoProvider(null, salt);
+        String encrypted = cryptoProvider.encrypt("test", null);
+
+        // When & Then
+        assertThatThrownBy(() -> providerWithoutKey.decrypt(encrypted, null))
+                .isInstanceOf(PiiCryptoException.class)
+                .hasMessageContaining("PII 암호화가 비활성화되어 있습니다");
+    }
+
+    @Test
+    @DisplayName("암호화가 비활성화된 상태에서도 해싱은 가능하다")
+    void hash_withoutKey_shouldWork() {
+        // Given
+        DefaultPiiCryptoProvider providerWithoutKey = new DefaultPiiCryptoProvider(null, salt);
+        String value = "test@example.com";
+
+        // When
+        String hash = providerWithoutKey.hash(value);
+
+        // Then
+        assertThat(hash).isNotNull();
+        assertThat(hash).isNotEqualTo(value);
+    }
+
+    @Test
+    @DisplayName("잘못된 Base64 형식의 키로 초기화하면 예외가 발생한다")
+    void constructor_withInvalidBase64Key_shouldThrowException() {
+        // Given
+        String invalidBase64Key = "not-valid-base64!!!";
+
+        // When & Then
+        assertThatThrownBy(() -> new DefaultPiiCryptoProvider(invalidBase64Key, salt))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("잘못된 Base64 형식");
+    }
+
+    @Test
+    @DisplayName("빈 키로 registerKey를 호출하면 예외가 발생한다")
+    void registerKey_withEmptyKey_shouldThrowException() {
+        // When & Then
+        assertThatThrownBy(() -> cryptoProvider.registerKey("alias", ""))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("null이거나 비어있을 수 없습니다");
+    }
+
+    @Test
+    @DisplayName("null 키로 registerKey를 호출하면 예외가 발생한다")
+    void registerKey_withNullKey_shouldThrowException() {
+        // When & Then
+        assertThatThrownBy(() -> cryptoProvider.registerKey("alias", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("null이거나 비어있을 수 없습니다");
+    }
 }

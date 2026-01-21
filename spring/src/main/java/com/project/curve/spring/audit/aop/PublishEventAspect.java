@@ -2,8 +2,8 @@ package com.project.curve.spring.audit.aop;
 
 import com.project.curve.core.port.EventProducer;
 import com.project.curve.core.type.EventSeverity;
-import com.project.curve.spring.audit.annotation.Auditable;
-import com.project.curve.spring.exception.AuditEventPublishException;
+import com.project.curve.spring.audit.annotation.PublishEvent;
+import com.project.curve.spring.exception.EventPublishException;
 import com.project.curve.spring.audit.payload.AuditEventPayload;
 import com.project.curve.spring.metrics.CurveMetricsCollector;
 import lombok.RequiredArgsConstructor;
@@ -20,82 +20,82 @@ import java.lang.reflect.Method;
 @Aspect
 @Component
 @RequiredArgsConstructor
-public class AuditableAspect {
+public class PublishEventAspect {
 
     private final EventProducer eventProducer;
 
     @Autowired(required = false)
     private CurveMetricsCollector metricsCollector;
 
-    @Pointcut("@annotation(com.project.curve.spring.audit.annotation.Auditable)")
-    public void auditableMethod() {
+    @Pointcut("@annotation(com.project.curve.spring.audit.annotation.PublishEvent)")
+    public void publishEventMethod() {
     }
 
-    @Before("auditableMethod() && @annotation(auditable)")
-    public void beforeMethod(JoinPoint joinPoint, Auditable auditable) {
-        if (auditable.phase() == Auditable.Phase.BEFORE) {
-            publishEvent(joinPoint, auditable, null);
+    @Before("publishEventMethod() && @annotation(publishEvent)")
+    public void beforeMethod(JoinPoint joinPoint, PublishEvent publishEvent) {
+        if (publishEvent.phase() == PublishEvent.Phase.BEFORE) {
+            publishEvent(joinPoint, publishEvent, null);
         }
     }
 
-    @AfterReturning(pointcut = "auditableMethod() && @annotation(auditable)", returning = "result")
-    public void afterReturning(JoinPoint joinPoint, Auditable auditable, Object result) {
-        if (auditable.phase() == Auditable.Phase.AFTER_RETURNING) {
-            publishEvent(joinPoint, auditable, result);
+    @AfterReturning(pointcut = "publishEventMethod() && @annotation(publishEvent)", returning = "result")
+    public void afterReturning(JoinPoint joinPoint, PublishEvent publishEvent, Object result) {
+        if (publishEvent.phase() == PublishEvent.Phase.AFTER_RETURNING) {
+            publishEvent(joinPoint, publishEvent, result);
         }
     }
 
-    @After("auditableMethod() && @annotation(auditable)")
-    public void afterMethod(JoinPoint joinPoint, Auditable auditable) {
-        if (auditable.phase() == Auditable.Phase.AFTER) {
-            publishEvent(joinPoint, auditable, null);
+    @After("publishEventMethod() && @annotation(publishEvent)")
+    public void afterMethod(JoinPoint joinPoint, PublishEvent publishEvent) {
+        if (publishEvent.phase() == PublishEvent.Phase.AFTER) {
+            publishEvent(joinPoint, publishEvent, null);
         }
     }
 
-    private void publishEvent(JoinPoint joinPoint, Auditable auditable, Object returnValue) {
+    private void publishEvent(JoinPoint joinPoint, PublishEvent publishEvent, Object returnValue) {
         long startTime = System.currentTimeMillis();
 
         try {
-            String eventType = determineEventType(joinPoint, auditable);
-            Object payloadData = extractPayload(joinPoint, auditable, returnValue);
+            String eventType = determineEventType(joinPoint, publishEvent);
+            Object payloadData = extractPayload(joinPoint, publishEvent, returnValue);
             AuditEventPayload payload = createAuditPayload(eventType, joinPoint, payloadData);
 
-            publishAndRecordSuccess(eventType, payload, auditable, startTime);
+            publishAndRecordSuccess(eventType, payload, publishEvent, startTime);
 
         } catch (Exception e) {
-            handlePublishFailure(joinPoint, auditable, startTime, e);
+            handlePublishFailure(joinPoint, publishEvent, startTime, e);
         }
     }
 
-    private void publishAndRecordSuccess(String eventType, AuditEventPayload payload, Auditable auditable, long startTime) {
-        EventSeverity severity = auditable.severity();
+    private void publishAndRecordSuccess(String eventType, AuditEventPayload payload, PublishEvent publishEvent, long startTime) {
+        EventSeverity severity = publishEvent.severity();
         eventProducer.publish(payload, severity);
-        log.debug("Audit event published: eventType={}, severity={}", eventType, severity);
+        log.debug("Event published: eventType={}, severity={}", eventType, severity);
 
         recordSuccessMetrics(eventType, startTime);
     }
 
-    private void handlePublishFailure(JoinPoint joinPoint, Auditable auditable, long startTime, Exception e) {
-        String eventType = determineEventTypeForFailure(joinPoint, auditable);
+    private void handlePublishFailure(JoinPoint joinPoint, PublishEvent publishEvent, long startTime, Exception e) {
+        String eventType = determineEventTypeForFailure(joinPoint, publishEvent);
 
-        log.error("Failed to publish audit event for method: {}, eventType={}, errorType={}",
+        log.error("Failed to publish event for method: {}, eventType={}, errorType={}",
                 joinPoint.getSignature(), eventType, e.getClass().getSimpleName(), e);
 
         recordFailureMetrics(eventType, e, startTime);
 
-        if (auditable.failOnError()) {
-            throw new AuditEventPublishException(
-                    "Failed to publish audit event for method: " + joinPoint.getSignature(), e);
+        if (publishEvent.failOnError()) {
+            throw new EventPublishException(
+                    "Failed to publish event for method: " + joinPoint.getSignature(), e);
         } else {
-            log.warn("Audit event publish failed but continuing execution (failOnError=false): " +
+            log.warn("Event publish failed but continuing execution (failOnError=false): " +
                     "eventType={}, method={}, errorType={}, errorMessage={}",
                     eventType, joinPoint.getSignature(), e.getClass().getSimpleName(), e.getMessage());
         }
     }
 
-    private String determineEventTypeForFailure(JoinPoint joinPoint, Auditable auditable) {
+    private String determineEventTypeForFailure(JoinPoint joinPoint, PublishEvent publishEvent) {
         try {
-            return determineEventType(joinPoint, auditable);
+            return determineEventType(joinPoint, publishEvent);
         } catch (Exception ex) {
             return "unknown";
         }
@@ -116,9 +116,9 @@ public class AuditableAspect {
         }
     }
 
-    private String determineEventType(JoinPoint joinPoint, Auditable auditable) {
-        if (!auditable.eventType().isBlank()) {
-            return auditable.eventType();
+    private String determineEventType(JoinPoint joinPoint, PublishEvent publishEvent) {
+        if (!publishEvent.eventType().isBlank()) {
+            return publishEvent.eventType();
         }
 
         // 기본값: 클래스명.메서드명
@@ -128,8 +128,8 @@ public class AuditableAspect {
         return className + "." + methodName;
     }
 
-    private Object extractPayload(JoinPoint joinPoint, Auditable auditable, Object returnValue) {
-        int payloadIndex = auditable.payloadIndex();
+    private Object extractPayload(JoinPoint joinPoint, PublishEvent publishEvent, Object returnValue) {
+        int payloadIndex = publishEvent.payloadIndex();
 
         if (payloadIndex == -1) {
             // 반환값 사용

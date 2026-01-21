@@ -6,7 +6,7 @@ import com.example.orderservice.domain.OrderStatus;
 import com.example.orderservice.event.OrderCancelledPayload;
 import com.example.orderservice.event.OrderCreatedPayload;
 import com.project.curve.core.type.EventSeverity;
-import com.project.curve.spring.audit.annotation.Auditable;
+import com.project.curve.spring.audit.annotation.PublishEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 주문 서비스
- * - @Auditable 어노테이션으로 자동 이벤트 발행
+ * - @PublishEvent 어노테이션으로 자동 이벤트 발행
  * - PII 데이터는 자동으로 마스킹/암호화
  */
 @Slf4j
@@ -39,10 +39,10 @@ public class OrderService {
      * @param totalAmount 총 금액
      * @return 생성된 주문
      */
-    @Auditable(
+    @PublishEvent(
             eventType = "ORDER_CREATED",
             severity = EventSeverity.INFO,
-            phase = Auditable.Phase.AFTER_RETURNING,
+            phase = PublishEvent.Phase.AFTER_RETURNING,
             payloadIndex = -1,  // 반환값 사용
             failOnError = false  // 이벤트 발행 실패해도 비즈니스 로직은 계속 진행
     )
@@ -95,10 +95,10 @@ public class OrderService {
      * @param reason 취소 사유
      * @return 취소된 주문
      */
-    @Auditable(
+    @PublishEvent(
             eventType = "ORDER_CANCELLED",
             severity = EventSeverity.WARN,
-            phase = Auditable.Phase.AFTER_RETURNING,
+            phase = PublishEvent.Phase.AFTER_RETURNING,
             payloadIndex = -1,
             failOnError = false
     )
@@ -149,10 +149,10 @@ public class OrderService {
      * @param orderId 주문 ID
      * @param newStatus 새로운 상태
      */
-    @Auditable(
+    @PublishEvent(
             eventType = "ORDER_STATUS_CHANGED",
             severity = EventSeverity.INFO,
-            phase = Auditable.Phase.BEFORE,
+            phase = PublishEvent.Phase.BEFORE,
             payloadIndex = 0,  // 첫 번째 파라미터(orderId) 사용
             failOnError = false
     )

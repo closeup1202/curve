@@ -29,11 +29,32 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Kafka 기반 이벤트 발행자
- * - 이벤트를 JSON으로 직렬화하여 Kafka 토픽에 발행
- * - RetryTemplate을 통한 재시도 지원
- * - 전송 실패 시 DLQ(Dead Letter Queue)로 동기 전송하여 이벤트 손실 방지
- * - 동기/비동기 전송 모드 지원
+ * Kafka 기반 이벤트 발행자.
+ * <p>
+ * 이벤트를 JSON으로 직렬화하여 Kafka 토픽에 발행합니다.
+ *
+ * <h2>주요 기능</h2>
+ * <ul>
+ *   <li>RetryTemplate을 통한 재시도 지원</li>
+ *   <li>전송 실패 시 DLQ(Dead Letter Queue)로 전송하여 이벤트 손실 방지</li>
+ *   <li>DLQ 전송도 실패 시 로컬 파일 백업 (최후의 안전망)</li>
+ *   <li>동기/비동기 전송 모드 지원</li>
+ * </ul>
+ *
+ * <h2>PII(개인식별정보) 처리</h2>
+ * <p>
+ * 이벤트 직렬화 시 {@link com.project.curve.spring.pii.jackson.PiiModule}이 ObjectMapper에
+ * 등록되어 있으면, {@code @PiiField} 어노테이션이 붙은 필드는 자동으로 마스킹/암호화됩니다.
+ * <p>
+ * <b>보안 주의사항:</b>
+ * <ul>
+ *   <li>{@code curve.pii.enabled=true} (기본값)로 설정해야 PII 마스킹이 적용됩니다.</li>
+ *   <li>DLQ 및 로컬 백업 파일에 저장되는 데이터도 마스킹된 상태입니다.</li>
+ *   <li>로컬 백업 파일은 POSIX 시스템에서 600 권한(rw-------)으로 생성됩니다.</li>
+ * </ul>
+ *
+ * @see com.project.curve.spring.pii.annotation.PiiField
+ * @see com.project.curve.spring.pii.jackson.PiiModule
  */
 @Slf4j
 public class KafkaEventProducer extends AbstractEventPublisher {
@@ -302,9 +323,31 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     }
 
     /**
-     * DLQ 전송도 실패한 경우 로컬 파일에 백업
-     * - POSIX 파일 권한 설정 (rw-------)으로 보안 강화
-     * - 민감 데이터 노출 방지를 위해 페이로드 정보는 로깅하지 않음
+     * DLQ 전송도 실패한 경우 로컬 파일에 백업.
+     * <p>
+     * 이벤트 손실을 방지하기 위한 최후의 안전망입니다.
+     *
+     * <h3>보안 고려사항</h3>
+     * <ul>
+     *   <li>POSIX 파일 시스템: 600 권한(rw-------)으로 생성</li>
+     *   <li>Windows: 수동 권한 설정 필요 (경고 로그 출력)</li>
+     *   <li>저장되는 데이터는 PiiModule이 적용된 경우 마스킹된 상태</li>
+     *   <li>페이로드 내용은 로그에 출력하지 않음</li>
+     * </ul>
+     *
+     * <h3>복구 방법</h3>
+     * <p>
+     * 백업 파일은 JSON 형식이며, Kafka가 복구되면 수동으로 재전송할 수 있습니다.
+     * <pre>
+     * # 백업 파일 확인
+     * ls -la ./dlq-backup/
+     *
+     * # 재전송 (예시)
+     * cat ./dlq-backup/{eventId}.json | kafka-console-producer --topic event.audit.v1
+     * </pre>
+     *
+     * @param eventId       이벤트 ID
+     * @param originalValue 직렬화된 이벤트 페이로드 (PII 마스킹 적용된 상태)
      */
     private void backupToLocalFile(String eventId, String originalValue) {
         try {
@@ -323,11 +366,11 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                 // Windows 등 POSIX를 지원하지 않는 시스템
                 Files.writeString(backupFile, originalValue, StandardOpenOption.CREATE);
                 log.error("Event backed up to file (POSIX not supported): eventId={}, file={}", eventId, backupFile);
-                log.warn("File permissions not set - consider manual security configuration on non-POSIX systems");
+                log.warn("Consider manual security configuration on non-POSIX systems like windows : {}", backupFile);
             }
         } catch (IOException e) {
             log.error("Failed to backup event to file: eventId={}", eventId, e);
-            log.error("CRITICAL: Event permanently lost - eventId={}", eventId);
+            log.error("Event permanently lost  eventId={}, cause={}", eventId, e.getMessage());
         }
     }
 }

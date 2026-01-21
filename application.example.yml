@@ -69,7 +69,7 @@ curve:
 
   # ===== AOP 설정 =====
   aop:
-    # @Auditable 어노테이션 AOP 활성화 여부
+    # @PublishEvent 어노테이션 AOP 활성화 여부
     enabled: true
 
   # ===== 보안 설정 =====

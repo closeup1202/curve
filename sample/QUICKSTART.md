@@ -151,7 +151,7 @@ curl -X POST http://localhost:8081/api/orders/a1b2c3d4-.../cancel \
 ### 이벤트 발행 성공
 ```
 INFO  : Creating order: customer=cust-001, product=MacBook Pro, quantity=1, amount=3500000
-DEBUG : Audit event published: eventType=ORDER_CREATED, severity=INFO
+DEBUG : Event published: eventType=ORDER_CREATED, severity=INFO
 INFO  : Order created successfully: orderId=a1b2c3d4-...
 DEBUG : Sending event to Kafka: eventId=123456789012345678, topic=event.audit.v1, mode=async
 DEBUG : Event sent successfully: eventId=123456789012345678, topic=event.audit.v1, partition=0, offset=123
@@ -166,12 +166,12 @@ INFO  : Event sent to DLQ successfully (async): eventId=123456789012345678, dlqT
 
 ## 7. 코드 설명
 
-### @Auditable 어노테이션
+### @PublishEvent 어노테이션
 ```java
-@Auditable(
+@PublishEvent(
     eventType = "ORDER_CREATED",           // Kafka 이벤트 타입
     severity = EventSeverity.INFO,         // 이벤트 심각도
-    phase = Auditable.Phase.AFTER_RETURNING,  // 메서드 실행 시점
+    phase = PublishEvent.Phase.AFTER_RETURNING,  // 메서드 실행 시점
     payloadIndex = -1,                     // -1: 반환값 사용
     failOnError = false                    // 이벤트 발행 실패해도 비즈니스 로직 계속
 )
@@ -243,7 +243,7 @@ ERROR: Port 8081 is already in use
 **확인 사항**:
 - `curve.aop.enabled=true`인지 확인
 - 메서드가 `public`인지 확인
-- `@Auditable` 어노테이션이 올바르게 적용되었는지 확인
+- `@PublishEvent` 어노테이션이 올바르게 적용되었는지 확인
 
 ## 10. 더 알아보기
 

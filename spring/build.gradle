@@ -1,12 +1,9 @@
 dependencies {
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    // Security는 선택적 의존성으로 변경 - 필요한 프로젝트만 추가
     compileOnly 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation project(':core')
-
-    // Micrometer for metrics collection
     implementation 'io.micrometer:micrometer-core'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation project(':core')
 }
