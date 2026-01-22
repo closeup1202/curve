@@ -37,7 +37,6 @@ public class CurveAutoConfiguration {
 
     @PostConstruct
     public void startUp() {
-        log.info("👀 Curve가 자동으로 활성화되었습니다!");
-        log.info("📋 설정 변경: curve.enabled=false로 비활성화 가능");
+        log.info("Curve auto-configuration enabled (disable with curve.enabled=false)");
     }
 }

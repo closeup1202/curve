@@ -520,6 +520,24 @@ Curve는 `@Validated`를 사용하여 설정값의 유효성을 자동으로 검
 
 잘못된 설정값이 입력되면 애플리케이션 시작 시 명확한 오류 메시지와 함께 실패합니다.
 
+### 디버그 로깅
+
+Curve는 기본적으로 최소한의 로그만 출력합니다. 상세한 설정 정보나 내부 동작을 확인하려면 DEBUG 레벨을 활성화하세요.
+
+```yaml
+logging:
+  level:
+    com.project.curve: DEBUG
+```
+
+**DEBUG 레벨에서 확인할 수 있는 정보:**
+- Kafka Producer 설정 상세 (retries, timeout 등)
+- RetryTemplate 설정 상세
+- SnowflakeIdGenerator 초기화 정보
+- DLQ ExecutorService 설정
+- PII 모듈 등록 상태
+- 이벤트 전송 상세 로그
+
 ---
 
 ## 🔥 고급 기능

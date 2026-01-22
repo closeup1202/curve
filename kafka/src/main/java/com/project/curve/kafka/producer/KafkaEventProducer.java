@@ -102,7 +102,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         this.dlqExecutor = dlqExecutor;
         this.metricsCollector = metricsCollector;
 
-        log.info("KafkaEventProducer initialized: topic={}, asyncMode={}, syncTimeout={}s, asyncTimeout={}ms, dlq={}, retry={}, backupPath={}, dlqExecutor={}",
+        log.debug("KafkaEventProducer initialized: topic={}, asyncMode={}, syncTimeout={}s, asyncTimeout={}ms, dlq={}, retry={}, backupPath={}, dlqExecutor={}",
                 this.topic, this.asyncMode, this.syncTimeoutSeconds, this.asyncTimeoutMs,
                 this.dlqEnabled ? this.dlqTopic : "disabled",
                 this.retryTemplate != null ? "enabled" : "disabled",

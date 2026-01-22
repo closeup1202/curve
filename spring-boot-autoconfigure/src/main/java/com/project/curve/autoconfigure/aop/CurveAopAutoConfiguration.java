@@ -22,7 +22,7 @@ public class CurveAopAutoConfiguration {
 
     @Bean
     public PublishEventAspect publishEventAspect(EventProducer eventProducer) {
-        log.info("Initializing PublishEventAspect for @PublishEvent annotation support");
+        log.debug("Initializing PublishEventAspect for @PublishEvent annotation support");
         return new PublishEventAspect(eventProducer);
     }
 }

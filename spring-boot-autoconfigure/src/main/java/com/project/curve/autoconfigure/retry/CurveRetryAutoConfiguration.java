@@ -38,7 +38,7 @@ public class CurveRetryAutoConfiguration {
         backOffPolicy.setMaxInterval(retryConfig.getMaxInterval());
         retryTemplate.setBackOffPolicy(backOffPolicy);
 
-        log.info("Curve RetryTemplate configured: maxAttempts={}, initialInterval={}ms, multiplier={}, maxInterval={}ms",
+        log.debug("Curve RetryTemplate configured: maxAttempts={}, initialInterval={}ms, multiplier={}, maxInterval={}ms",
                 retryConfig.getMaxAttempts(),
                 retryConfig.getInitialInterval(),
                 retryConfig.getMultiplier(),

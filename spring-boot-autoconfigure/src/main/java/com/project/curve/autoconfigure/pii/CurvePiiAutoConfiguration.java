@@ -8,14 +8,13 @@ import com.project.curve.spring.pii.jackson.PiiModule;
 import com.project.curve.spring.pii.mask.*;
 import com.project.curve.spring.pii.processor.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
-import org.springframework.lang.NonNull;
 
 import java.util.List;
 
@@ -25,7 +24,7 @@ import java.util.List;
  * @PiiField 어노테이션이 붙은 필드를 Jackson 직렬화 시 자동으로 마스킹/암호화/해싱 처리한다.
  */
 @Slf4j
-@AutoConfiguration
+@AutoConfiguration(after = JacksonAutoConfiguration.class)
 @ConditionalOnClass(ObjectMapper.class)
 @ConditionalOnProperty(prefix = "curve.pii", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class CurvePiiAutoConfiguration {
@@ -41,33 +40,18 @@ public class CurvePiiAutoConfiguration {
         boolean saltConfigured = salt != null && !salt.isBlank();
 
         if (!keyConfigured) {
-            log.error("============================================================");
-            log.error("PII 암호화 키가 설정되지 않았습니다!");
-            log.error("@PiiField(strategy = PiiStrategy.ENCRYPT) 사용 시 예외가 발생합니다.");
-            log.error("");
-            log.error("[필수 설정 방법]");
-            log.error("  1. 환경변수 설정 (권장):");
-            log.error("     export PII_ENCRYPTION_KEY=your-base64-encoded-32-byte-key");
-            log.error("");
-            log.error("  2. application.yml 설정:");
-            log.error("     curve:");
-            log.error("       pii:");
-            log.error("         crypto:");
-            log.error("           default-key: ${{PII_ENCRYPTION_KEY}}");
-            log.error("");
-            log.error("[키 생성 방법]");
-            log.error("  openssl rand -base64 32");
-            log.error("============================================================");
+            log.warn("PII encryption key not configured. @PiiField(strategy=ENCRYPT) will throw exception. " +
+                    "Set PII_ENCRYPTION_KEY env var or curve.pii.crypto.default-key property.");
         }
 
         if (!saltConfigured) {
-            log.warn("PII 해싱 솔트가 설정되지 않았습니다. 솔트 없이 해싱됩니다.");
-            log.warn("보안 강화를 위해 환경변수 PII_HASH_SALT 또는 curve.pii.crypto.salt 설정을 권장합니다.");
+            log.debug("PII hash salt not configured. Hashing will proceed without salt. " +
+                    "Set PII_HASH_SALT env var or curve.pii.crypto.salt for enhanced security.");
         }
 
-        log.info("PII 암호화 제공자 초기화 - 암호화: {}, 솔트: {}",
-                keyConfigured ? "활성화" : "비활성화",
-                saltConfigured ? "설정됨" : "미설정");
+        log.debug("PII crypto provider initialized - encryption: {}, salt: {}",
+                keyConfigured ? "enabled" : "disabled",
+                saltConfigured ? "configured" : "not configured");
 
         return new DefaultPiiCryptoProvider(defaultKey, salt);
     }
@@ -157,19 +141,14 @@ public class CurvePiiAutoConfiguration {
     }
 
     /**
-     * ObjectMapper에 PiiModule을 자동 등록하는 BeanPostProcessor
+     * ObjectMapper에 PiiModule을 자동 등록하는 Customizer.
+     * Spring Boot의 Jackson 자동 설정과 통합되어 BeanPostProcessor 경고를 방지합니다.
      */
     @Bean
-    public BeanPostProcessor piiModuleRegistrar(PiiModule piiModule) {
-        return new BeanPostProcessor() {
-            @Override
-            public Object postProcessAfterInitialization(@NonNull Object bean, @NonNull String beanName) throws BeansException {
-                if (bean instanceof ObjectMapper objectMapper) {
-                    objectMapper.registerModule(piiModule);
-                    log.info("PII Module 등록 완료 - @PiiField 어노테이션 자동 처리 활성화");
-                }
-                return bean;
-            }
+    public Jackson2ObjectMapperBuilderCustomizer piiModuleCustomizer(PiiModule piiModule) {
+        return builder -> {
+            builder.modules(piiModule);
+            log.debug("PII Module registered for @PiiField annotation processing");
         };
     }
 }

@@ -12,6 +12,7 @@
 - [Retry 설정](#retry-설정)
 - [AOP 설정](#aop-설정)
 - [PII 보호 설정](#pii-보호-설정)
+- [로깅 설정](#로깅-설정)
 
 ---
 
@@ -584,6 +585,54 @@ Reason: workerId는 1023 이하여야 합니다
 **해결:**
 - 설정값이 검증 규칙에 맞는지 확인
 - [설정 검증](#설정-검증) 섹션의 검증 규칙 참고
+
+---
+
+## 로깅 설정
+
+Curve는 기본적으로 최소한의 로그만 출력합니다. 상세한 설정 정보나 내부 동작을 확인하려면 DEBUG 레벨을 활성화하세요.
+
+### 기본 로깅 (INFO)
+
+기본 설정에서는 다음 로그만 출력됩니다:
+
+```
+INFO  c.p.c.a.CurveAutoConfiguration : Curve auto-configuration enabled (disable with curve.enabled=false)
+```
+
+### DEBUG 로깅 활성화
+
+```yaml
+logging:
+  level:
+    com.project.curve: DEBUG
+```
+
+### DEBUG 레벨에서 확인 가능한 정보
+
+| 항목 | 설명 |
+|------|------|
+| Kafka Producer 설정 | retries, timeout, async-mode 등 상세 설정 |
+| RetryTemplate 설정 | max-attempts, backoff 정책 상세 |
+| SnowflakeIdGenerator | Worker ID 및 초기화 정보 |
+| DLQ ExecutorService | 스레드 풀 크기, shutdown timeout |
+| PII 모듈 | 암호화/솔트 설정 상태, 모듈 등록 |
+| 이벤트 전송 | 이벤트별 전송 상세 (eventId, topic, partition, offset) |
+
+### 특정 모듈만 DEBUG 활성화
+
+```yaml
+logging:
+  level:
+    # Kafka 전송 관련만 DEBUG
+    com.project.curve.kafka: DEBUG
+
+    # Auto-Configuration 관련만 DEBUG
+    com.project.curve.autoconfigure: DEBUG
+
+    # PII 처리 관련만 DEBUG
+    com.project.curve.spring.pii: DEBUG
+```
 
 ---
 

@@ -10,6 +10,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-configuration-processor'
     implementation 'org.springframework.boot:spring-boot-autoconfigure-processor'
 
+    compileOnly 'org.springframework:spring-web'
+
     api project(':core')
     api project(':spring')
     api project(':kafka')

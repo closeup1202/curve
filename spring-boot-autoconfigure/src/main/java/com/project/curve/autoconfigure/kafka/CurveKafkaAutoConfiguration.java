@@ -66,7 +66,7 @@ public class CurveKafkaAutoConfiguration {
         ExecutorService rawExecutor = Executors.newFixedThreadPool(threadPoolSize, threadFactory);
         ExecutorService gracefulExecutor = new GracefulExecutorService(rawExecutor, terminationTimeoutSeconds);
 
-        log.info("DLQ ExecutorService created with {} threads (graceful shutdown timeout: {}s)",
+        log.debug("DLQ ExecutorService created with {} threads (graceful shutdown timeout: {}s)",
                 threadPoolSize, terminationTimeoutSeconds);
 
         return gracefulExecutor;
@@ -107,7 +107,7 @@ public class CurveKafkaAutoConfiguration {
     public KafkaTemplate<String, String> kafkaTemplate(
             ProducerFactory<String, String> producerFactory
     ) {
-        log.info("Creating default KafkaTemplate");
+        log.debug("Creating default KafkaTemplate");
         return new KafkaTemplate<>(producerFactory);
     }
 
@@ -129,7 +129,7 @@ public class CurveKafkaAutoConfiguration {
         props.put(ProducerConfig.ACKS_CONFIG, "all");
         props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
 
-        log.info("ProducerFactory configured: retries={}, retryBackoffMs={}, requestTimeoutMs={}",
+        log.debug("ProducerFactory configured: retries={}, retryBackoffMs={}, requestTimeoutMs={}",
                 kafkaConfig.getRetries(), kafkaConfig.getRetryBackoffMs(), kafkaConfig.getRequestTimeoutMs());
 
         return new DefaultKafkaProducerFactory<>(props);

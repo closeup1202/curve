@@ -47,7 +47,7 @@ public final class SnowflakeIdGenerator implements IdGenerator {
                     String.format("Worker ID must be between 0 and %d, but got %d", MAX_WORKER_ID, workerId));
         }
         this.workerId = workerId;
-        log.info("SnowflakeIdGenerator initialized with workerId: {}", workerId);
+        log.debug("SnowflakeIdGenerator initialized with workerId: {}", workerId);
     }
 
     /**

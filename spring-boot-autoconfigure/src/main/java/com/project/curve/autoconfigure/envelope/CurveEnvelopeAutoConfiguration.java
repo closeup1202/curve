@@ -27,11 +27,11 @@ public class CurveEnvelopeAutoConfiguration {
         var idGeneratorConfig = properties.getIdGenerator();
 
         if (idGeneratorConfig.isAutoGenerate()) {
-            log.info("Creating SnowflakeIdGenerator with auto-generated worker ID");
+            log.debug("Creating SnowflakeIdGenerator with auto-generated worker ID");
             return SnowflakeIdGenerator.createWithAutoWorkerId();
         } else {
             long workerId = idGeneratorConfig.getWorkerId();
-            log.info("Creating SnowflakeIdGenerator with configured worker ID: {}", workerId);
+            log.debug("Creating SnowflakeIdGenerator with configured worker ID: {}", workerId);
             return new SnowflakeIdGenerator(workerId);
         }
     }
