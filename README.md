@@ -546,7 +546,128 @@ curve:
     worker-id: ${POD_ORDINAL:1}
 ```
 
-### 2. Context Provider 커스터마이징
+### 2. 커스텀 메시지 플랫폼 구현
+
+Curve는 기본적으로 Kafka를 지원하지만, `EventProducer` 인터페이스를 구현하여 다른 메시지 플랫폼을 사용할 수 있습니다.
+
+#### RabbitMQ 구현 예시
+
+```java
+@Component
+public class RabbitMqEventProducer extends AbstractEventPublisher {
+
+    private final RabbitTemplate rabbitTemplate;
+    private final ObjectMapper objectMapper;
+    private final String exchange;
+    private final String routingKey;
+
+    public RabbitMqEventProducer(
+            EventEnvelopeFactory envelopeFactory,
+            EventContextProvider eventContextProvider,
+            RabbitTemplate rabbitTemplate,
+            ObjectMapper objectMapper,
+            @Value("${curve.rabbitmq.exchange}") String exchange,
+            @Value("${curve.rabbitmq.routing-key}") String routingKey) {
+        super(envelopeFactory, eventContextProvider);
+        this.rabbitTemplate = rabbitTemplate;
+        this.objectMapper = objectMapper;
+        this.exchange = exchange;
+        this.routingKey = routingKey;
+    }
+
+    @Override
+    protected <T extends DomainEventPayload> void send(EventEnvelope<T> envelope) {
+        try {
+            String json = objectMapper.writeValueAsString(envelope);
+            rabbitTemplate.convertAndSend(exchange, routingKey, json);
+        } catch (JsonProcessingException e) {
+            throw new EventSerializationException("Failed to serialize event", e);
+        }
+    }
+}
+```
+
+#### Redis Streams 구현 예시
+
+```java
+@Component
+public class RedisEventProducer extends AbstractEventPublisher {
+
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final String streamKey;
+
+    public RedisEventProducer(
+            EventEnvelopeFactory envelopeFactory,
+            EventContextProvider eventContextProvider,
+            StringRedisTemplate redisTemplate,
+            ObjectMapper objectMapper,
+            @Value("${curve.redis.stream-key}") String streamKey) {
+        super(envelopeFactory, eventContextProvider);
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
+        this.streamKey = streamKey;
+    }
+
+    @Override
+    protected <T extends DomainEventPayload> void send(EventEnvelope<T> envelope) {
+        try {
+            String json = objectMapper.writeValueAsString(envelope);
+            MapRecord<String, String, String> record = MapRecord.create(streamKey,
+                    Map.of("eventId", envelope.eventId().value(), "payload", json));
+            redisTemplate.opsForStream().add(record);
+        } catch (JsonProcessingException e) {
+            throw new EventSerializationException("Failed to serialize event", e);
+        }
+    }
+}
+```
+
+#### AWS SQS 구현 예시
+
+```java
+@Component
+public class SqsEventProducer extends AbstractEventPublisher {
+
+    private final SqsTemplate sqsTemplate;
+    private final ObjectMapper objectMapper;
+    private final String queueUrl;
+
+    public SqsEventProducer(
+            EventEnvelopeFactory envelopeFactory,
+            EventContextProvider eventContextProvider,
+            SqsTemplate sqsTemplate,
+            ObjectMapper objectMapper,
+            @Value("${curve.sqs.queue-url}") String queueUrl) {
+        super(envelopeFactory, eventContextProvider);
+        this.sqsTemplate = sqsTemplate;
+        this.objectMapper = objectMapper;
+        this.queueUrl = queueUrl;
+    }
+
+    @Override
+    protected <T extends DomainEventPayload> void send(EventEnvelope<T> envelope) {
+        try {
+            String json = objectMapper.writeValueAsString(envelope);
+            sqsTemplate.send(queueUrl, json);
+        } catch (JsonProcessingException e) {
+            throw new EventSerializationException("Failed to serialize event", e);
+        }
+    }
+}
+```
+
+#### 설정
+
+커스텀 구현체를 사용하려면 Kafka 자동 설정을 비활성화하세요:
+
+```yaml
+curve:
+  kafka:
+    enabled: false  # Kafka 비활성화
+```
+
+### 3. Context Provider 커스터마이징
 
 #### 커스텀 ActorContextProvider
 ```java
@@ -569,7 +690,7 @@ public TagsContextProvider customTagsProvider() {
 }
 ```
 
-### 3. DLQ (Dead Letter Queue)
+### 4. DLQ (Dead Letter Queue)
 
 **작동 방식**
 ```
@@ -594,7 +715,7 @@ DLQ로 동기 전송
 }
 ```
 
-### 4. Retry 전략
+### 5. Retry 전략
 
 **Exponential Backoff**
 ```
@@ -611,7 +732,7 @@ DLQ로 동기 전송
 - `TransientDataAccessException`
 - `TimeoutException`
 
-### 5. 동기 vs 비동기 모드
+### 6. 동기 vs 비동기 모드
 
 | 항목 | 동기 모드 | 비동기 모드 |
 |------|-----------|-------------|
@@ -629,7 +750,7 @@ curve:
     async-timeout-ms: 5000
 ```
 
-### 6. PII (개인식별정보) 보호
+### 7. PII (개인식별정보) 보호
 
 Curve는 민감한 개인정보를 자동으로 마스킹, 암호화, 해싱할 수 있습니다.
 
@@ -675,7 +796,7 @@ curve:
       salt: ${PII_HASH_SALT}
 ```
 
-### 7. MDC 기반 Tags
+### 8. MDC 기반 Tags
 
 **요청 시작 시 MDC 설정**
 ```java
