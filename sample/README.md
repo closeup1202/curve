@@ -286,18 +286,41 @@ ERROR: Failed to send event to Kafka
 
 ### 2. PII 암호화 실패
 
+**증상:**
 ```
-WARN : PII encryption key not configured
+ERROR: PII 암호화 키가 설정되지 않았습니다!
+ERROR: @PiiField(strategy = PiiStrategy.ENCRYPT) 사용 시 예외가 발생합니다.
 ```
 
 **해결**:
-application.yml에 암호화 키 설정:
+
+1. **암호화 키 생성**:
+```bash
+openssl rand -base64 32
+# 출력 예: K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=
+```
+
+2. **환경변수 설정**:
+```bash
+# Linux/macOS
+export PII_ENCRYPTION_KEY=K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=
+export PII_HASH_SALT=your-random-salt-value
+
+# Windows PowerShell
+$env:PII_ENCRYPTION_KEY="K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols="
+$env:PII_HASH_SALT="your-random-salt-value"
+```
+
+3. **application.yml 설정**:
 ```yaml
 curve:
   pii:
     crypto:
       default-key: ${PII_ENCRYPTION_KEY}
+      salt: ${PII_HASH_SALT}
 ```
+
+**⚠️ 주의**: 암호화 키를 application.yml에 직접 하드코딩하지 마세요!
 
 ### 3. 이벤트가 발행되지 않음
 
@@ -305,6 +328,21 @@ curve:
 - `@PublishEvent` 어노테이션이 올바르게 적용되었는지 확인
 - AOP가 활성화되어 있는지 확인: `curve.aop.enabled=true`
 - 메서드가 public인지 확인 (AOP는 public 메서드만 지원)
+
+### 4. 설정 검증 실패
+
+**증상:**
+```
+APPLICATION FAILED TO START
+Reason: workerId는 1023 이하여야 합니다
+```
+
+**해결**:
+- 설정값이 검증 규칙에 맞는지 확인
+- `curve.id-generator.worker-id`: 0 ~ 1023 범위
+- `curve.kafka.topic`: 빈 문자열 불가
+- `curve.retry.max-attempts`: 1 이상
+- 상세 검증 규칙은 [CONFIGURATION.md](../docs/CONFIGURATION.md#설정-검증) 참고
 
 ## 다음 단계
 

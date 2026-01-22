@@ -12,7 +12,6 @@ import static org.assertj.core.api.Assertions.*;
 class DefaultPiiCryptoProviderTest {
 
     private DefaultPiiCryptoProvider cryptoProvider;
-    private String defaultKeyBase64;
     private String salt;
 
     @BeforeEach
@@ -22,7 +21,7 @@ class DefaultPiiCryptoProviderTest {
         for (int i = 0; i < 32; i++) {
             keyBytes[i] = (byte) i;
         }
-        defaultKeyBase64 = Base64.getEncoder().encodeToString(keyBytes);
+        String defaultKeyBase64 = Base64.getEncoder().encodeToString(keyBytes);
         salt = "test-salt";
         cryptoProvider = new DefaultPiiCryptoProvider(defaultKeyBase64, salt);
     }

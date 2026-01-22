@@ -1,27 +1,41 @@
 package com.project.curve.autoconfigure;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 @Getter
 @Setter
+@Validated
 @ConfigurationProperties(prefix = "curve")
 public class CurveProperties {
 
     private boolean enabled = true;
 
+    @Valid
     private final Kafka kafka = new Kafka();
 
+    @Valid
     private final Retry retry = new Retry();
 
+    @Valid
     private final Aop aop = new Aop();
 
+    @Valid
     private final IdGenerator idGenerator = new IdGenerator();
 
+    @Valid
     private final Security security = new Security();
 
+    @Valid
     private final Pii pii = new Pii();
 
     @Data
@@ -29,6 +43,7 @@ public class CurveProperties {
         /**
          * Kafka 토픽 이름
          */
+        @NotBlank(message = "Kafka topic은 필수입니다")
         private String topic = "event.audit.v1";
 
         /**
@@ -41,16 +56,19 @@ public class CurveProperties {
          * Kafka Producer 재시도 횟수 (기본값: 3)
          * Kafka Producer 자체 재시도 설정 (spring.kafka.producer.retries 우선)
          */
+        @PositiveOrZero(message = "retries는 0 이상이어야 합니다")
         private int retries = 3;
 
         /**
          * 재시도 백오프 시간(ms) (기본값: 1000ms = 1초)
          */
+        @Positive(message = "retryBackoffMs는 양수여야 합니다")
         private long retryBackoffMs = 1000L;
 
         /**
          * 요청 타임아웃(ms) (기본값: 30000ms = 30초)
          */
+        @Positive(message = "requestTimeoutMs는 양수여야 합니다")
         private int requestTimeoutMs = 30000;
 
         /**
@@ -64,12 +82,14 @@ public class CurveProperties {
          * 비동기 전송 타임아웃(ms) (기본값: 5000ms = 5초)
          * asyncMode=true일 때만 사용
          */
+        @Positive(message = "asyncTimeoutMs는 양수여야 합니다")
         private long asyncTimeoutMs = 5000L;
 
         /**
          * 동기 전송 타임아웃(초) (기본값: 30초)
          * asyncMode=false일 때 사용
          */
+        @Positive(message = "syncTimeoutSeconds는 양수여야 합니다")
         private long syncTimeoutSeconds = 30L;
 
         /**
@@ -82,6 +102,7 @@ public class CurveProperties {
          * DLQ 전송 전용 ExecutorService 스레드 풀 크기 (기본값: 2)
          * 비동기 모드에서 DLQ 전송 시 메인 콜백 스레드 블로킹을 방지하기 위한 별도 스레드 풀
          */
+        @Min(value = 1, message = "dlqExecutorThreads는 1 이상이어야 합니다")
         private int dlqExecutorThreads = 2;
 
         /**
@@ -89,6 +110,7 @@ public class CurveProperties {
          * 애플리케이션 종료 시 실행 중인 DLQ 작업 완료를 대기하는 시간
          * 타임아웃 초과 시 강제 종료
          */
+        @Positive(message = "dlqExecutorShutdownTimeoutSeconds는 양수여야 합니다")
         private long dlqExecutorShutdownTimeoutSeconds = 30L;
     }
 
@@ -102,22 +124,26 @@ public class CurveProperties {
         /**
          * 최대 재시도 횟수 (기본값: 3)
          */
+        @Min(value = 1, message = "maxAttempts는 1 이상이어야 합니다")
         private int maxAttempts = 3;
 
         /**
          * 재시도 백오프 초기 지연 시간(ms) (기본값: 1000ms = 1초)
          */
+        @Positive(message = "initialInterval은 양수여야 합니다")
         private long initialInterval = 1000L;
 
         /**
          * 재시도 백오프 배수 (기본값: 2.0)
          * 예: 1초 -> 2초 -> 4초
          */
+        @Min(value = 1, message = "multiplier는 1 이상이어야 합니다")
         private double multiplier = 2.0;
 
         /**
          * 재시도 백오프 최대 지연 시간(ms) (기본값: 10000ms = 10초)
          */
+        @Positive(message = "maxInterval은 양수여야 합니다")
         private long maxInterval = 10000L;
     }
 
@@ -136,6 +162,8 @@ public class CurveProperties {
          * 분산 환경에서 각 인스턴스마다 고유한 값을 설정해야 함
          * 기본값: 1
          */
+        @Min(value = 0, message = "workerId는 0 이상이어야 합니다")
+        @Max(value = 1023, message = "workerId는 1023 이하여야 합니다")
         private long workerId = 1L;
 
         /**

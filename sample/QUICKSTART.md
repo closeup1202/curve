@@ -11,7 +11,24 @@ docker-compose up -d
 - Kafka UI: http://localhost:8080
 - Kafka broker: localhost:9094
 
-## 2. 애플리케이션 실행
+## 2. 환경변수 설정 (PII 암호화용)
+
+PII 암호화 기능을 사용하려면 암호화 키를 설정해야 합니다.
+
+```bash
+# 키 생성
+openssl rand -base64 32
+
+# 환경변수 설정 (Linux/macOS)
+export PII_ENCRYPTION_KEY=생성된키값
+export PII_HASH_SALT=your-random-salt
+
+# Windows PowerShell
+$env:PII_ENCRYPTION_KEY="생성된키값"
+$env:PII_HASH_SALT="your-random-salt"
+```
+
+## 3. 애플리케이션 실행
 
 ```bash
 cd sample
@@ -31,7 +48,7 @@ cd sample
 2024-01-17 10:30:00 - Tomcat started on port 8081
 ```
 
-## 3. API 테스트
+## 4. API 테스트
 
 ### 주문 생성
 ```bash
@@ -77,7 +94,7 @@ curl -X POST http://localhost:8081/api/orders/a1b2c3d4-.../cancel \
   -d '{"reason": "고객 변심"}'
 ```
 
-## 4. Kafka 이벤트 확인
+## 5. Kafka 이벤트 확인
 
 ### Kafka UI에서 확인
 1. http://localhost:8080 접속
@@ -124,7 +141,7 @@ curl -X POST http://localhost:8081/api/orders/a1b2c3d4-.../cancel \
 }
 ```
 
-## 5. PII 보호 확인
+## 6. PII 보호 확인
 
 ### 원본 데이터
 ```json
@@ -146,7 +163,7 @@ curl -X POST http://localhost:8081/api/orders/a1b2c3d4-.../cancel \
 }
 ```
 
-## 6. 로그 확인
+## 7. 로그 확인
 
 ### 이벤트 발행 성공
 ```
@@ -164,7 +181,7 @@ WARN  : Sending failed event to DLQ (async): eventId=123456789012345678, dlqTopi
 INFO  : Event sent to DLQ successfully (async): eventId=123456789012345678, dlqTopic=event.audit.dlq.v1, partition=0, offset=5
 ```
 
-## 7. 코드 설명
+## 8. 코드 설명
 
 ### @PublishEvent 어노테이션
 ```java
@@ -198,7 +215,7 @@ public class Customer {
 }
 ```
 
-## 8. 다음 단계
+## 9. 다음 단계
 
 ### 커스터마이징
 - **비동기/동기 모드 변경**: `application.yml`에서 `curve.kafka.async-mode` 설정
@@ -225,7 +242,7 @@ spring:
 
 이후 EventTrace에 자동으로 `traceId`, `spanId` 정보가 포함됩니다.
 
-## 9. 문제 해결
+## 10. 문제 해결
 
 ### Kafka 연결 실패
 ```
@@ -245,7 +262,23 @@ ERROR: Port 8081 is already in use
 - 메서드가 `public`인지 확인
 - `@PublishEvent` 어노테이션이 올바르게 적용되었는지 확인
 
-## 10. 더 알아보기
+### PII 암호화 키 미설정
+```
+ERROR: PII 암호화 키가 설정되지 않았습니다!
+```
+**해결**: [2. 환경변수 설정](#2-환경변수-설정-pii-암호화용) 참고
+
+### 설정 검증 실패
+```
+APPLICATION FAILED TO START
+Reason: workerId는 1023 이하여야 합니다
+```
+**해결**: 설정값이 검증 규칙에 맞는지 확인
+- `curve.id-generator.worker-id`: 0 ~ 1023
+- `curve.kafka.topic`: 빈 문자열 불가
+- 상세 내용: [CONFIGURATION.md](../docs/CONFIGURATION.md#설정-검증)
+
+## 11. 더 알아보기
 
 - [전체 README](README.md)
 - [Curve 메인 문서](../README.md)

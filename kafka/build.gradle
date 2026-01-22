@@ -6,9 +6,9 @@ dependencies {
     implementation project(':core')
     implementation project(':spring')
 
-    // Testcontainers for integration testing
-    testImplementation 'org.testcontainers:testcontainers:1.19.3'
-    testImplementation 'org.testcontainers:kafka:1.19.3'
-    testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
+    // Testcontainers for integration testing (1.20.4 - 2025 latest stable)
+    testImplementation 'org.testcontainers:testcontainers:1.20.4'
+    testImplementation 'org.testcontainers:kafka:1.20.4'
+    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
 }

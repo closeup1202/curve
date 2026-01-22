@@ -4,6 +4,7 @@ import com.project.curve.core.port.EventProducer;
 import com.project.curve.core.type.EventSeverity;
 import com.project.curve.spring.audit.annotation.PublishEvent;
 import com.project.curve.spring.audit.payload.EventPayload;
+import com.project.curve.spring.audit.type.DefaultEventType;
 import com.project.curve.spring.exception.EventPublishException;
 import com.project.curve.spring.metrics.CurveMetricsCollector;
 import org.aspectj.lang.JoinPoint;
@@ -17,6 +18,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.lang.reflect.Method;
 
@@ -25,6 +28,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PublishEventAspect 테스트")
+@MockitoSettings(strictness = Strictness.LENIENT)
 class PublishEventAspectTest {
 
     @Mock
@@ -56,7 +60,7 @@ class PublishEventAspectTest {
 
         // 기본 JoinPoint 설정
         when(joinPoint.getSignature()).thenReturn(methodSignature);
-        when(methodSignature.getDeclaringType()).thenReturn((Class) TestService.class);
+        when(methodSignature.getDeclaringType()).thenReturn(TestService.class);
         when(methodSignature.getName()).thenReturn("testMethod");
 
         Method method = TestService.class.getMethod("testMethod", String.class);
@@ -84,8 +88,8 @@ class PublishEventAspectTest {
             verify(eventProducer).publish(payloadCaptor.capture(), severityCaptor.capture());
 
             EventPayload payload = payloadCaptor.getValue();
-            assertThat(payload.getEventType()).isEqualTo("TEST_EVENT");
-            assertThat(payload.getData()).isEqualTo("testData");
+            assertThat(payload.getEventType()).isEqualTo(new DefaultEventType("TEST_EVENT"));
+            assertThat(payload.data()).isEqualTo("testData");
             assertThat(severityCaptor.getValue()).isEqualTo(EventSeverity.INFO);
         }
 
@@ -124,8 +128,8 @@ class PublishEventAspectTest {
             verify(eventProducer).publish(payloadCaptor.capture(), eq(EventSeverity.INFO));
 
             EventPayload payload = payloadCaptor.getValue();
-            assertThat(payload.getEventType()).isEqualTo("ORDER_CREATED");
-            assertThat(payload.getData()).isEqualTo(returnValue);
+            assertThat(payload.getEventType()).isEqualTo(new DefaultEventType("ORDER_CREATED"));
+            assertThat(payload.data()).isEqualTo(returnValue);
         }
 
         @Test
@@ -160,7 +164,7 @@ class PublishEventAspectTest {
 
             // Then
             verify(eventProducer).publish(payloadCaptor.capture(), eq(EventSeverity.WARN));
-            assertThat(payloadCaptor.getValue().getEventType()).isEqualTo("AFTER_EVENT");
+            assertThat(payloadCaptor.getValue().getEventType()).isEqualTo(new DefaultEventType("AFTER_EVENT"));
         }
     }
 
@@ -182,7 +186,7 @@ class PublishEventAspectTest {
 
             // Then
             verify(eventProducer).publish(payloadCaptor.capture(), any());
-            assertThat(payloadCaptor.getValue().getEventType()).isEqualTo("TestService.testMethod");
+            assertThat(payloadCaptor.getValue().getEventType()).isEqualTo(new DefaultEventType("TestService.testMethod"));
         }
     }
 
@@ -205,7 +209,7 @@ class PublishEventAspectTest {
 
             // Then
             verify(eventProducer).publish(payloadCaptor.capture(), any());
-            assertThat(payloadCaptor.getValue().getData()).isEqualTo("firstArg");
+            assertThat(payloadCaptor.getValue().data()).isEqualTo("firstArg");
         }
 
         @Test
@@ -223,7 +227,7 @@ class PublishEventAspectTest {
 
             // Then
             verify(eventProducer).publish(payloadCaptor.capture(), any());
-            assertThat(payloadCaptor.getValue().getData()).isNull();
+            assertThat(payloadCaptor.getValue().data()).isNull();
         }
     }
 
@@ -313,5 +317,6 @@ class PublishEventAspectTest {
         }
     }
 
-    public record TestOrder(String orderId) {}
+    public record TestOrder(String orderId) {
+    }
 }

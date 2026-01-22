@@ -38,7 +38,7 @@ class MdcTraceContextProviderTest {
         // Then
         assertThat(trace.traceId()).isEqualTo("abc123");
         assertThat(trace.spanId()).isEqualTo("span456");
-        assertThat(trace.parentSpanId()).isNull();
+        assertThat(trace.correlationId()).isNull();
     }
 
     @Test

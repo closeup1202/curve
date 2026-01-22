@@ -5,11 +5,13 @@
 ## 목차
 
 - [기본 설정](#기본-설정)
+- [설정 검증](#설정-검증)
 - [Worker ID 설정](#worker-id-설정)
 - [Kafka 전송 모드 설정](#kafka-전송-모드-설정)
 - [DLQ 설정](#dlq-설정)
 - [Retry 설정](#retry-설정)
 - [AOP 설정](#aop-설정)
+- [PII 보호 설정](#pii-보호-설정)
 
 ---
 
@@ -28,6 +30,47 @@ curve:
   id-generator:
     worker-id: 1  # Snowflake Worker ID (0~1023)
     auto-generate: false  # MAC 주소 기반 자동 생성
+```
+
+---
+
+## 설정 검증
+
+Curve는 `@Validated`를 사용하여 애플리케이션 시작 시 설정값의 유효성을 자동으로 검증합니다.
+잘못된 설정값이 입력되면 명확한 오류 메시지와 함께 애플리케이션 시작이 실패합니다.
+
+### 검증 규칙
+
+| 설정 항목 | 검증 규칙 | 오류 메시지 |
+|----------|----------|------------|
+| `curve.kafka.topic` | 필수 (빈 문자열 불가) | "Kafka topic은 필수입니다" |
+| `curve.kafka.retries` | 0 이상 | "retries는 0 이상이어야 합니다" |
+| `curve.kafka.retry-backoff-ms` | 양수 | "retryBackoffMs는 양수여야 합니다" |
+| `curve.kafka.request-timeout-ms` | 양수 | "requestTimeoutMs는 양수여야 합니다" |
+| `curve.kafka.async-timeout-ms` | 양수 | "asyncTimeoutMs는 양수여야 합니다" |
+| `curve.kafka.sync-timeout-seconds` | 양수 | "syncTimeoutSeconds는 양수여야 합니다" |
+| `curve.kafka.dlq-executor-threads` | 1 이상 | "dlqExecutorThreads는 1 이상이어야 합니다" |
+| `curve.id-generator.worker-id` | 0 ~ 1023 | "workerId는 0 이상 1023 이하여야 합니다" |
+| `curve.retry.max-attempts` | 1 이상 | "maxAttempts는 1 이상이어야 합니다" |
+| `curve.retry.initial-interval` | 양수 | "initialInterval은 양수여야 합니다" |
+| `curve.retry.multiplier` | 1 이상 | "multiplier는 1 이상이어야 합니다" |
+| `curve.retry.max-interval` | 양수 | "maxInterval은 양수여야 합니다" |
+
+### 검증 오류 예시
+
+```
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Binding to target org.springframework.boot.context.properties.bind.BindException:
+Failed to bind properties under 'curve' to com.project.curve.autoconfigure.CurveProperties failed:
+
+    Property: curve.id-generator.worker-id
+    Value: "2000"
+    Reason: workerId는 1023 이하여야 합니다
 ```
 
 ---
@@ -245,6 +288,118 @@ curve:
 
 ---
 
+## PII 보호 설정
+
+PII(개인식별정보) 보호 기능을 통해 민감한 데이터를 자동으로 마스킹, 암호화, 해싱할 수 있습니다.
+
+### 기본 설정
+
+```yaml
+curve:
+  pii:
+    enabled: true  # PII 보호 활성화 (기본값: true)
+    crypto:
+      default-key: ${PII_ENCRYPTION_KEY}  # 암호화 키 (환경변수 필수)
+      salt: ${PII_HASH_SALT}              # 해싱 솔트 (환경변수 권장)
+```
+
+### 암호화 키 설정 (필수)
+
+`@PiiField(strategy = PiiStrategy.ENCRYPT)` 사용 시 암호화 키가 반드시 필요합니다.
+
+**1. 키 생성**
+```bash
+# 32바이트 AES-256 키 생성
+openssl rand -base64 32
+# 출력 예: K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=
+```
+
+**2. 환경변수 설정 (권장)**
+```bash
+# Linux/macOS
+export PII_ENCRYPTION_KEY=K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=
+export PII_HASH_SALT=your-random-salt-value
+
+# Windows PowerShell
+$env:PII_ENCRYPTION_KEY="K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols="
+$env:PII_HASH_SALT="your-random-salt-value"
+```
+
+**3. application.yml 설정**
+```yaml
+curve:
+  pii:
+    crypto:
+      default-key: ${PII_ENCRYPTION_KEY}
+      salt: ${PII_HASH_SALT}
+```
+
+**⚠️ 주의사항:**
+- 암호화 키를 application.yml에 직접 하드코딩하지 마세요
+- 프로덕션 환경에서는 환경변수 또는 외부 비밀 관리 시스템(Vault, AWS Secrets Manager) 사용 권장
+- 키가 설정되지 않으면 ENCRYPT 전략 사용 시 예외 발생
+
+### PII 전략
+
+| 전략 | 설명 | 복원 가능 | 예시 |
+|------|------|----------|------|
+| `MASK` | 패턴 기반 마스킹 | 불가능 | `홍길동` → `홍**` |
+| `ENCRYPT` | AES-256-GCM 암호화 | 가능 (키 필요) | 암호화된 Base64 문자열 |
+| `HASH` | SHA-256 해싱 | 불가능 | 해시된 Base64 문자열 |
+
+### PII 타입별 마스킹 패턴
+
+| 타입 | 마스킹 패턴 | 예시 |
+|------|------------|------|
+| `NAME` | 첫 글자 유지, 나머지 마스킹 | `홍길동` → `홍**` |
+| `EMAIL` | 로컬 부분 유지, 도메인 마스킹 | `user@example.com` → `user@***.com` |
+| `PHONE` | 앞 3자리 + 뒤 4자리만 유지 | `010-1234-5678` → `010****5678` |
+| `DEFAULT` | 앞 30% 유지, 나머지 마스킹 | `서울시 강남구` → `서울***` |
+
+### 사용 예시
+
+```java
+public class CustomerInfo {
+    @PiiField(type = PiiType.NAME, strategy = PiiStrategy.MASK)
+    private String name;
+
+    @PiiField(type = PiiType.EMAIL, strategy = PiiStrategy.MASK)
+    private String email;
+
+    @PiiField(type = PiiType.PHONE, strategy = PiiStrategy.ENCRYPT)
+    private String phone;
+
+    @PiiField(strategy = PiiStrategy.HASH)
+    private String ssn;  // 주민등록번호
+}
+```
+
+### Kubernetes 환경 설정
+
+```yaml
+# deployment.yaml
+env:
+  - name: PII_ENCRYPTION_KEY
+    valueFrom:
+      secretKeyRef:
+        name: curve-secrets
+        key: pii-encryption-key
+  - name: PII_HASH_SALT
+    valueFrom:
+      secretKeyRef:
+        name: curve-secrets
+        key: pii-hash-salt
+```
+
+```bash
+# Secret 생성
+kubectl create secret generic curve-secrets \
+  --from-literal=pii-encryption-key=$(openssl rand -base64 32) \
+  --from-literal=pii-hash-salt=$(openssl rand -base64 16)
+```
+
+---
+
 ## 전체 설정 예시
 
 ### 프로덕션 환경 (안정성 중심)
@@ -274,6 +429,12 @@ curve:
 
   aop:
     enabled: true
+
+  pii:
+    enabled: true
+    crypto:
+      default-key: ${PII_ENCRYPTION_KEY}  # 환경변수 필수
+      salt: ${PII_HASH_SALT}
 ```
 
 ### 개발/테스트 환경 (성능 중심)
@@ -388,6 +549,41 @@ curve:
   kafka:
     async-mode: true  # 비동기 모드로 전환
 ```
+
+### PII 암호화 키 미설정
+
+**증상:**
+```
+ERROR: PII 암호화 키가 설정되지 않았습니다!
+ERROR: @PiiField(strategy = PiiStrategy.ENCRYPT) 사용 시 예외가 발생합니다.
+```
+
+**해결:**
+```bash
+# 1. 키 생성
+openssl rand -base64 32
+
+# 2. 환경변수 설정
+export PII_ENCRYPTION_KEY=생성된키값
+
+# 3. application.yml 설정
+curve:
+  pii:
+    crypto:
+      default-key: ${PII_ENCRYPTION_KEY}
+```
+
+### 설정 검증 실패
+
+**증상:**
+```
+APPLICATION FAILED TO START
+Reason: workerId는 1023 이하여야 합니다
+```
+
+**해결:**
+- 설정값이 검증 규칙에 맞는지 확인
+- [설정 검증](#설정-검증) 섹션의 검증 규칙 참고
 
 ---
 

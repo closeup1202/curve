@@ -430,6 +430,15 @@ curve:
     # X-Forwarded-For 헤더 사용 여부 (프록시 환경에서만 true)
     use-forwarded-headers: false
 
+  # PII (개인식별정보) 보호 설정
+  pii:
+    enabled: true
+    crypto:
+      # 암호화 키 (환경변수 사용 필수 권장)
+      default-key: ${PII_ENCRYPTION_KEY:}
+      # 해싱 솔트 (환경변수 사용 권장)
+      salt: ${PII_HASH_SALT:}
+
 # Spring Boot 설정
 server:
   # 프록시 헤더 처리 전략
@@ -495,6 +504,21 @@ server:
 ```
 
 > 📖 더 많은 설정 예시는 [`application.example.yml`](application.example.yml)을 참고하세요.
+
+### 설정 검증
+
+Curve는 `@Validated`를 사용하여 설정값의 유효성을 자동으로 검증합니다.
+
+| 설정 | 검증 규칙 |
+|------|----------|
+| `curve.kafka.topic` | 필수 (빈 문자열 불가) |
+| `curve.kafka.retries` | 0 이상 |
+| `curve.kafka.retry-backoff-ms` | 양수 |
+| `curve.id-generator.worker-id` | 0 ~ 1023 |
+| `curve.retry.max-attempts` | 1 이상 |
+| `curve.retry.multiplier` | 1 이상 |
+
+잘못된 설정값이 입력되면 애플리케이션 시작 시 명확한 오류 메시지와 함께 실패합니다.
 
 ---
 
@@ -605,7 +629,53 @@ curve:
     async-timeout-ms: 5000
 ```
 
-### 6. MDC 기반 Tags
+### 6. PII (개인식별정보) 보호
+
+Curve는 민감한 개인정보를 자동으로 마스킹, 암호화, 해싱할 수 있습니다.
+
+**지원 전략**
+| 전략 | 설명 | 복원 가능 |
+|------|------|-----------|
+| `MASK` | 패턴 기반 마스킹 (예: `user@***.com`) | 불가능 |
+| `ENCRYPT` | AES-256-GCM 암호화 | 가능 (키 필요) |
+| `HASH` | SHA-256 해싱 | 불가능 |
+
+**사용 예시**
+```java
+public class UserEventPayload implements DomainEventPayload {
+
+    @PiiField(type = PiiType.EMAIL, strategy = PiiStrategy.MASK)
+    private String email;  // "user@example.com" → "user@***.com"
+
+    @PiiField(type = PiiType.PHONE, strategy = PiiStrategy.ENCRYPT)
+    private String phone;  // 암호화된 값으로 저장
+
+    @PiiField(type = PiiType.NAME, strategy = PiiStrategy.HASH)
+    private String name;   // SHA-256 해시 값으로 저장
+}
+```
+
+**암호화 키 설정 (필수)**
+```bash
+# 키 생성
+openssl rand -base64 32
+
+# 환경변수 설정 (권장)
+export PII_ENCRYPTION_KEY=your-base64-encoded-32-byte-key
+export PII_HASH_SALT=your-random-salt-value
+```
+
+```yaml
+# application.yml
+curve:
+  pii:
+    enabled: true
+    crypto:
+      default-key: ${PII_ENCRYPTION_KEY}
+      salt: ${PII_HASH_SALT}
+```
+
+### 7. MDC 기반 Tags
 
 **요청 시작 시 MDC 설정**
 ```java

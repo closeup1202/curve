@@ -257,37 +257,32 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             if (metricsCollector != null) {
                 metricsCollector.recordDlqEvent(eventType, ex.getClass().getSimpleName());
             }
-            if (dlqExecutor != null) {  // ExecutorService가 있으면 비동기로, 없으면 동기로 DLQ 전송
-                sendToDlqAsync(eventId, originalValue, ex);
-            } else {
-                sendToDlqSync(eventId, originalValue, ex);
-            }
+            dispatchToDlq(eventId, originalValue, ex);
         } else {
             log.warn("DLQ not configured. Event may be lost: eventId={}", eventId);
         }
     }
 
     /**
-     * DLQ로 비동기 전송 - 별도 ExecutorService를 사용하여 콜백 스레드 블로킹 방지
+     * DLQ 전송 디스패치 - ExecutorService 존재 여부에 따라 비동기/동기 전송 결정
      */
-    private void sendToDlqAsync(String eventId, String originalValue, Throwable originalException) {
-        dlqExecutor.submit(() -> sendToDlq(eventId, originalValue, originalException, true));
+    private void dispatchToDlq(String eventId, String originalValue, Throwable originalException) {
+        if (dlqExecutor != null) {
+            // 비동기 전송 - 별도 ExecutorService를 사용하여 콜백 스레드 블로킹 방지
+            dlqExecutor.submit(() -> executeDlqSend(eventId, originalValue, originalException));
+        } else {
+            // 동기 전송 - 이벤트 손실 방지를 위해 즉시 전송
+            executeDlqSend(eventId, originalValue, originalException);
+        }
     }
 
     /**
-     * DLQ로 동기 전송 - 이벤트 손실 방지를 위해 동기 방식으로 전송
+     * DLQ 전송 실행 - 실제 Kafka DLQ 전송 로직
      */
-    private void sendToDlqSync(String eventId, String originalValue, Throwable originalException) {
-        sendToDlq(eventId, originalValue, originalException, false);
-    }
-
-    /**
-     * DLQ 전송 로직 - 동기/비동기 공통 처리
-     */
-    private void sendToDlq(String eventId, String originalValue, Throwable originalException, boolean isAsync) {
+    private void executeDlqSend(String eventId, String originalValue, Throwable originalException) {
+        String mode = dlqExecutor != null ? "async" : "sync";
         try {
-            log.warn("Sending failed event to DLQ ({}): eventId={}, dlqTopic={}",
-                    isAsync ? "async" : "sync", eventId, dlqTopic);
+            log.warn("Sending failed event to DLQ ({}): eventId={}, dlqTopic={}", mode, eventId, dlqTopic);
 
             String dlqValue = createDlqPayload(eventId, originalValue, originalException);
 
@@ -296,12 +291,11 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                     .get(syncTimeoutSeconds, TimeUnit.SECONDS);
 
             log.info("Event sent to DLQ successfully ({}): eventId={}, dlqTopic={}, partition={}, offset={}",
-                    isAsync ? "async" : "sync", eventId, dlqTopic,
+                    mode, eventId, dlqTopic,
                     result.getRecordMetadata().partition(), result.getRecordMetadata().offset());
 
         } catch (Exception e) {
-            log.error("Failed to send event to DLQ ({}): eventId={}, dlqTopic={}",
-                    isAsync ? "async" : "sync", eventId, dlqTopic, e);
+            log.error("Failed to send event to DLQ ({}): eventId={}, dlqTopic={}", mode, eventId, dlqTopic, e);
             backupToLocalFile(eventId, originalValue);
         }
     }

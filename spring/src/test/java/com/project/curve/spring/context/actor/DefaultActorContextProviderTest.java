@@ -49,7 +49,7 @@ class DefaultActorContextProviderTest {
             EventActor actor = provider.getActor();
 
             // Then
-            assertThat(actor.userId()).isEqualTo("SYSTEM");
+            assertThat(actor.id()).isEqualTo("SYSTEM");
             assertThat(actor.role()).isEqualTo("ROLE_SYSTEM");
         }
     }
@@ -164,7 +164,7 @@ class DefaultActorContextProviderTest {
             EventActor actor2 = provider.getActor();
 
             // Then
-            assertThat(actor1.userId()).isEqualTo(actor2.userId());
+            assertThat(actor1.id()).isEqualTo(actor2.id());
             assertThat(actor1.role()).isEqualTo(actor2.role());
             assertThat(actor1.ip()).isEqualTo(actor2.ip());
         }

@@ -34,30 +34,70 @@ public class CurvePiiAutoConfiguration {
     @ConditionalOnMissingBean
     public PiiCryptoProvider piiCryptoProvider(CurveProperties properties) {
         CurveProperties.Pii.Crypto crypto = properties.getPii().getCrypto();
-        String defaultKey = crypto.getDefaultKey();
-        String salt = crypto.getSalt();
+        String defaultKey = resolveEncryptionKey(crypto.getDefaultKey());
+        String salt = resolveSalt(crypto.getSalt());
 
         boolean keyConfigured = defaultKey != null && !defaultKey.isBlank();
         boolean saltConfigured = salt != null && !salt.isBlank();
 
         if (!keyConfigured) {
-            log.warn("============================================================");
-            log.warn("PII 암호화 키가 설정되지 않았습니다!");
-            log.warn("@PiiField(strategy = PiiStrategy.ENCRYPT) 사용 시 예외가 발생합니다.");
-            log.warn("설정 방법: curve.pii.crypto.default-key 또는 환경변수 PII_ENCRYPTION_KEY");
-            log.warn("============================================================");
+            log.error("============================================================");
+            log.error("PII 암호화 키가 설정되지 않았습니다!");
+            log.error("@PiiField(strategy = PiiStrategy.ENCRYPT) 사용 시 예외가 발생합니다.");
+            log.error("");
+            log.error("[필수 설정 방법]");
+            log.error("  1. 환경변수 설정 (권장):");
+            log.error("     export PII_ENCRYPTION_KEY=your-base64-encoded-32-byte-key");
+            log.error("");
+            log.error("  2. application.yml 설정:");
+            log.error("     curve:");
+            log.error("       pii:");
+            log.error("         crypto:");
+            log.error("           default-key: ${{PII_ENCRYPTION_KEY}}");
+            log.error("");
+            log.error("[키 생성 방법]");
+            log.error("  openssl rand -base64 32");
+            log.error("============================================================");
         }
 
         if (!saltConfigured) {
-            log.info("PII 해싱 솔트가 설정되지 않았습니다. 솔트 없이 해싱됩니다. " +
-                    "보안 강화를 위해 curve.pii.crypto.salt 설정을 권장합니다.");
+            log.warn("PII 해싱 솔트가 설정되지 않았습니다. 솔트 없이 해싱됩니다.");
+            log.warn("보안 강화를 위해 환경변수 PII_HASH_SALT 또는 curve.pii.crypto.salt 설정을 권장합니다.");
         }
 
-        log.debug("PII 암호화 제공자 초기화 - 암호화: {}, 솔트: {}",
+        log.info("PII 암호화 제공자 초기화 - 암호화: {}, 솔트: {}",
                 keyConfigured ? "활성화" : "비활성화",
                 saltConfigured ? "설정됨" : "미설정");
 
         return new DefaultPiiCryptoProvider(defaultKey, salt);
+    }
+
+    /**
+     * 암호화 키를 환경변수 또는 설정값에서 해석합니다.
+     * 환경변수 PII_ENCRYPTION_KEY가 설정되어 있으면 우선 사용합니다.
+     */
+    private String resolveEncryptionKey(String configuredKey) {
+        // 환경변수 우선
+        String envKey = System.getenv("PII_ENCRYPTION_KEY");
+        if (envKey != null && !envKey.isBlank()) {
+            log.debug("PII 암호화 키를 환경변수 PII_ENCRYPTION_KEY에서 로드했습니다.");
+            return envKey;
+        }
+        return configuredKey;
+    }
+
+    /**
+     * 솔트를 환경변수 또는 설정값에서 해석합니다.
+     * 환경변수 PII_HASH_SALT가 설정되어 있으면 우선 사용합니다.
+     */
+    private String resolveSalt(String configuredSalt) {
+        // 환경변수 우선
+        String envSalt = System.getenv("PII_HASH_SALT");
+        if (envSalt != null && !envSalt.isBlank()) {
+            log.debug("PII 해싱 솔트를 환경변수 PII_HASH_SALT에서 로드했습니다.");
+            return envSalt;
+        }
+        return configuredSalt;
     }
 
     // 마스커 빈들
