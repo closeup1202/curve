@@ -1,1 +1,2 @@
 com.project.curve.autoconfigure.CurveAutoConfiguration
+com.project.curve.autoconfigure.health.CurveHealthAutoConfiguration

@@ -364,7 +364,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             }
         } catch (IOException e) {
             log.error("Failed to backup event to file: eventId={}", eventId, e);
-            log.error("Event permanently lost  eventId={}, cause={}", eventId, e.getMessage());
+            log.error("Event permanently lost. eventId={}, cause={}", eventId, e.getMessage());
         }
     }
 }

@@ -38,6 +38,9 @@ public class CurveProperties {
     @Valid
     private final Pii pii = new Pii();
 
+    @Valid
+    private final Outbox outbox = new Outbox();
+
     @Data
     public static class Kafka {
         /**
@@ -220,5 +223,62 @@ public class CurveProperties {
              */
             private String salt;
         }
+    }
+
+    @Data
+    public static class Outbox {
+        /**
+         * Transactional Outbox Pattern 활성화 여부 (기본값: false)
+         * <p>
+         * true: DB 트랜잭션과 이벤트 발행의 원자성 보장
+         * - @PublishEvent에서 outbox=true 사용 가능
+         * - PENDING 이벤트를 주기적으로 Kafka로 발행
+         * <p>
+         * false: 기존 방식 (즉시 Kafka로 발행)
+         */
+        private boolean enabled = false;
+
+        /**
+         * Outbox 이벤트 폴링 주기(ms) (기본값: 1000ms = 1초)
+         * PENDING 상태의 이벤트를 얼마나 자주 조회할지 설정
+         */
+        @Positive(message = "pollIntervalMs는 양수여야 합니다")
+        private long pollIntervalMs = 1000L;
+
+        /**
+         * 한 번에 처리할 이벤트 배치 크기 (기본값: 100)
+         * 대량의 PENDING 이벤트가 있을 때 한 번에 처리할 최대 개수
+         */
+        @Min(value = 1, message = "batchSize는 1 이상이어야 합니다")
+        @Max(value = 1000, message = "batchSize는 1000 이하여야 합니다")
+        private int batchSize = 100;
+
+        /**
+         * Outbox 이벤트 발행 최대 재시도 횟수 (기본값: 3)
+         * PENDING 상태에서 발행 실패 시 재시도할 최대 횟수
+         * 초과 시 FAILED 상태로 변경
+         */
+        @Min(value = 1, message = "maxRetries는 1 이상이어야 합니다")
+        private int maxRetries = 3;
+
+        /**
+         * PUBLISHED 이벤트 자동 정리 활성화 여부 (기본값: false)
+         * true: 오래된 PUBLISHED 이벤트를 주기적으로 삭제하여 테이블 크기 관리
+         * false: 수동으로 정리 필요
+         */
+        private boolean cleanupEnabled = false;
+
+        /**
+         * PUBLISHED 이벤트 보관 기간(일) (기본값: 7일)
+         * cleanupEnabled=true일 때, 이 기간이 지난 PUBLISHED 이벤트를 삭제
+         */
+        @Min(value = 1, message = "retentionDays는 1 이상이어야 합니다")
+        private int retentionDays = 7;
+
+        /**
+         * 정리 작업 실행 주기(cron 표현식) (기본값: 매일 새벽 2시)
+         * cleanupEnabled=true일 때 사용
+         */
+        private String cleanupCron = "0 0 2 * * *";
     }
 }

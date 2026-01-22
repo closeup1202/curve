@@ -1,0 +1,237 @@
+package com.project.curve.spring.outbox.persistence;
+
+import com.project.curve.core.outbox.OutboxEvent;
+import com.project.curve.core.outbox.OutboxStatus;
+import jakarta.persistence.*;
+
+import java.time.Instant;
+
+/**
+ * Outbox 이벤트 JPA 엔티티.
+ * <p>
+ * Spring Data JPA를 사용한 영속성 구현입니다.
+ *
+ * <h3>인덱스 전략</h3>
+ * <ul>
+ *   <li>status: PENDING 이벤트 조회 최적화</li>
+ *   <li>(aggregateType, aggregateId): Aggregate 기준 조회 최적화</li>
+ *   <li>occurredAt: 시간순 정렬 최적화</li>
+ * </ul>
+ *
+ * @see OutboxEvent
+ */
+@Entity
+@Table(
+        name = "curve_outbox_events",
+        indexes = {
+                @Index(name = "idx_outbox_status", columnList = "status"),
+                @Index(name = "idx_outbox_aggregate", columnList = "aggregate_type, aggregate_id"),
+                @Index(name = "idx_outbox_occurred_at", columnList = "occurred_at")
+        }
+)
+public class OutboxEventJpaEntity {
+
+    @Id
+    @Column(name = "event_id", nullable = false, length = 64)
+    private String eventId;
+
+    @Column(name = "aggregate_type", nullable = false, length = 100)
+    private String aggregateType;
+
+    @Column(name = "aggregate_id", nullable = false, length = 100)
+    private String aggregateId;
+
+    @Column(name = "event_type", nullable = false, length = 100)
+    private String eventType;
+
+    @Column(name = "payload", nullable = false, columnDefinition = "TEXT")
+    private String payload;
+
+    @Column(name = "occurred_at", nullable = false)
+    private Instant occurredAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private OutboxStatus status;
+
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount;
+
+    @Column(name = "published_at")
+    private Instant publishedAt;
+
+    @Column(name = "error_message", length = 500)
+    private String errorMessage;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
+
+    protected OutboxEventJpaEntity() {
+        // JPA requires default constructor
+    }
+
+    public OutboxEventJpaEntity(
+            String eventId,
+            String aggregateType,
+            String aggregateId,
+            String eventType,
+            String payload,
+            Instant occurredAt
+    ) {
+        this.eventId = eventId;
+        this.aggregateType = aggregateType;
+        this.aggregateId = aggregateId;
+        this.eventType = eventType;
+        this.payload = payload;
+        this.occurredAt = occurredAt;
+        this.status = OutboxStatus.PENDING;
+        this.retryCount = 0;
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
+    }
+
+    /**
+     * Core 도메인 모델로 변환.
+     *
+     * @return OutboxEvent 도메인 모델
+     */
+    public OutboxEvent toDomain() {
+        OutboxEvent event = new OutboxEvent(
+                eventId,
+                aggregateType,
+                aggregateId,
+                eventType,
+                payload,
+                occurredAt
+        );
+
+        // 상태 복원
+        if (status == OutboxStatus.PUBLISHED && publishedAt != null) {
+            event.markAsPublished();
+        } else if (status == OutboxStatus.FAILED && errorMessage != null) {
+            event.markAsFailed(errorMessage);
+        }
+
+        // 재시도 횟수 복원
+        for (int i = 0; i < retryCount; i++) {
+            event.incrementRetryCount();
+        }
+
+        return event;
+    }
+
+    /**
+     * 도메인 모델로부터 엔티티 생성.
+     *
+     * @param domain OutboxEvent 도메인 모델
+     * @return JPA 엔티티
+     */
+    public static OutboxEventJpaEntity fromDomain(OutboxEvent domain) {
+        OutboxEventJpaEntity entity = new OutboxEventJpaEntity(
+                domain.getEventId(),
+                domain.getAggregateType(),
+                domain.getAggregateId(),
+                domain.getEventType(),
+                domain.getPayload(),
+                domain.getOccurredAt()
+        );
+
+        entity.status = domain.getStatus();
+        entity.retryCount = domain.getRetryCount();
+        entity.publishedAt = domain.getPublishedAt();
+        entity.errorMessage = domain.getErrorMessage();
+        entity.updatedAt = Instant.now();
+
+        return entity;
+    }
+
+    /**
+     * 도메인 모델의 상태를 엔티티에 반영.
+     *
+     * @param domain OutboxEvent 도메인 모델
+     */
+    public void updateFromDomain(OutboxEvent domain) {
+        this.status = domain.getStatus();
+        this.retryCount = domain.getRetryCount();
+        this.publishedAt = domain.getPublishedAt();
+        this.errorMessage = domain.getErrorMessage();
+        this.updatedAt = Instant.now();
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        Instant now = Instant.now();
+        if (createdAt == null) {
+            createdAt = now;
+        }
+        if (updatedAt == null) {
+            updatedAt = now;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = Instant.now();
+    }
+
+    // Getters
+
+    public String getEventId() {
+        return eventId;
+    }
+
+    public String getAggregateType() {
+        return aggregateType;
+    }
+
+    public String getAggregateId() {
+        return aggregateId;
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public Instant getOccurredAt() {
+        return occurredAt;
+    }
+
+    public OutboxStatus getStatus() {
+        return status;
+    }
+
+    public int getRetryCount() {
+        return retryCount;
+    }
+
+    public Instant getPublishedAt() {
+        return publishedAt;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+}

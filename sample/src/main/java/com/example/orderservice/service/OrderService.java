@@ -170,4 +170,72 @@ public class OrderService {
 
         log.info("Order status updated: orderId={}, {} -> {}", orderId, oldStatus, newStatus);
     }
+
+    /**
+     * 주문 생성 (Transactional Outbox Pattern 사용).
+     * <p>
+     * outbox=true로 설정하여 DB 트랜잭션과 이벤트 발행의 원자성을 보장합니다.
+     * <p>
+     * - DB 저장과 Outbox 이벤트 저장이 같은 트랜잭션에서 수행됩니다.
+     * - 별도 스케줄러가 Outbox 테이블의 PENDING 이벤트를 Kafka로 발행합니다.
+     * - Kafka가 다운되어도 데이터 손실이 없습니다.
+     *
+     * @param customer 고객 정보
+     * @param productName 상품명
+     * @param quantity 수량
+     * @param totalAmount 총 금액
+     * @return 생성된 주문 페이로드
+     */
+    @PublishEvent(
+            eventType = "ORDER_CREATED_WITH_OUTBOX",
+            severity = EventSeverity.INFO,
+            phase = PublishEvent.Phase.AFTER_RETURNING,
+            payloadIndex = -1,  // 반환값 사용
+            failOnError = false,
+            // Transactional Outbox Pattern 설정
+            outbox = true,
+            aggregateType = "Order",
+            aggregateId = "#result.orderId"  // SpEL: 반환값의 orderId 필드
+    )
+    public OrderCreatedPayload createOrderWithOutbox(
+            Customer customer,
+            String productName,
+            int quantity,
+            BigDecimal totalAmount
+    ) {
+        log.info("[OUTBOX] Creating order: customer={}, product={}, quantity={}, amount={}",
+                customer.getCustomerId(), productName, quantity, totalAmount);
+
+        // 주문 생성
+        String orderId = UUID.randomUUID().toString();
+        Instant now = Instant.now();
+
+        Order order = Order.builder()
+                .orderId(orderId)
+                .customer(customer)
+                .productName(productName)
+                .quantity(quantity)
+                .totalAmount(totalAmount)
+                .status(OrderStatus.PENDING)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        // 저장
+        orderStorage.put(orderId, order);
+
+        log.info("[OUTBOX] Order created successfully: orderId={}", orderId);
+        log.info("[OUTBOX] Event will be saved to outbox table in the same transaction");
+        log.info("[OUTBOX] OutboxEventPublisher will publish it to Kafka asynchronously");
+
+        // 이벤트 페이로드 반환
+        return OrderCreatedPayload.builder()
+                .orderId(orderId)
+                .customer(customer)
+                .productName(productName)
+                .quantity(quantity)
+                .totalAmount(totalAmount)
+                .status(OrderStatus.PENDING)
+                .build();
+    }
 }

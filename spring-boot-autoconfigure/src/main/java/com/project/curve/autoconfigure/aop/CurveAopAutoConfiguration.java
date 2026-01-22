@@ -1,5 +1,6 @@
 package com.project.curve.autoconfigure.aop;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.curve.core.port.EventProducer;
 import com.project.curve.spring.audit.aop.PublishEventAspect;
 import lombok.extern.slf4j.Slf4j;
@@ -21,8 +22,11 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 public class CurveAopAutoConfiguration {
 
     @Bean
-    public PublishEventAspect publishEventAspect(EventProducer eventProducer) {
+    public PublishEventAspect publishEventAspect(
+            EventProducer eventProducer,
+            ObjectMapper objectMapper
+    ) {
         log.debug("Initializing PublishEventAspect for @PublishEvent annotation support");
-        return new PublishEventAspect(eventProducer);
+        return new PublishEventAspect(eventProducer, objectMapper);
     }
 }

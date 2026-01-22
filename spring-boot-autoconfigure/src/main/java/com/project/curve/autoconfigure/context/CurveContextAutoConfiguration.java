@@ -4,6 +4,7 @@ import com.project.curve.core.context.*;
 import com.project.curve.spring.context.SpringEventContextProvider;
 import com.project.curve.spring.context.actor.DefaultActorContextProvider;
 import com.project.curve.spring.context.actor.SpringSecurityActorContextProvider;
+import com.project.curve.spring.context.correlation.MdcCorrelationContextProvider;
 import com.project.curve.spring.context.schema.AnnotationBasedSchemaContextProvider;
 import com.project.curve.spring.context.source.SpringSourceContextProvider;
 import com.project.curve.spring.context.tag.MdcTagsContextProvider;
@@ -18,6 +19,12 @@ import org.springframework.core.env.Environment;
 
 @Configuration
 public class CurveContextAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(CorrelationContextProvider.class)
+    public CorrelationContextProvider correlationContextProvider() {
+        return new MdcCorrelationContextProvider();
+    }
 
     @Bean
     @ConditionalOnMissingBean(TraceContextProvider.class)
@@ -56,9 +63,10 @@ public class CurveContextAutoConfiguration {
     public SourceContextProvider sourceContextProvider(
             @Value("${spring.application.name:unknown-service}") String service,
             Environment env,
-            @Value("${curve.source.version:1.0.0}") String version
+            @Value("${curve.source.version:1.0.0}") String version,
+            CorrelationContextProvider correlationContextProvider
     ) {
-        return new SpringSourceContextProvider(service, env, version);
+        return new SpringSourceContextProvider(service, env, version, correlationContextProvider);
     }
 
     @Bean

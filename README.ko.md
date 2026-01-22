@@ -2,7 +2,7 @@
 
 # Curve
 
-**Declarative Event Publishing Library for Spring Boot Microservices**
+**Spring Boot 마이크로서비스를 위한 선언적 이벤트 발행 라이브러리**
 
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.9-brightgreen.svg)](https://spring.io/projects/spring-boot)
@@ -16,31 +16,31 @@
 
 ---
 
-## 🎬 Quick Demo
+## 🎬 빠른 데모
 
 ```java
-// Just add one annotation!
+// 어노테이션 하나만 추가하면 끝!
 @PublishEvent(eventType = "USER_CREATED")
 public User createUser(CreateUserRequest request) {
     return userRepository.save(new User(request));
 }
 ```
 
-**→ Automatically publishes to Kafka + PII masking + DLQ on failure + Metrics collection** ✨
+**→ Kafka 자동 발행 + PII 마스킹 + 실패 시 DLQ + 메트릭 수집** ✨
 
-<!-- Add demo GIF here: ![Demo](docs/demo.gif) -->
+<!-- 데모 GIF 추가: ![Demo](docs/demo.gif) -->
 
 ---
 
-## 🔥 Why Curve?
+## 🔥 왜 Curve인가?
 
 <table>
 <tr>
 <td width="50%">
 
-### Before (Legacy)
+### Before (기존 방식)
 ```java
-// 50+ lines of boilerplate code
+// 50줄 이상의 보일러플레이트 코드
 @Service
 public class UserService {
 
@@ -56,7 +56,7 @@ public class UserService {
         );
 
         try {
-            // Manual event creation
+            // 수동으로 이벤트 생성
             EventEnvelope event = EventEnvelope.builder()
                 .eventId(UUID.randomUUID().toString())
                 .eventType("USER_CREATED")
@@ -66,17 +66,17 @@ public class UserService {
                 .payload(/* ... */)
                 .build();
 
-            // Manual PII masking
+            // 수동으로 PII 마스킹
             String json = maskPii(
                 objectMapper.writeValueAsString(event)
             );
 
-            // Manual Kafka send with retry
+            // 수동으로 Kafka 전송 및 재시도
             kafka.send("user-events", json)
                 .get(30, TimeUnit.SECONDS);
 
         } catch (Exception e) {
-            // Manual error handling
+            // 수동으로 에러 처리
             log.error("Failed to publish event", e);
             sendToDlq(event);
         }
@@ -91,7 +91,7 @@ public class UserService {
 
 ### After (Curve)
 ```java
-// Just 1 annotation!
+// 어노테이션 하나만!
 @Service
 public class UserService {
 
@@ -103,15 +103,15 @@ public class UserService {
 }
 ```
 
-**90% less code** ✨
+**코드 90% 감소** ✨
 
-Everything handled automatically:
-- ✅ Event ID generation
-- ✅ Metadata extraction
-- ✅ PII masking
-- ✅ Kafka publishing
-- ✅ Retry & DLQ
-- ✅ Metrics collection
+모든 것이 자동으로 처리됩니다:
+- ✅ 이벤트 ID 생성
+- ✅ 메타데이터 추출
+- ✅ PII 마스킹
+- ✅ Kafka 발행
+- ✅ 재시도 & DLQ
+- ✅ 메트릭 수집
 
 </td>
 </tr>
@@ -119,38 +119,38 @@ Everything handled automatically:
 
 ---
 
-## ✨ Key Features
+## ✨ 주요 기능
 
-### 🎯 Declarative Event Publishing
-No more Kafka boilerplate - just add `@PublishEvent` annotation
+### 🎯 선언적 이벤트 발행
+Kafka 보일러플레이트 코드 불필요 - `@PublishEvent` 어노테이션만 추가
 
-### 📦 Standardized Event Structure
-All events follow a unified schema with metadata (source, actor, trace, tags)
+### 📦 표준화된 이벤트 구조
+모든 이벤트가 메타데이터(source, actor, trace, tags)를 포함한 통일된 스키마 사용
 
-### 🛡️ 3-Tier Failure Recovery
-**Main Topic → DLQ → Local File Backup**
-Zero event loss even when Kafka is down for 24 hours
+### 🛡️ 3단계 장애 복구
+**Main Topic → DLQ → 로컬 파일 백업**
+Kafka가 24시간 장애여도 이벤트 손실 제로
 
-### 🔐 Automatic PII Protection
-`@PiiField` annotation automatically masks/encrypts sensitive data
+### 🔐 자동 PII 보호
+`@PiiField` 어노테이션으로 민감 데이터 자동 마스킹/암호화
 
-### ⚡ High Performance
-- **Sync mode**: ~500 TPS
-- **Async mode**: ~10,000+ TPS
+### ⚡ 고성능
+- **동기 모드**: ~500 TPS
+- **비동기 모드**: ~10,000+ TPS
 
 ### 🏗️ Hexagonal Architecture
-Framework-independent core for maximum flexibility
+최대 유연성을 위한 프레임워크 독립적 코어
 
-### 📊 Built-in Observability
+### 📊 내장 관찰성
 - Spring Actuator Health Indicator
-- Custom metrics endpoint (`/actuator/curve-metrics`)
-- Detailed event tracking
+- 커스텀 메트릭 엔드포인트 (`/actuator/curve-metrics`)
+- 상세한 이벤트 추적
 
 ---
 
-## 🚀 Quick Start
+## 🚀 빠른 시작
 
-### 1. Add Dependency
+### 1. 의존성 추가
 
 **Gradle (build.gradle)**
 ```gradle
@@ -168,7 +168,7 @@ dependencies {
 </dependency>
 ```
 
-### 2. Configure
+### 2. 설정
 
 **application.yml**
 ```yaml
@@ -183,7 +183,7 @@ curve:
     dlq-topic: event.audit.dlq.v1
 ```
 
-### 3. Use
+### 3. 사용
 
 ```java
 import com.project.curve.spring.audit.annotation.PublishEvent;
@@ -197,55 +197,55 @@ public class OrderService {
         severity = EventSeverity.INFO
     )
     public Order createOrder(OrderRequest request) {
-        // Your business logic
+        // 비즈니스 로직
         return orderRepository.save(new Order(request));
     }
 }
 ```
 
-### 4. Run Local Kafka
+### 4. 로컬 Kafka 실행
 
 ```bash
 docker-compose up -d
 ```
 
-### 5. Verify
+### 5. 확인
 
 - **Kafka UI**: http://localhost:8080
 - **Health Check**: http://localhost:8081/actuator/health/curve
-- **Metrics**: http://localhost:8081/actuator/curve-metrics
+- **메트릭**: http://localhost:8081/actuator/curve-metrics
 
-Done! 🎉
+완료! 🎉
 
 ---
 
-## 📊 Comparison
+## 📊 비교
 
-| Feature | Spring Events | Spring Cloud Stream | Curve |
+| 기능 | Spring Events | Spring Cloud Stream | Curve |
 |---------|--------------|---------------------|-------|
-| Kafka Integration | ❌ | ✅ | ✅ |
-| Declarative Usage | ✅ | △ | ✅ |
-| Standardized Schema | ❌ | ❌ | ✅ |
-| PII Protection | ❌ | ❌ | ✅ |
-| DLQ Support | ❌ | ✅ | ✅ |
-| Local File Backup | ❌ | ❌ | ✅ |
+| Kafka 연동 | ❌ | ✅ | ✅ |
+| 선언적 사용 | ✅ | △ | ✅ |
+| 표준화된 스키마 | ❌ | ❌ | ✅ |
+| PII 보호 | ❌ | ❌ | ✅ |
+| DLQ 지원 | ❌ | ✅ | ✅ |
+| 로컬 파일 백업 | ❌ | ❌ | ✅ |
 | Health Check | ❌ | ❌ | ✅ |
-| Custom Metrics | ❌ | ❌ | ✅ |
+| 커스텀 메트릭 | ❌ | ❌ | ✅ |
 | Snowflake ID | ❌ | ❌ | ✅ |
-| **Boilerplate Code** | **Medium** | **High** | **Minimal** |
+| **보일러플레이트** | **중간** | **많음** | **최소** |
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ 아키텍처
 
 ### Hexagonal Architecture (Ports & Adapters)
 
 ```
 ┌─────────────────────────────────────┐
-│         Domain Layer (Core)         │
+│      도메인 계층 (Core)              │
 │  • EventEnvelope, EventMetadata     │
 │  • Validation, Exception            │
-│  • Framework-independent            │
+│  • 프레임워크 독립적                  │
 └───────────────┬─────────────────────┘
                 │
         ┌───────┴────────┐
@@ -253,59 +253,59 @@ Done! 🎉
         ▼                ▼
 ┌───────────┐      ┌────────────┐
 │  Spring   │      │   Kafka    │
-│ (Adapter) │      │ (Adapter)  │
+│ (어댑터)   │      │  (어댑터)   │
 │  • AOP    │      │ • Producer │
 │  • Context│      │ • DLQ      │
 └───────────┘      └────────────┘
 ```
 
-### Module Structure
+### 모듈 구조
 
 ```
 curve/
-├── core/                          # Pure domain model (framework-independent)
+├── core/                          # 순수 도메인 모델 (프레임워크 독립)
 │   ├── envelope/                  # EventEnvelope, EventMetadata
-│   ├── port/                      # EventProducer, IdGenerator (interfaces)
-│   ├── context/                   # ContextProvider (interfaces)
+│   ├── port/                      # EventProducer, IdGenerator (인터페이스)
+│   ├── context/                   # ContextProvider (인터페이스)
 │   ├── validation/                # EventValidator
-│   └── exception/                 # Domain exceptions
+│   └── exception/                 # 도메인 예외
 │
-├── spring/                        # Spring Framework adapter
+├── spring/                        # Spring Framework 어댑터
 │   ├── aop/                       # @PublishEvent Aspect
-│   ├── context/                   # Spring-based Context Provider implementations
+│   ├── context/                   # Spring 기반 Context Provider 구현
 │   ├── factory/                   # EventEnvelopeFactory
 │   ├── infrastructure/            # SnowflakeIdGenerator, UtcClockProvider
 │   └── publisher/                 # AbstractEventPublisher
 │
-├── kafka/                         # Kafka adapter
+├── kafka/                         # Kafka 어댑터
 │   ├── producer/                  # KafkaEventProducer
 │   └── dlq/                       # FailedEventRecord
 │
-└── spring-boot-autoconfigure/     # Spring Boot auto-configuration
-    ├── CurveAutoConfiguration     # Main configuration
-    ├── CurveProperties            # Configuration properties
-    └── health/                    # Health indicator & metrics
+└── spring-boot-autoconfigure/     # Spring Boot 자동 설정
+    ├── CurveAutoConfiguration     # 메인 설정
+    ├── CurveProperties            # 설정 속성
+    └── health/                    # Health indicator & 메트릭
 ```
 
-### Core Design Principles
+### 핵심 설계 원칙
 
-1. **Dependency Inversion Principle (DIP)**
-   - Core module has zero framework dependencies
-   - External dependencies isolated via Port interfaces
+1. **의존성 역전 원칙 (DIP)**
+   - Core 모듈은 프레임워크 의존성 제로
+   - Port 인터페이스를 통해 외부 의존성 격리
 
-2. **Single Responsibility Principle (SRP)**
-   - Each ContextProvider handles one responsibility
-   - EventValidator validates, EventProducer publishes
+2. **단일 책임 원칙 (SRP)**
+   - 각 ContextProvider는 하나의 책임만 처리
+   - EventValidator는 검증만, EventProducer는 발행만
 
-3. **Open/Closed Principle (OCP)**
-   - EventProducer interface allows non-Kafka brokers
-   - ContextProvider implementations are replaceable
+3. **개방-폐쇄 원칙 (OCP)**
+   - EventProducer 인터페이스로 Kafka 외 다른 브로커 사용 가능
+   - ContextProvider 구현체 교체 가능
 
 ---
 
-## 🎯 Use Cases
+## 🎯 사용 사례
 
-### 1. Audit Logging
+### 1. 감사 로깅
 ```java
 @PublishEvent(eventType = "USER_LOGIN", severity = INFO)
 public User login(String username, String password) {
@@ -313,7 +313,7 @@ public User login(String username, String password) {
 }
 ```
 
-### 2. Event-Driven Architecture
+### 2. 이벤트 기반 아키텍처
 ```java
 @PublishEvent(eventType = "ORDER_COMPLETED")
 public Order completeOrder(Long orderId) {
@@ -323,20 +323,20 @@ public Order completeOrder(Long orderId) {
 }
 ```
 
-### 3. Data Pipeline
+### 3. 데이터 파이프라인
 ```java
 @PublishEvent(eventType = "CUSTOMER_REGISTERED")
 public Customer registerCustomer(CustomerRequest request) {
-    // Event automatically flows to data lake/warehouse
+    // 이벤트가 자동으로 데이터 레이크/웨어하우스로 전달
     return customerRepository.save(new Customer(request));
 }
 ```
 
 ---
 
-## 🛡️ Security Features
+## 🛡️ 보안 기능
 
-### Automatic PII Protection
+### 자동 PII 보호
 
 ```java
 public class UserEventPayload implements DomainEventPayload {
@@ -345,31 +345,31 @@ public class UserEventPayload implements DomainEventPayload {
     private String email;  // "user@example.com" → "user@***.com"
 
     @PiiField(type = PiiType.PHONE, strategy = PiiStrategy.ENCRYPT)
-    private String phone;  // Encrypted with AES-256-GCM
+    private String phone;  // AES-256-GCM 암호화
 
     @PiiField(type = PiiType.NAME, strategy = PiiStrategy.HASH)
-    private String name;   // SHA-256 hashed
+    private String name;   // SHA-256 해싱
 }
 ```
 
-**Supported Strategies:**
-- **MASK**: Pattern-based masking (e.g., `j***@gm***.com`)
-- **ENCRYPT**: AES-256-GCM encryption (reversible)
-- **HASH**: SHA-256 hashing (irreversible)
+**지원되는 전략:**
+- **MASK**: 패턴 기반 마스킹 (예: `j***@gm***.com`)
+- **ENCRYPT**: AES-256-GCM 암호화 (복원 가능)
+- **HASH**: SHA-256 해싱 (복원 불가)
 
-**Configuration:**
+**설정:**
 ```yaml
 curve:
   pii:
     enabled: true
     crypto:
-      default-key: ${PII_ENCRYPTION_KEY}  # Environment variable
+      default-key: ${PII_ENCRYPTION_KEY}  # 환경 변수
       salt: ${PII_HASH_SALT}
 ```
 
 ---
 
-## 📈 Observability
+## 📈 관찰성
 
 ### Health Check
 
@@ -377,7 +377,7 @@ curve:
 curl http://localhost:8081/actuator/health/curve
 ```
 
-**Response:**
+**응답:**
 ```json
 {
   "status": "UP",
@@ -390,13 +390,13 @@ curl http://localhost:8081/actuator/health/curve
 }
 ```
 
-### Custom Metrics Endpoint
+### 커스텀 메트릭 엔드포인트
 
 ```bash
 curl http://localhost:8081/actuator/curve-metrics
 ```
 
-**Response:**
+**응답:**
 ```json
 {
   "summary": {
@@ -418,16 +418,16 @@ curl http://localhost:8081/actuator/curve-metrics
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ 설정
 
-### Full Configuration Example
+### 전체 설정 예시
 
 ```yaml
 curve:
   enabled: true
 
   id-generator:
-    worker-id: 1  # 0-1023, unique per instance
+    worker-id: 1  # 0-1023, 인스턴스마다 고유
     auto-generate: false
 
   kafka:
@@ -436,7 +436,7 @@ curve:
     retries: 3
     retry-backoff-ms: 1000
     request-timeout-ms: 30000
-    async-mode: false  # true for high throughput
+    async-mode: false  # 높은 처리량을 위해 true
     async-timeout-ms: 5000
 
   retry:
@@ -447,7 +447,7 @@ curve:
     max-interval: 10000
 
   security:
-    use-forwarded-headers: false  # true when behind proxy
+    use-forwarded-headers: false  # 프록시 뒤에서는 true
 
   pii:
     enabled: true
@@ -456,9 +456,9 @@ curve:
       salt: ${PII_HASH_SALT}
 ```
 
-### Environment-Specific Profiles
+### 환경별 프로파일
 
-**Development:**
+**개발:**
 ```yaml
 spring:
   config:
@@ -467,11 +467,11 @@ spring:
 
 curve:
   kafka:
-    async-mode: true  # Fast iteration
+    async-mode: true  # 빠른 반복
     topic: event.audit.dev.v1
 ```
 
-**Production:**
+**프로덕션:**
 ```yaml
 spring:
   config:
@@ -482,33 +482,33 @@ curve:
   id-generator:
     worker-id: ${POD_ORDINAL}  # Kubernetes StatefulSet
   kafka:
-    async-mode: false  # Reliability first
+    async-mode: false  # 안정성 우선
     retries: 5
 ```
 
-See [Configuration Guide](docs/CONFIGURATION.md) for details.
+자세한 내용은 [설정 가이드](docs/CONFIGURATION.md)를 참고하세요.
 
 ---
 
-## 🔧 Advanced Features
+## 🔧 고급 기능
 
 ### 1. Snowflake ID Generator
 
-Distributed unique ID generation without collisions.
+충돌 없는 분산 고유 ID 생성.
 
-**Structure:**
+**구조:**
 ```
-| 42 bits: Timestamp | 10 bits: Worker ID | 12 bits: Sequence |
+| 42비트: 타임스탬프 | 10비트: Worker ID | 12비트: Sequence |
 ```
 
-**Capacity:**
-- Up to **1,024 workers**
-- **4,096 IDs per millisecond** per worker
-- **Time-sortable**
+**용량:**
+- 최대 **1,024 워커**
+- **밀리초당 4,096개 ID** (워커당)
+- **시간 정렬 가능**
 
-### 2. Custom Event Producer
+### 2. 커스텀 이벤트 Producer
 
-Implement `EventProducer` interface for non-Kafka brokers:
+Kafka가 아닌 다른 브로커를 위해 `EventProducer` 인터페이스 구현:
 
 ```java
 @Component
@@ -524,60 +524,60 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 }
 ```
 
-### 3. DLQ Recovery
+### 3. DLQ 복구
 
 ```bash
-# List backup files
+# 백업 파일 목록
 ./scripts/dlq-recovery.sh --list
 
-# Recover all files
+# 모든 파일 복구
 ./scripts/dlq-recovery.sh --topic event.audit.v1 --broker localhost:9094
 
-# Recover specific file
+# 특정 파일 복구
 ./scripts/dlq-recovery.sh --file 1234567890.json --topic event.audit.v1
 ```
 
 ---
 
-## 📚 Documentation
+## 📚 문서
 
-- [Configuration Guide](docs/CONFIGURATION.md) - Detailed configuration options
-- [Example Configuration](application.example.yml) - Configuration examples
-- [Sample Application](sample/) - Full working example
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+- [설정 가이드](docs/CONFIGURATION.md) - 상세 설정 옵션
+- [예시 설정](application.example.yml) - 설정 예시
+- [샘플 애플리케이션](sample/) - 완전한 작동 예시
 
 ---
 
-## 📄 License
+## 🤝 기여하기
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+기여를 환영합니다! Pull Request를 자유롭게 제출해주세요.
 
----
-
-## 🙏 Acknowledgments
-
-- Inspired by **Spring Cloud Stream** and **Spring Kafka**
-- Built with **Spring Boot** and **Apache Kafka**
-- Hexagonal Architecture pattern from **Alistair Cockburn**
+가이드라인은 [CONTRIBUTING.md](CONTRIBUTING.md)를 참고하세요.
 
 ---
 
-## 📬 Contact
+## 📄 라이선스
 
-- **Issues**: [GitHub Issues](https://github.com/your-username/curve/issues)
-- **Email**: closeup1202@gmail.com
+이 프로젝트는 MIT 라이선스로 배포됩니다 - 자세한 내용은 [LICENSE](LICENSE) 파일을 참고하세요.
+
+---
+
+## 🙏 감사의 말
+
+- **Spring Cloud Stream**과 **Spring Kafka**에서 영감을 받았습니다
+- **Spring Boot**와 **Apache Kafka**로 구축되었습니다
+- **Alistair Cockburn**의 Hexagonal Architecture 패턴 적용
+
+---
+
+## 📬 연락처
+
+- **이슈**: [GitHub Issues](https://github.com/your-username/curve/issues)
+- **이메일**: closeup1202@gmail.com
 
 ---
 
 <div align="center">
 
-[⬆ Back to top](#curve)
+[⬆ 맨 위로](#curve)
 
 </div>
