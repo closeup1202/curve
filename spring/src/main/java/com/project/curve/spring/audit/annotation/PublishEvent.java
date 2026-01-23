@@ -29,8 +29,34 @@ public @interface PublishEvent {
      * 이벤트 페이로드로 사용할 파라미터 인덱스
      * -1: 반환값 사용 (기본값)
      * 0 이상: 해당 인덱스의 파라미터 사용
+     * <p>
+     * payload() 속성이 설정되어 있으면 이 값은 무시됩니다.
      */
     int payloadIndex() default -1;
+
+    /**
+     * 이벤트 페이로드 추출을 위한 SpEL 표현식.
+     * <p>
+     * 설정 시 payloadIndex보다 우선순위가 높습니다.
+     *
+     * <h3>사용 가능한 변수</h3>
+     * <ul>
+     *   <li>#result - 메서드 반환값 (AFTER_RETURNING 시)</li>
+     *   <li>#args - 메서드 파라미터 배열</li>
+     *   <li>#p0, #p1, ... - 각 파라미터</li>
+     *   <li>파라미터 이름 - 컴파일 시 -parameters 옵션이 켜져있을 경우 사용 가능</li>
+     * </ul>
+     *
+     * <h3>예시</h3>
+     * <pre>
+     * // 요청 객체의 특정 필드만 추출
+     * payload = "#args[0].toEventDto()"
+     *
+     * // 반환값과 파라미터 조합
+     * payload = "new com.example.Event(#result.id, #args[0].name)"
+     * </pre>
+     */
+    String payload() default "";
 
     /**
      * 이벤트 발행 시점
@@ -47,64 +73,17 @@ public @interface PublishEvent {
 
     /**
      * Transactional Outbox Pattern 사용 여부.
-     * <p>
-     * true: DB 트랜잭션 내에 Outbox 테이블에 이벤트를 먼저 저장하고,
-     * 별도 스케줄러가 Kafka로 발행하여 원자성 보장
-     * <p>
-     * false: 즉시 Kafka로 발행 (기본값)
-     *
-     * <h3>사용 예시</h3>
-     * <pre>
-     * @Transactional
-     * @PublishEvent(
-     *     eventType = "ORDER_CREATED",
-     *     outbox = true,
-     *     aggregateType = "Order",
-     *     aggregateId = "#result.orderId"
-     * )
-     * public Order createOrder(OrderRequest req) {
-     *     return orderRepo.save(new Order(req));
-     * }
-     * </pre>
      */
     boolean outbox() default false;
 
     /**
      * 집합체(Aggregate) 타입.
-     * <p>
-     * Outbox 패턴에서 이벤트 그룹화 및 순서 보장에 사용됩니다.
-     * <p>
-     * 예: "Order", "User", "Payment"
-     * <p>
      * outbox=true일 때 필수 항목입니다.
      */
     String aggregateType() default "";
 
     /**
      * 집합체(Aggregate) ID 추출 SpEL 표현식.
-     * <p>
-     * 메서드 파라미터나 반환값에서 aggregateId를 추출합니다.
-     *
-     * <h3>사용 가능한 변수</h3>
-     * <ul>
-     *   <li>#result - 메서드 반환값 (AFTER_RETURNING 시)</li>
-     *   <li>#args[0], #args[1] - 메서드 파라미터</li>
-     *   <li>#orderId - 파라미터 이름으로 직접 접근</li>
-     * </ul>
-     *
-     * <h3>예시</h3>
-     * <pre>
-     * // 반환값에서 추출
-     * aggregateId = "#result.orderId"
-     *
-     * // 파라미터에서 추출
-     * aggregateId = "#orderId"
-     * aggregateId = "#args[0]"
-     *
-     * // 중첩 속성
-     * aggregateId = "#result.order.orderId"
-     * </pre>
-     *
      * outbox=true일 때 필수 항목입니다.
      */
     String aggregateId() default "";
@@ -113,13 +92,8 @@ public @interface PublishEvent {
      * 이벤트 발행 시점
      */
     enum Phase {
-        // 메서드 실행 전
         BEFORE,
-
-        // 메서드 정상 반환 후
         AFTER_RETURNING,
-
-        // 메서드 실행 후 (예외 발생 여부 무관)
         AFTER
     }
 }

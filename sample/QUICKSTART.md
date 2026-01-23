@@ -190,7 +190,10 @@ INFO  : Event sent to DLQ successfully (async): eventId=123456789012345678, dlqT
     severity = EventSeverity.INFO,         // 이벤트 심각도
     phase = PublishEvent.Phase.AFTER_RETURNING,  // 메서드 실행 시점
     payloadIndex = -1,                     // -1: 반환값 사용
-    failOnError = false                    // 이벤트 발행 실패해도 비즈니스 로직 계속
+    failOnError = false,                   // 이벤트 발행 실패해도 비즈니스 로직 계속
+    outbox = true,                         // Transactional Outbox 사용
+    aggregateType = "Order",               // Aggregate 타입
+    aggregateId = "#result.orderId"        // Aggregate ID (SpEL)
 )
 public OrderCreatedPayload createOrder(...) {
     // 비즈니스 로직만 작성
@@ -221,6 +224,7 @@ public class Customer {
 - **비동기/동기 모드 변경**: `application.yml`에서 `curve.kafka.async-mode` 설정
 - **재시도 횟수 조정**: `curve.retry.max-attempts` 설정
 - **DLQ 스레드 수 조정**: `curve.kafka.dlq-executor-threads` 설정
+- **Outbox 설정**: `curve.outbox.enabled=true` 설정
 
 ### Spring Security 통합
 ```yaml
@@ -282,5 +286,5 @@ Reason: workerId는 1023 이하여야 합니다
 
 - [전체 README](README.md)
 - [Curve 메인 문서](../README.md)
-- [Curve 설정 가이드](../CONFIGURATION.md)
+- [Curve 설정 가이드](../docs/CONFIGURATION.md)
 - [Kafka UI](http://localhost:8080)

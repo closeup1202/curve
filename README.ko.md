@@ -122,7 +122,7 @@ public class UserService {
 ## ✨ 주요 기능
 
 ### 🎯 선언적 이벤트 발행
-Kafka 보일러플레이트 코드 불필요 - `@PublishEvent` 어노테이션만 추가
+Kafka 보일러플레이트 코드 불필요 - `@PublishEvent` 어노테이션만 추가. SpEL을 통한 유연한 페이로드 추출 지원.
 
 ### 📦 표준화된 이벤트 구조
 모든 이벤트가 메타데이터(source, actor, trace, tags)를 포함한 통일된 스키마 사용
@@ -137,6 +137,7 @@ Kafka가 24시간 장애여도 이벤트 손실 제로
 ### ⚡ 고성능
 - **동기 모드**: ~500 TPS
 - **비동기 모드**: ~10,000+ TPS
+- **Transactional Outbox**: 원자성 및 일관성 보장
 
 ### 🏗️ Hexagonal Architecture
 최대 유연성을 위한 프레임워크 독립적 코어
@@ -145,6 +146,7 @@ Kafka가 24시간 장애여도 이벤트 손실 제로
 - Spring Actuator Health Indicator
 - 커스텀 메트릭 엔드포인트 (`/actuator/curve-metrics`)
 - 상세한 이벤트 추적
+- 비동기 컨텍스트 전파 (MDC, RequestContext)
 
 ---
 
@@ -232,6 +234,7 @@ docker-compose up -d
 | Health Check | ❌ | ❌ | ✅ |
 | 커스텀 메트릭 | ❌ | ❌ | ✅ |
 | Snowflake ID | ❌ | ❌ | ✅ |
+| Transactional Outbox | ❌ | ❌ | ✅ |
 | **보일러플레이트** | **중간** | **많음** | **최소** |
 
 ---
@@ -454,6 +457,18 @@ curve:
     crypto:
       default-key: ${PII_ENCRYPTION_KEY}
       salt: ${PII_HASH_SALT}
+
+  outbox:
+    enabled: true
+    poll-interval-ms: 1000
+    batch-size: 100
+    max-retries: 3
+    cleanup-enabled: true
+    retention-days: 7
+    cleanup-cron: "0 0 2 * * *"
+
+  serde:
+    type: JSON # JSON, AVRO, PROTOBUF
 ```
 
 ### 환경별 프로파일
@@ -506,7 +521,38 @@ curve:
 - **밀리초당 4,096개 ID** (워커당)
 - **시간 정렬 가능**
 
-### 2. 커스텀 이벤트 Producer
+### 2. Transactional Outbox Pattern
+
+DB 트랜잭션과 이벤트 발행의 원자성을 보장합니다.
+
+```java
+@Transactional
+@PublishEvent(
+    eventType = "ORDER_CREATED",
+    outbox = true,
+    aggregateType = "Order",
+    aggregateId = "#result.orderId"
+)
+public Order createOrder(OrderRequest req) {
+    return orderRepo.save(new Order(req));
+}
+```
+
+### 3. 유연한 페이로드 추출 (SpEL)
+
+SpEL을 사용하여 이벤트 페이로드로 사용할 데이터를 유연하게 추출합니다.
+
+```java
+@PublishEvent(
+    eventType = "USER_UPDATED",
+    payload = "#args[0].toEventDto()"
+)
+public User updateUser(UserUpdateRequest request) {
+    // ...
+}
+```
+
+### 4. 커스텀 이벤트 Producer
 
 Kafka가 아닌 다른 브로커를 위해 `EventProducer` 인터페이스 구현:
 
@@ -524,7 +570,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 }
 ```
 
-### 3. DLQ 복구
+### 5. DLQ 복구
 
 ```bash
 # 백업 파일 목록

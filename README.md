@@ -122,29 +122,31 @@ Everything handled automatically:
 ## ✨ Key Features
 
 ### 🎯 Declarative Event Publishing
-No more Kafka boilerplate - just add `@PublishEvent` annotation
+No more Kafka boilerplate - just add `@PublishEvent` annotation. Supports SpEL for flexible payload extraction.
 
 ### 📦 Standardized Event Structure
-All events follow a unified schema with metadata (source, actor, trace, tags)
+All events follow a unified schema with metadata (source, actor, trace, tags).
 
 ### 🛡️ 3-Tier Failure Recovery
 **Main Topic → DLQ → Local File Backup**
-Zero event loss even when Kafka is down for 24 hours
+Zero event loss even when Kafka is down for 24 hours.
 
 ### 🔐 Automatic PII Protection
-`@PiiField` annotation automatically masks/encrypts sensitive data
+`@PiiField` annotation automatically masks/encrypts sensitive data.
 
 ### ⚡ High Performance
 - **Sync mode**: ~500 TPS
 - **Async mode**: ~10,000+ TPS
+- **Transactional Outbox**: Guarantees atomicity and consistency.
 
 ### 🏗️ Hexagonal Architecture
-Framework-independent core for maximum flexibility
+Framework-independent core for maximum flexibility.
 
 ### 📊 Built-in Observability
 - Spring Actuator Health Indicator
 - Custom metrics endpoint (`/actuator/curve-metrics`)
 - Detailed event tracking
+- Async context propagation (MDC, RequestContext)
 
 ---
 
@@ -232,6 +234,7 @@ Done! 🎉
 | Health Check | ❌ | ❌ | ✅ |
 | Custom Metrics | ❌ | ❌ | ✅ |
 | Snowflake ID | ❌ | ❌ | ✅ |
+| Transactional Outbox | ❌ | ❌ | ✅ |
 | **Boilerplate Code** | **Medium** | **High** | **Minimal** |
 
 ---
@@ -454,6 +457,18 @@ curve:
     crypto:
       default-key: ${PII_ENCRYPTION_KEY}
       salt: ${PII_HASH_SALT}
+      
+  outbox:
+    enabled: true
+    poll-interval-ms: 1000
+    batch-size: 100
+    max-retries: 3
+    cleanup-enabled: true
+    retention-days: 7
+    cleanup-cron: "0 0 2 * * *"
+    
+  serde:
+    type: JSON # JSON, AVRO, PROTOBUF
 ```
 
 ### Environment-Specific Profiles
@@ -506,7 +521,38 @@ Distributed unique ID generation without collisions.
 - **4,096 IDs per millisecond** per worker
 - **Time-sortable**
 
-### 2. Custom Event Producer
+### 2. Transactional Outbox Pattern
+
+Guarantees atomicity between DB transactions and event publishing.
+
+```java
+@Transactional
+@PublishEvent(
+    eventType = "ORDER_CREATED",
+    outbox = true,
+    aggregateType = "Order",
+    aggregateId = "#result.orderId"
+)
+public Order createOrder(OrderRequest req) {
+    return orderRepo.save(new Order(req));
+}
+```
+
+### 3. Flexible Payload Extraction (SpEL)
+
+Extract specific data for the event payload using SpEL.
+
+```java
+@PublishEvent(
+    eventType = "USER_UPDATED",
+    payload = "#args[0].toEventDto()"
+)
+public User updateUser(UserUpdateRequest request) {
+    // ...
+}
+```
+
+### 4. Custom Event Producer
 
 Implement `EventProducer` interface for non-Kafka brokers:
 
@@ -524,7 +570,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 }
 ```
 
-### 3. DLQ Recovery
+### 5. DLQ Recovery
 
 ```bash
 # List backup files

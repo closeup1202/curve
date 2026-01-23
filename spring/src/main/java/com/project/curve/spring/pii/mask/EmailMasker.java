@@ -12,6 +12,7 @@ public class EmailMasker implements PiiMasker {
     @Override
     public String mask(String value, MaskingLevel level) {
         if (value == null || value.isEmpty()) return value;
+        if (level == null) level = MaskingLevel.NORMAL;
 
         int atIndex = value.indexOf(AT);
         if (atIndex <= 0) return "*".repeat(value.length());

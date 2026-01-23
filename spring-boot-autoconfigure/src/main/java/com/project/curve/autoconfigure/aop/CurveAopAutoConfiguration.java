@@ -1,8 +1,8 @@
 package com.project.curve.autoconfigure.aop;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.curve.core.port.EventProducer;
 import com.project.curve.spring.audit.aop.PublishEventAspect;
+import com.project.curve.spring.metrics.CurveMetricsCollector;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,9 +24,9 @@ public class CurveAopAutoConfiguration {
     @Bean
     public PublishEventAspect publishEventAspect(
             EventProducer eventProducer,
-            ObjectMapper objectMapper
+            CurveMetricsCollector metricsCollector
     ) {
         log.debug("Initializing PublishEventAspect for @PublishEvent annotation support");
-        return new PublishEventAspect(eventProducer, objectMapper);
+        return new PublishEventAspect(eventProducer, metricsCollector);
     }
 }

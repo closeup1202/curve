@@ -6,10 +6,12 @@ import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -73,4 +75,24 @@ public interface OutboxEventJpaRepository extends JpaRepository<OutboxEventJpaEn
      * @return 이벤트 개수
      */
     long countByStatus(OutboxStatus status);
+
+    /**
+     * 오래된 이벤트 삭제 (배치 처리용).
+     * <p>
+     * JPQL은 LIMIT를 직접 지원하지 않으므로, 서브쿼리나 네이티브 쿼리를 사용해야 할 수 있습니다.
+     * 여기서는 ID 목록을 조회 후 삭제하는 방식을 사용하거나, 네이티브 쿼리를 사용할 수 있습니다.
+     * DB 호환성을 위해 ID 조회 후 삭제 방식을 권장하지만, 성능을 위해 네이티브 쿼리를 사용할 수도 있습니다.
+     * <p>
+     * 여기서는 ID 목록을 먼저 조회하는 방식을 사용하기 위해 조회 메서드를 추가합니다.
+     */
+    @Query("SELECT e.eventId FROM OutboxEventJpaEntity e WHERE e.status = :status AND e.occurredAt < :before")
+    List<String> findIdsByStatusAndOccurredAtBefore(
+            @Param("status") OutboxStatus status,
+            @Param("before") Instant before,
+            Pageable pageable
+    );
+
+    @Modifying
+    @Query("DELETE FROM OutboxEventJpaEntity e WHERE e.eventId IN :ids")
+    int deleteByEventIds(@Param("ids") List<String> ids);
 }

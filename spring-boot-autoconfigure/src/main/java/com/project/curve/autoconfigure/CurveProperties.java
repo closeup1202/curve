@@ -42,6 +42,9 @@ public class CurveProperties {
     @Valid
     private final Outbox outbox = new Outbox();
 
+    @Valid
+    private final Serde serde = new Serde();
+
     @Data
     public static class Kafka {
         /**
@@ -272,6 +275,14 @@ public class CurveProperties {
         private int maxRetries = 3;
 
         /**
+         * Kafka 전송 타임아웃(초) (기본값: 10초)
+         * 이벤트를 Kafka로 발행할 때 응답을 기다리는 최대 시간
+         * 타임아웃 초과 시 재시도 대상으로 처리
+         */
+        @Positive(message = "sendTimeoutSeconds는 양수여야 합니다")
+        private int sendTimeoutSeconds = 10;
+
+        /**
          * PUBLISHED 이벤트 자동 정리 활성화 여부 (기본값: false)
          * true: 오래된 PUBLISHED 이벤트를 주기적으로 삭제하여 테이블 크기 관리
          * false: 수동으로 정리 필요
@@ -290,5 +301,20 @@ public class CurveProperties {
          * cleanupEnabled=true일 때 사용
          */
         private String cleanupCron = "0 0 2 * * *";
+    }
+
+    @Data
+    public static class Serde {
+        /**
+         * 직렬화 타입 (기본값: JSON)
+         * - JSON: Jackson 기반 JSON 직렬화
+         * - AVRO: Avro 기반 바이너리 직렬화 (구현 필요)
+         * - PROTOBUF: Protocol Buffers 기반 직렬화 (구현 필요)
+         */
+        private SerdeType type = SerdeType.JSON;
+
+        public enum SerdeType {
+            JSON, AVRO, PROTOBUF
+        }
     }
 }

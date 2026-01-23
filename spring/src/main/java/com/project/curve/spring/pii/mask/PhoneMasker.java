@@ -10,6 +10,7 @@ public class PhoneMasker implements PiiMasker {
     @Override
     public String mask(String value, MaskingLevel level) {
         if (value == null || value.isEmpty()) return value;
+        if (level == null) level = MaskingLevel.NORMAL;
 
         // 숫자만 추출
         String digits = value.replaceAll("[^0-9]", "");

@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -81,6 +82,18 @@ public class JpaOutboxEventRepositoryAdapter implements OutboxEventRepository {
     @Override
     public void deleteById(String eventId) {
         jpaRepository.deleteById(eventId);
+    }
+
+    @Override
+    public int deleteByStatusAndOccurredAtBefore(OutboxStatus status, Instant before, int limit) {
+        PageRequest pageRequest = PageRequest.of(0, limit);
+        List<String> idsToDelete = jpaRepository.findIdsByStatusAndOccurredAtBefore(status, before, pageRequest);
+
+        if (idsToDelete.isEmpty()) {
+            return 0;
+        }
+
+        return jpaRepository.deleteByEventIds(idsToDelete);
     }
 
     @Override

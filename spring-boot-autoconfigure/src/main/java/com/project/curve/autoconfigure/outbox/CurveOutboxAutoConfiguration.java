@@ -1,7 +1,9 @@
 package com.project.curve.autoconfigure.outbox;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.curve.autoconfigure.CurveProperties;
 import com.project.curve.core.outbox.OutboxEventRepository;
+import com.project.curve.spring.audit.aop.OutboxEventSaver;
 import com.project.curve.spring.outbox.config.OutboxJpaRepositoryConfig;
 import com.project.curve.spring.outbox.persistence.OutboxEventJpaEntity;
 import com.project.curve.spring.outbox.publisher.OutboxEventPublisher;
@@ -69,6 +71,14 @@ public class CurveOutboxAutoConfiguration {
     }
 
     @Bean
+    public OutboxEventSaver outboxEventSaver(
+            OutboxEventRepository outboxEventRepository,
+            ObjectMapper objectMapper
+    ) {
+        return new OutboxEventSaver(outboxEventRepository, objectMapper);
+    }
+
+    @Bean
     public OutboxEventPublisher outboxEventPublisher(
             OutboxEventRepository outboxRepository,
             KafkaTemplate<String, String> kafkaTemplate,
@@ -78,11 +88,14 @@ public class CurveOutboxAutoConfiguration {
         String topic = properties.getKafka().getTopic();
 
         log.info("Registering OutboxEventPublisher: " +
-                        "pollIntervalMs={}, batchSize={}, maxRetries={}, topic={}",
+                        "pollIntervalMs={}, batchSize={}, maxRetries={}, sendTimeoutSeconds={}, topic={}, cleanupEnabled={}, retentionDays={}",
                 outboxConfig.getPollIntervalMs(),
                 outboxConfig.getBatchSize(),
                 outboxConfig.getMaxRetries(),
-                topic
+                outboxConfig.getSendTimeoutSeconds(),
+                topic,
+                outboxConfig.isCleanupEnabled(),
+                outboxConfig.getRetentionDays()
         );
 
         return new OutboxEventPublisher(
@@ -90,7 +103,10 @@ public class CurveOutboxAutoConfiguration {
                 kafkaTemplate,
                 topic,
                 outboxConfig.getBatchSize(),
-                outboxConfig.getMaxRetries()
+                outboxConfig.getMaxRetries(),
+                outboxConfig.getSendTimeoutSeconds(),
+                outboxConfig.isCleanupEnabled(),
+                outboxConfig.getRetentionDays()
         );
     }
 }

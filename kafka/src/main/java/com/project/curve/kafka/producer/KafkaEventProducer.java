@@ -89,7 +89,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             Long syncTimeoutSeconds,
             String dlqBackupPath,
             ExecutorService dlqExecutor,
-            CurveMetricsCollector metricsCollector
+            @NonNull CurveMetricsCollector metricsCollector
     ) {
         super(envelopeFactory, eventContextProvider);
         this.kafkaTemplate = kafkaTemplate;
@@ -159,10 +159,8 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     }
 
     private void recordErrorMetrics(String eventType, long startTime, String errorType) {
-        if (metricsCollector != null) {
-            metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
-            metricsCollector.recordKafkaError(errorType);
-        }
+        metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
+        metricsCollector.recordKafkaError(errorType);
     }
 
     private void sendWithRetry(String eventId, String eventType, String value, long startTime) {
@@ -170,17 +168,13 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             retryTemplate.execute(context -> {
                 if (context.getRetryCount() > 0) {
                     log.warn("Retrying event send: eventId={}, attempt={}", eventId, context.getRetryCount() + 1);
-                    if (metricsCollector != null) {
-                        metricsCollector.recordRetry(eventType, context.getRetryCount(), "in_progress");
-                    }
+                    metricsCollector.recordRetry(eventType, context.getRetryCount(), "in_progress");
                 }
                 return doSendSync(eventId, eventType, value, startTime);
             });
         } catch (Exception e) {
             log.error("All retry attempts exhausted for event: eventId={}", eventId, e);
-            if (metricsCollector != null) {
-                metricsCollector.recordRetry(eventType, 3, "failure");
-            }
+            metricsCollector.recordRetry(eventType, 3, "failure");
             handleSendFailure(eventId, eventType, value, e);
         }
     }
@@ -190,9 +184,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             doSendSync(eventId, eventType, value, startTime);
         } catch (Exception e) {
             log.error("Failed to send event to Kafka: eventId={}, topic={}", eventId, topic, e);
-            if (metricsCollector != null) {
-                metricsCollector.recordKafkaError(e.getClass().getSimpleName());
-            }
+            metricsCollector.recordKafkaError(e.getClass().getSimpleName());
             handleSendFailure(eventId, eventType, value, e);
         }
     }
@@ -206,15 +198,11 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Async send failed: eventId={}, topic={}", eventId, topic, ex);
-                        if (metricsCollector != null) {
-                            metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
-                            metricsCollector.recordKafkaError(ex.getClass().getSimpleName());
-                        }
+                        metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
+                        metricsCollector.recordKafkaError(ex.getClass().getSimpleName());
                         handleSendFailure(eventId, eventType, value, ex);
                     } else {
-                        if (metricsCollector != null) {
-                            metricsCollector.recordEventPublished(eventType, true, System.currentTimeMillis() - startTime);
-                        }
+                        metricsCollector.recordEventPublished(eventType, true, System.currentTimeMillis() - startTime);
                         handleSendSuccess(eventId, result);
                     }
                 })
@@ -222,10 +210,8 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                 .exceptionally(ex -> {
                     log.error("Async send timeout: eventId={}, topic={}, timeout={}ms",
                             eventId, topic, asyncTimeoutMs, ex);
-                    if (metricsCollector != null) {
-                        metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
-                        metricsCollector.recordKafkaError("TimeoutException");
-                    }
+                    metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
+                    metricsCollector.recordKafkaError("TimeoutException");
                     handleSendFailure(eventId, eventType, value, ex);
                     return null;
                 });
@@ -238,9 +224,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                 .send(topic, eventId, value)
                 .get(syncTimeoutSeconds, TimeUnit.SECONDS);
 
-        if (metricsCollector != null) {
-            metricsCollector.recordEventPublished(eventType, true, System.currentTimeMillis() - startTime);
-        }
+        metricsCollector.recordEventPublished(eventType, true, System.currentTimeMillis() - startTime);
         handleSendSuccess(eventId, result);
         return result;
     }
@@ -253,9 +237,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
 
     private void handleSendFailure(String eventId, String eventType, String originalValue, Throwable ex) {
         if (dlqEnabled) {
-            if (metricsCollector != null) {
-                metricsCollector.recordDlqEvent(eventType, ex.getClass().getSimpleName());
-            }
+            metricsCollector.recordDlqEvent(eventType, ex.getClass().getSimpleName());
             dispatchToDlq(eventId, originalValue, ex);
         } else {
             log.warn("DLQ not configured. Event may be lost: eventId={}", eventId);

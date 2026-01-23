@@ -83,12 +83,18 @@ class KafkaEventProducerIntegrationTest {
 
         EventEnvelopeFactory envelopeFactory = new EventEnvelopeFactory(clockProvider, idGenerator);
 
+        // EventSerializer mock 설정
+        com.project.curve.core.serde.EventSerializer eventSerializer = mock(com.project.curve.core.serde.EventSerializer.class);
+        when(eventSerializer.serialize(any())).thenAnswer(invocation -> objectMapper.writeValueAsString(invocation.getArgument(0)));
+
         // KafkaEventProducer 생성
         producer = KafkaEventProducer.builder()
                 .envelopeFactory(envelopeFactory)
                 .eventContextProvider(contextProvider)
                 .kafkaTemplate(kafkaTemplate)
+                .eventSerializer(eventSerializer)
                 .objectMapper(objectMapper)
+                .metricsCollector(new com.project.curve.spring.metrics.NoOpCurveMetricsCollector())
                 .topic("test-topic")
                 .dlqTopic("test-dlq-topic")
                 .asyncMode(false)

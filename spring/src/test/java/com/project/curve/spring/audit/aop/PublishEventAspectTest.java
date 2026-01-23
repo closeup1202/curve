@@ -56,7 +56,7 @@ class PublishEventAspectTest {
 
     @BeforeEach
     void setUp() throws NoSuchMethodException {
-        aspect = new PublishEventAspect(eventProducer);
+        aspect = new PublishEventAspect(eventProducer, metricsCollector);
 
         // 기본 JoinPoint 설정
         when(joinPoint.getSignature()).thenReturn(methodSignature);

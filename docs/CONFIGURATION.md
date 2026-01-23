@@ -12,6 +12,8 @@
 - [Retry 설정](#retry-설정)
 - [AOP 설정](#aop-설정)
 - [PII 보호 설정](#pii-보호-설정)
+- [Outbox 설정](#outbox-설정)
+- [직렬화 설정](#직렬화-설정)
 - [로깅 설정](#로깅-설정)
 
 ---
@@ -56,6 +58,11 @@ Curve는 `@Validated`를 사용하여 애플리케이션 시작 시 설정값의
 | `curve.retry.initial-interval` | 양수 | "initialInterval은 양수여야 합니다" |
 | `curve.retry.multiplier` | 1 이상 | "multiplier는 1 이상이어야 합니다" |
 | `curve.retry.max-interval` | 양수 | "maxInterval은 양수여야 합니다" |
+| `curve.outbox.poll-interval-ms` | 양수 | "pollIntervalMs는 양수여야 합니다" |
+| `curve.outbox.batch-size` | 1 ~ 1000 | "batchSize는 1 이상 1000 이하여야 합니다" |
+| `curve.outbox.max-retries` | 1 이상 | "maxRetries는 1 이상이어야 합니다" |
+| `curve.outbox.send-timeout-seconds` | 양수 | "sendTimeoutSeconds는 양수여야 합니다" |
+| `curve.outbox.retention-days` | 1 이상 | "retentionDays는 1 이상이어야 합니다" |
 
 ### 검증 오류 예시
 
@@ -401,6 +408,46 @@ kubectl create secret generic curve-secrets \
 
 ---
 
+## Outbox 설정
+
+Transactional Outbox Pattern을 사용하여 DB 트랜잭션과 이벤트 발행의 원자성을 보장합니다.
+
+### 기본 설정
+
+```yaml
+curve:
+  outbox:
+    enabled: true  # Outbox 활성화
+    poll-interval-ms: 1000  # 폴링 주기 (1초)
+    batch-size: 100  # 배치 크기
+    max-retries: 3  # 최대 재시도 횟수
+    send-timeout-seconds: 10  # 전송 타임아웃
+    cleanup-enabled: true  # 오래된 이벤트 정리 활성화
+    retention-days: 7  # 보관 기간 (7일)
+    cleanup-cron: "0 0 2 * * *"  # 정리 작업 실행 시간 (매일 새벽 2시)
+    initialize-schema: embedded  # 스키마 초기화 모드 (embedded, always, never)
+```
+
+### 스키마 초기화 모드
+
+- `embedded`: H2, HSQLDB 등 임베디드 DB에서만 테이블 자동 생성 (기본값)
+- `always`: 항상 테이블 자동 생성 시도 (없을 경우)
+- `never`: 자동 생성 안 함 (Flyway/Liquibase 사용 시 권장)
+
+---
+
+## 직렬화 설정
+
+이벤트 페이로드 직렬화 방식을 설정합니다.
+
+```yaml
+curve:
+  serde:
+    type: JSON  # JSON (기본값), AVRO, PROTOBUF
+```
+
+---
+
 ## 전체 설정 예시
 
 ### 프로덕션 환경 (안정성 중심)
@@ -436,6 +483,12 @@ curve:
     crypto:
       default-key: ${PII_ENCRYPTION_KEY}  # 환경변수 필수
       salt: ${PII_HASH_SALT}
+
+  outbox:
+    enabled: true
+    initialize-schema: never  # Flyway 사용
+    cleanup-enabled: true
+    retention-days: 14
 ```
 
 ### 개발/테스트 환경 (성능 중심)
@@ -463,6 +516,10 @@ curve:
 
   aop:
     enabled: true
+    
+  outbox:
+    enabled: true
+    initialize-schema: always
 ```
 
 ### 고성능 환경
@@ -499,6 +556,7 @@ curve:
 - 전송 모드: 동기 (디버깅 편의)
 - DLQ: 활성화
 - Retry: 최소 (빠른 실패)
+- Outbox: 활성화 (스키마 자동 생성)
 
 ### 스테이징
 
@@ -506,6 +564,7 @@ curve:
 - 전송 모드: 비동기
 - DLQ: 활성화
 - Retry: 중간 수준
+- Outbox: 활성화
 
 ### 프로덕션
 
@@ -513,6 +572,7 @@ curve:
 - 전송 모드: 비즈니스 요구사항에 따라
 - DLQ: 필수 활성화
 - Retry: 높은 수준
+- Outbox: 필수 활성화 (데이터 일관성)
 
 ---
 
@@ -618,6 +678,7 @@ logging:
 | DLQ ExecutorService | 스레드 풀 크기, shutdown timeout |
 | PII 모듈 | 암호화/솔트 설정 상태, 모듈 등록 |
 | 이벤트 전송 | 이벤트별 전송 상세 (eventId, topic, partition, offset) |
+| Outbox Publisher | 폴링, 발행, 정리 작업 로그 |
 
 ### 특정 모듈만 DEBUG 활성화
 
@@ -632,6 +693,9 @@ logging:
 
     # PII 처리 관련만 DEBUG
     com.project.curve.spring.pii: DEBUG
+
+    # Outbox 관련만 DEBUG
+    com.project.curve.spring.outbox: DEBUG
 ```
 
 ---
@@ -641,3 +705,4 @@ logging:
 - [Snowflake ID Algorithm](https://en.wikipedia.org/wiki/Snowflake_ID)
 - [Kafka Producer Configuration](https://kafka.apache.org/documentation/#producerconfigs)
 - [Spring Retry](https://docs.spring.io/spring-retry/docs/current/reference/html/)
+- [Transactional Outbox Pattern](https://microservices.io/patterns/data/transactional-outbox.html)

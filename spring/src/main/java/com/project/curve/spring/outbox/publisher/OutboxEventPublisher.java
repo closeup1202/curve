@@ -8,7 +8,10 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -45,6 +48,9 @@ public class OutboxEventPublisher {
     private final String topic;
     private final int batchSize;
     private final int maxRetries;
+    private final int sendTimeoutSeconds;
+    private final boolean cleanupEnabled;
+    private final int retentionDays;
 
     private final AtomicInteger publishedCount = new AtomicInteger(0);
     private final AtomicInteger failedCount = new AtomicInteger(0);
@@ -54,16 +60,22 @@ public class OutboxEventPublisher {
             KafkaTemplate<String, String> kafkaTemplate,
             String topic,
             int batchSize,
-            int maxRetries
+            int maxRetries,
+            int sendTimeoutSeconds,
+            boolean cleanupEnabled,
+            int retentionDays
     ) {
         this.outboxRepository = outboxRepository;
         this.kafkaTemplate = kafkaTemplate;
         this.topic = topic;
         this.batchSize = batchSize;
         this.maxRetries = maxRetries;
+        this.sendTimeoutSeconds = sendTimeoutSeconds;
+        this.cleanupEnabled = cleanupEnabled;
+        this.retentionDays = retentionDays;
 
-        log.info("OutboxEventPublisher initialized: topic={}, batchSize={}, maxRetries={}",
-                topic, batchSize, maxRetries);
+        log.info("OutboxEventPublisher initialized: topic={}, batchSize={}, maxRetries={}, sendTimeoutSeconds={}, cleanupEnabled={}, retentionDays={}",
+                topic, batchSize, maxRetries, sendTimeoutSeconds, cleanupEnabled, retentionDays);
     }
 
     /**
@@ -93,15 +105,49 @@ public class OutboxEventPublisher {
     }
 
     /**
+     * 오래된 PUBLISHED 이벤트 정리.
+     * <p>
+     * 설정된 cleanup-cron 주기로 실행됩니다.
+     */
+    @Scheduled(cron = "${curve.outbox.cleanup-cron:0 0 2 * * *}")
+    @Transactional
+    public void cleanupOldEvents() {
+        if (!cleanupEnabled) {
+            return;
+        }
+
+        log.info("Starting outbox cleanup job (retentionDays={})", retentionDays);
+        Instant before = Instant.now().minus(retentionDays, ChronoUnit.DAYS);
+        int deletedCount = 0;
+        int batchDeleteSize = 1000; // 한 번에 삭제할 최대 개수
+
+        try {
+            // 반복적으로 삭제하여 대량 삭제 시 트랜잭션 부하 분산
+            while (true) {
+                int count = outboxRepository.deleteByStatusAndOccurredAtBefore(
+                        OutboxStatus.PUBLISHED, before, batchDeleteSize
+                );
+                deletedCount += count;
+                if (count < batchDeleteSize) {
+                    break;
+                }
+            }
+            log.info("Outbox cleanup completed. Deleted {} events older than {}", deletedCount, before);
+        } catch (Exception e) {
+            log.error("Failed to cleanup old outbox events", e);
+        }
+    }
+
+    /**
      * 개별 이벤트 처리.
      *
      * @param event 처리할 이벤트
      */
     private void processEvent(OutboxEvent event) {
         try {
-            // Kafka로 발행
+            // Kafka로 발행 (타임아웃 적용)
             kafkaTemplate.send(topic, event.getEventId(), event.getPayload())
-                    .get(); // 동기 전송 (결과 확인)
+                    .get(sendTimeoutSeconds, TimeUnit.SECONDS);
 
             // 발행 성공
             event.markAsPublished();

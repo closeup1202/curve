@@ -1,5 +1,6 @@
 package com.project.curve.core.outbox;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -77,6 +78,19 @@ public interface OutboxEventRepository {
      * @param eventId 삭제할 이벤트 ID
      */
     void deleteById(String eventId);
+
+    /**
+     * 오래된 이벤트 일괄 삭제.
+     * <p>
+     * 특정 상태이고, 기준 시간 이전에 발생한 이벤트를 삭제합니다.
+     * 대량 삭제 시 DB 부하를 줄이기 위해 배치 단위로 삭제하는 것이 좋습니다.
+     *
+     * @param status 삭제할 상태 (주로 PUBLISHED)
+     * @param before 기준 시간 (이 시간 이전 데이터 삭제)
+     * @param limit  한 번에 삭제할 최대 개수
+     * @return 삭제된 개수
+     */
+    int deleteByStatusAndOccurredAtBefore(OutboxStatus status, Instant before, int limit);
 
     /**
      * 전체 이벤트 개수 조회.

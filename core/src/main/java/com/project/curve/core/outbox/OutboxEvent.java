@@ -84,6 +84,43 @@ public class OutboxEvent {
     }
 
     /**
+     * 영속성 계층에서 도메인 모델을 복원할 때 사용하는 팩토리 메서드.
+     * <p>
+     * 생성자와 달리 기존 상태(status, retryCount 등)를 직접 설정합니다.
+     *
+     * @param eventId       이벤트 ID
+     * @param aggregateType 집합체 타입
+     * @param aggregateId   집합체 ID
+     * @param eventType     이벤트 타입
+     * @param payload       페이로드
+     * @param occurredAt    발생 시각
+     * @param status        현재 상태
+     * @param retryCount    재시도 횟수
+     * @param publishedAt   발행 시각 (nullable)
+     * @param errorMessage  에러 메시지 (nullable)
+     * @return 복원된 OutboxEvent
+     */
+    public static OutboxEvent restore(
+            String eventId,
+            String aggregateType,
+            String aggregateId,
+            String eventType,
+            String payload,
+            Instant occurredAt,
+            OutboxStatus status,
+            int retryCount,
+            Instant publishedAt,
+            String errorMessage
+    ) {
+        OutboxEvent event = new OutboxEvent(eventId, aggregateType, aggregateId, eventType, payload, occurredAt);
+        event.status = status;
+        event.retryCount = retryCount;
+        event.publishedAt = publishedAt;
+        event.errorMessage = errorMessage;
+        return event;
+    }
+
+    /**
      * 이벤트 발행 성공 처리.
      */
     public void markAsPublished() {

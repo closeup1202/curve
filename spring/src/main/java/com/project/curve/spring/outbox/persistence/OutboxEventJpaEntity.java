@@ -105,28 +105,18 @@ public class OutboxEventJpaEntity {
      * @return OutboxEvent 도메인 모델
      */
     public OutboxEvent toDomain() {
-        OutboxEvent event = new OutboxEvent(
+        return OutboxEvent.restore(
                 eventId,
                 aggregateType,
                 aggregateId,
                 eventType,
                 payload,
-                occurredAt
+                occurredAt,
+                status,
+                retryCount,
+                publishedAt,
+                errorMessage
         );
-
-        // 상태 복원
-        if (status == OutboxStatus.PUBLISHED && publishedAt != null) {
-            event.markAsPublished();
-        } else if (status == OutboxStatus.FAILED && errorMessage != null) {
-            event.markAsFailed(errorMessage);
-        }
-
-        // 재시도 횟수 복원
-        for (int i = 0; i < retryCount; i++) {
-            event.incrementRetryCount();
-        }
-
-        return event;
     }
 
     /**

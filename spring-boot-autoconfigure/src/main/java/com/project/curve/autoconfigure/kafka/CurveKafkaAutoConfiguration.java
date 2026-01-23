@@ -7,6 +7,7 @@ import com.project.curve.core.port.EventProducer;
 import com.project.curve.core.serde.EventSerializer;
 import com.project.curve.kafka.producer.KafkaEventProducer;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
+import com.project.curve.spring.metrics.CurveMetricsCollector;
 import com.project.curve.spring.infrastructure.GracefulExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -82,6 +83,7 @@ public class CurveKafkaAutoConfiguration {
             EventSerializer eventSerializer,
             ObjectMapper objectMapper,
             CurveProperties properties,
+            CurveMetricsCollector metricsCollector,
             @Autowired(required = false) @Qualifier("curveRetryTemplate") RetryTemplate retryTemplate,
             @Autowired(required = false) @Qualifier("curveDlqExecutor") ExecutorService dlqExecutor
     ) {
@@ -102,6 +104,7 @@ public class CurveKafkaAutoConfiguration {
                 .syncTimeoutSeconds(kafkaConfig.getSyncTimeoutSeconds())
                 .dlqBackupPath(kafkaConfig.getDlqBackupPath())
                 .dlqExecutor(dlqExecutor)
+                .metricsCollector(metricsCollector)
                 .build();
     }
 
