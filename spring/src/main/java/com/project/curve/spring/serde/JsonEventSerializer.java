@@ -6,6 +6,9 @@ import com.project.curve.core.envelope.EventEnvelope;
 import com.project.curve.core.exception.EventSerializationException;
 import com.project.curve.core.payload.DomainEventPayload;
 import com.project.curve.core.serde.EventSerializer;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
 
 /**
  * Jackson ObjectMapper를 사용한 JSON 이벤트 직렬화 구현체.
@@ -24,22 +27,19 @@ import com.project.curve.core.serde.EventSerializer;
  * @see ObjectMapper
  * @see EventSerializer
  */
+@RequiredArgsConstructor
+@Component
 public class JsonEventSerializer implements EventSerializer {
 
     private final ObjectMapper objectMapper;
 
-    public JsonEventSerializer(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
-
     @Override
-    public <T extends DomainEventPayload> String serialize(EventEnvelope<T> envelope) throws EventSerializationException {
+    public <T extends DomainEventPayload> String serialize(EventEnvelope<T> envelope) {
         try {
             return objectMapper.writeValueAsString(envelope);
         } catch (JsonProcessingException e) {
             throw new EventSerializationException(
-                    "Failed to serialize EventEnvelope. eventId=" + envelope.eventId().value(),
-                    e
+                    "Failed to serialize EventEnvelope. eventId=" + envelope.eventId().value(), e
             );
         }
     }

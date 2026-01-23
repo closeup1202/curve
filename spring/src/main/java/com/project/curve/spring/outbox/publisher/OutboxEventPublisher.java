@@ -75,10 +75,7 @@ public class OutboxEventPublisher {
     @Transactional
     public void publishPendingEvents() {
         try {
-            List<OutboxEvent> pendingEvents = outboxRepository.findByStatus(
-                    OutboxStatus.PENDING,
-                    batchSize
-            );
+            List<OutboxEvent> pendingEvents = outboxRepository.findPendingForProcessing(batchSize);
 
             if (pendingEvents.isEmpty()) {
                 return;

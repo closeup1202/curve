@@ -5,6 +5,7 @@ import com.project.curve.core.outbox.OutboxEventRepository;
 import com.project.curve.core.outbox.OutboxStatus;
 import com.project.curve.spring.outbox.persistence.OutboxEventJpaEntity;
 import com.project.curve.spring.outbox.persistence.OutboxEventJpaRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,16 +24,13 @@ import java.util.stream.Collectors;
  */
 @Component
 @Transactional
+@RequiredArgsConstructor
 public class JpaOutboxEventRepositoryAdapter implements OutboxEventRepository {
 
     private final OutboxEventJpaRepository jpaRepository;
 
-    public JpaOutboxEventRepositoryAdapter(OutboxEventJpaRepository jpaRepository) {
-        this.jpaRepository = jpaRepository;
-    }
-
     @Override
-    public OutboxEvent save(OutboxEvent event) {
+    public void save(OutboxEvent event) {
         OutboxEventJpaEntity entity = jpaRepository.findById(event.getEventId())
                 .map(existing -> {
                     existing.updateFromDomain(event);
@@ -41,7 +39,7 @@ public class JpaOutboxEventRepositoryAdapter implements OutboxEventRepository {
                 .orElseGet(() -> OutboxEventJpaEntity.fromDomain(event));
 
         OutboxEventJpaEntity saved = jpaRepository.save(entity);
-        return saved.toDomain();
+        saved.toDomain();
     }
 
     @Override
@@ -56,6 +54,15 @@ public class JpaOutboxEventRepositoryAdapter implements OutboxEventRepository {
     public List<OutboxEvent> findByStatus(OutboxStatus status, int limit) {
         PageRequest pageRequest = PageRequest.of(0, limit);
         return jpaRepository.findByStatusOrderByOccurredAtAsc(status, pageRequest)
+                .stream()
+                .map(OutboxEventJpaEntity::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<OutboxEvent> findPendingForProcessing(int limit) {
+        PageRequest pageRequest = PageRequest.of(0, limit);
+        return jpaRepository.findByStatusForUpdateSkipLocked(OutboxStatus.PENDING, pageRequest)
                 .stream()
                 .map(OutboxEventJpaEntity::toDomain)
                 .collect(Collectors.toList());

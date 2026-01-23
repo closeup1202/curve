@@ -25,9 +25,8 @@ public interface OutboxEventRepository {
      * 비즈니스 로직과 같은 트랜잭션 내에서 호출되어야 원자성이 보장됩니다.
      *
      * @param event 저장할 이벤트
-     * @return 저장된 이벤트
      */
-    OutboxEvent save(OutboxEvent event);
+    void save(OutboxEvent event);
 
     /**
      * 이벤트 ID로 조회.
@@ -47,6 +46,17 @@ public interface OutboxEventRepository {
      * @return 이벤트 목록
      */
     List<OutboxEvent> findByStatus(OutboxStatus status, int limit);
+
+    /**
+     * 발행 대상 PENDING 이벤트를 비관적 잠금(FOR UPDATE SKIP LOCKED)으로 조회.
+     * <p>
+     * 다중 인스턴스 환경에서 동일 이벤트의 중복 처리를 방지합니다.
+     * 이미 다른 인스턴스가 잠근 행은 건너뛰고, 잠기지 않은 행만 반환합니다.
+     *
+     * @param limit 최대 조회 개수
+     * @return 잠금이 획득된 PENDING 이벤트 목록
+     */
+    List<OutboxEvent> findPendingForProcessing(int limit);
 
     /**
      * 집합체(Aggregate) 기준으로 이벤트 조회.

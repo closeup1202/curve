@@ -3,6 +3,7 @@ package com.project.curve.spring.outbox.persistence;
 import com.project.curve.core.outbox.OutboxEvent;
 import com.project.curve.core.outbox.OutboxStatus;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.time.Instant;
 
@@ -20,6 +21,7 @@ import java.time.Instant;
  *
  * @see OutboxEvent
  */
+@Getter
 @Entity
 @Table(
         name = "curve_outbox_events",
@@ -179,59 +181,5 @@ public class OutboxEventJpaEntity {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = Instant.now();
-    }
-
-    // Getters
-
-    public String getEventId() {
-        return eventId;
-    }
-
-    public String getAggregateType() {
-        return aggregateType;
-    }
-
-    public String getAggregateId() {
-        return aggregateId;
-    }
-
-    public String getEventType() {
-        return eventType;
-    }
-
-    public String getPayload() {
-        return payload;
-    }
-
-    public Instant getOccurredAt() {
-        return occurredAt;
-    }
-
-    public OutboxStatus getStatus() {
-        return status;
-    }
-
-    public int getRetryCount() {
-        return retryCount;
-    }
-
-    public Instant getPublishedAt() {
-        return publishedAt;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public Long getVersion() {
-        return version;
     }
 }

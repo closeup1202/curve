@@ -1,5 +1,7 @@
 package com.project.curve.core.outbox;
 
+import lombok.Getter;
+
 import java.time.Instant;
 
 /**
@@ -28,6 +30,7 @@ import java.time.Instant;
  *
  * @see OutboxStatus
  */
+@Getter
 public class OutboxEvent {
 
     private final String eventId;
@@ -128,46 +131,6 @@ public class OutboxEvent {
     }
 
     // Getters
-
-    public String getEventId() {
-        return eventId;
-    }
-
-    public String getAggregateType() {
-        return aggregateType;
-    }
-
-    public String getAggregateId() {
-        return aggregateId;
-    }
-
-    public String getEventType() {
-        return eventType;
-    }
-
-    public String getPayload() {
-        return payload;
-    }
-
-    public Instant getOccurredAt() {
-        return occurredAt;
-    }
-
-    public OutboxStatus getStatus() {
-        return status;
-    }
-
-    public int getRetryCount() {
-        return retryCount;
-    }
-
-    public Instant getPublishedAt() {
-        return publishedAt;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
 
     // Private helpers
 

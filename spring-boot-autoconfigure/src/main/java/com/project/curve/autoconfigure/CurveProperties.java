@@ -1,5 +1,6 @@
 package com.project.curve.autoconfigure;
 
+import com.project.curve.autoconfigure.outbox.InitializeSchema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -237,6 +238,15 @@ public class CurveProperties {
          * false: 기존 방식 (즉시 Kafka로 발행)
          */
         private boolean enabled = false;
+
+        /**
+         * Outbox 테이블 스키마 초기화 모드 (기본값: embedded)
+         * <p>
+         * embedded: 임베디드 DB(H2, HSQLDB)에서만 자동 생성
+         * always: 항상 자동 생성 (테이블이 없을 때만)
+         * never: 서비스에서 직접 관리 (Flyway/Liquibase 등)
+         */
+        private InitializeSchema initializeSchema = InitializeSchema.EMBEDDED;
 
         /**
          * Outbox 이벤트 폴링 주기(ms) (기본값: 1000ms = 1초)

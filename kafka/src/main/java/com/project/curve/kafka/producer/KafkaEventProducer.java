@@ -6,6 +6,7 @@ import com.project.curve.core.context.EventContextProvider;
 import com.project.curve.core.envelope.EventEnvelope;
 import com.project.curve.core.exception.EventSerializationException;
 import com.project.curve.core.payload.DomainEventPayload;
+import com.project.curve.core.serde.EventSerializer;
 import com.project.curve.kafka.dlq.FailedEventRecord;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
 import com.project.curve.spring.metrics.CurveMetricsCollector;
@@ -60,6 +61,7 @@ import java.util.concurrent.TimeUnit;
 public class KafkaEventProducer extends AbstractEventPublisher {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final EventSerializer eventSerializer;
     private final ObjectMapper objectMapper;
     private final String topic;
     private final String dlqTopic;
@@ -77,6 +79,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             @NonNull EventEnvelopeFactory envelopeFactory,
             @NonNull EventContextProvider eventContextProvider,
             @NonNull KafkaTemplate<String, String> kafkaTemplate,
+            @NonNull EventSerializer eventSerializer,
             @NonNull ObjectMapper objectMapper,
             @NonNull String topic,
             String dlqTopic,
@@ -90,6 +93,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     ) {
         super(envelopeFactory, eventContextProvider);
         this.kafkaTemplate = kafkaTemplate;
+        this.eventSerializer = eventSerializer;
         this.objectMapper = objectMapper;
         this.topic = topic;
         this.dlqTopic = dlqTopic;
@@ -117,9 +121,9 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         long startTime = System.currentTimeMillis();
 
         try {
-            String value = serializeToJson(envelope);
+            String value = eventSerializer.serialize(envelope);
             doSend(eventId, eventType, value, startTime);
-        } catch (JsonProcessingException e) {
+        } catch (EventSerializationException e) {
             handleSerializationError(eventId, eventType, startTime, e);
         } catch (Exception e) {
             handleSendError(eventType, startTime, e);
@@ -144,10 +148,10 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         }
     }
 
-    private void handleSerializationError(String eventId, String eventType, long startTime, JsonProcessingException e) {
+    private void handleSerializationError(String eventId, String eventType, long startTime, EventSerializationException e) {
         log.error("Failed to serialize EventEnvelope: eventId={}", eventId, e);
         recordErrorMetrics(eventType, startTime, "SerializationException");
-        throw new EventSerializationException("Failed to serialize EventEnvelope. eventId=" + eventId, e);
+        throw e;
     }
 
     private void handleSendError(String eventType, long startTime, Exception e) {
@@ -159,11 +163,6 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
             metricsCollector.recordKafkaError(errorType);
         }
-    }
-
-    private <T extends DomainEventPayload> String serializeToJson(EventEnvelope<T> envelope)
-            throws JsonProcessingException {
-        return objectMapper.writeValueAsString(envelope);
     }
 
     private void sendWithRetry(String eventId, String eventType, String value, long startTime) {

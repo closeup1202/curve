@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.curve.autoconfigure.CurveProperties;
 import com.project.curve.core.context.EventContextProvider;
 import com.project.curve.core.port.EventProducer;
+import com.project.curve.core.serde.EventSerializer;
 import com.project.curve.kafka.producer.KafkaEventProducer;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
 import com.project.curve.spring.infrastructure.GracefulExecutorService;
@@ -78,6 +79,7 @@ public class CurveKafkaAutoConfiguration {
             EventEnvelopeFactory envelopeFactory,
             EventContextProvider eventContextProvider,
             KafkaTemplate<String, String> kafkaTemplate,
+            EventSerializer eventSerializer,
             ObjectMapper objectMapper,
             CurveProperties properties,
             @Autowired(required = false) @Qualifier("curveRetryTemplate") RetryTemplate retryTemplate,
@@ -90,6 +92,7 @@ public class CurveKafkaAutoConfiguration {
                 .envelopeFactory(envelopeFactory)
                 .eventContextProvider(eventContextProvider)
                 .kafkaTemplate(kafkaTemplate)
+                .eventSerializer(eventSerializer)
                 .objectMapper(objectMapper)
                 .topic(kafkaConfig.getTopic())
                 .dlqTopic(kafkaConfig.getDlqTopic())
