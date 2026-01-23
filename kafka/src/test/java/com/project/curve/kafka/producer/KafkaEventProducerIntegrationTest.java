@@ -5,27 +5,26 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.project.curve.core.context.EventContextProvider;
 import com.project.curve.core.envelope.EventId;
 import com.project.curve.core.envelope.EventMetadata;
-import com.project.curve.core.payload.DomainEventPayload;
 import com.project.curve.core.port.ClockProvider;
 import com.project.curve.core.port.IdGenerator;
 import com.project.curve.core.type.EventSeverity;
-import com.project.curve.core.type.EventType;
-import com.project.curve.spring.audit.type.DefaultEventType;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.kafka.ConfluentKafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
@@ -47,7 +46,7 @@ import static org.mockito.Mockito.*;
 class KafkaEventProducerIntegrationTest {
 
     @Container
-    static KafkaContainer kafka = new KafkaContainer(
+    static ConfluentKafkaContainer kafka = new ConfluentKafkaContainer(
             DockerImageName.parse("confluentinc/cp-kafka:7.5.0")
     );
 
@@ -55,17 +54,21 @@ class KafkaEventProducerIntegrationTest {
     private static KafkaConsumer<String, String> consumer;
     private static KafkaConsumer<String, String> dlqConsumer;
 
-    @BeforeAll
-    static void setUp() {
-        // Kafka 프로듀서 설정
+    private static @NotNull KafkaTemplate<String, String> getStringKafkaTemplate() {
         Map<String, Object> producerProps = new HashMap<>();
         producerProps.put("bootstrap.servers", kafka.getBootstrapServers());
-        producerProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        producerProps.put("key.serializer", StringSerializer.class);
+        producerProps.put("value.serializer", StringSerializer.class);
 
         DefaultKafkaProducerFactory<String, String> producerFactory =
                 new DefaultKafkaProducerFactory<>(producerProps);
-        KafkaTemplate<String, String> kafkaTemplate = new KafkaTemplate<>(producerFactory);
+        return new KafkaTemplate<>(producerFactory);
+    }
+
+    @BeforeAll
+    static void setUp() {
+        // Kafka 프로듀서 설정
+        KafkaTemplate<String, String> kafkaTemplate = getStringKafkaTemplate();
 
         // ObjectMapper 설정
         ObjectMapper objectMapper = new ObjectMapper();
@@ -150,7 +153,7 @@ class KafkaEventProducerIntegrationTest {
     @DisplayName("이벤트를 Kafka에 발행할 수 있다")
     void publish_shouldSendEventToKafka() {
         // Given
-        TestEventPayload payload = new TestEventPayload("test-data");
+        TestEventPayload payload = new TestEventPayload("order-1", "test-data", 100);
 
         // When & Then
         assertThatNoException().isThrownBy(() ->
@@ -167,7 +170,7 @@ class KafkaEventProducerIntegrationTest {
         // When & Then
         assertThatNoException().isThrownBy(() -> {
             for (int i = 0; i < eventCount; i++) {
-                TestEventPayload payload = new TestEventPayload("test-data-" + i);
+                TestEventPayload payload = new TestEventPayload("order-" + i, "test-data-" + i, 100);
                 producer.publish(payload, EventSeverity.INFO);
             }
         });
@@ -178,7 +181,7 @@ class KafkaEventProducerIntegrationTest {
     void publish_shouldSendMessageAndConsumeSuccessfully() {
         // Given
         String testData = "real-kafka-message-test";
-        TestEventPayload payload = new TestEventPayload(testData);
+        TestEventPayload payload = new TestEventPayload("order-1", testData, 100);
 
         // When: 메시지 발행
         producer.publish(payload, EventSeverity.INFO);
@@ -208,7 +211,7 @@ class KafkaEventProducerIntegrationTest {
     void publish_shouldIncludeEventMetadata() throws Exception {
         // Given
         String testData = "metadata-test";
-        TestEventPayload payload = new TestEventPayload(testData);
+        TestEventPayload payload = new TestEventPayload("order-1", testData, 100);
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
@@ -228,7 +231,7 @@ class KafkaEventProducerIntegrationTest {
             if (record.value().contains(testData)) {
                 try {
                     String json = record.value();
-                    Map envelope = objectMapper.readValue(json, Map.class);
+                    Map<?, ?> envelope = objectMapper.readValue(json, Map.class);
 
                     // 필수 필드 검증
                     hasValidMetadata = envelope.containsKey("eventId") &&
@@ -266,13 +269,7 @@ class KafkaEventProducerIntegrationTest {
     @DisplayName("DLQ Consumer가 메시지를 수신할 수 있다")
     void dlq_shouldConsumeMessages() throws Exception {
         // Given: DLQ에 직접 메시지 전송 (실제 실패 시나리오 시뮬레이션)
-        Map<String, Object> producerProps = new HashMap<>();
-        producerProps.put("bootstrap.servers", kafka.getBootstrapServers());
-        producerProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-
-        DefaultKafkaProducerFactory<String, String> producerFactory = new DefaultKafkaProducerFactory<>(producerProps);
-        KafkaTemplate<String, String> dlqTemplate = new KafkaTemplate<>(producerFactory);
+        KafkaTemplate<String, String> dlqTemplate = getStringKafkaTemplate();
 
         // FailedEventRecord JSON 생성
         String testEventId = "failed-event-123";
@@ -305,6 +302,7 @@ class KafkaEventProducerIntegrationTest {
                 foundDlqMessage = true;
 
                 // FailedEventRecord 파싱 및 검증
+                @SuppressWarnings("unchecked")
                 Map<String, Object> parsedRecord = objectMapper.readValue(record.value(), Map.class);
                 assertThat(parsedRecord).containsKey("eventId");
                 assertThat(parsedRecord).containsKey("originalTopic");
@@ -318,13 +316,5 @@ class KafkaEventProducerIntegrationTest {
         assertThat(foundDlqMessage)
                 .as("DLQ에 전송된 메시지를 Consumer에서 수신해야 함")
                 .isTrue();
-    }
-
-    // Test payload
-    private record TestEventPayload(String data) implements DomainEventPayload {
-        @Override
-        public EventType getEventType() {
-            return new DefaultEventType("TEST");
-        }
     }
 }

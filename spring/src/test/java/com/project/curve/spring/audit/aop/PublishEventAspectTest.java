@@ -65,6 +65,12 @@ class PublishEventAspectTest {
 
         Method method = TestService.class.getMethod("testMethod", String.class);
         when(methodSignature.getMethod()).thenReturn(method);
+
+        // PublishEvent 기본값 설정 (NPE 방지)
+        when(publishEvent.payload()).thenReturn("");
+        when(publishEvent.eventType()).thenReturn("");
+        when(publishEvent.aggregateType()).thenReturn("");
+        when(publishEvent.aggregateId()).thenReturn("");
     }
 
     @Nested
