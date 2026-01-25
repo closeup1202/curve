@@ -63,7 +63,8 @@ public class JpaOutboxEventRepositoryAdapter implements OutboxEventRepository {
     @Override
     public List<OutboxEvent> findPendingForProcessing(int limit) {
         PageRequest pageRequest = PageRequest.of(0, limit);
-        return jpaRepository.findByStatusForUpdateSkipLocked(OutboxStatus.PENDING, pageRequest)
+        // 현재 시각 이전에 재시도 예정인 이벤트만 조회
+        return jpaRepository.findByStatusForUpdateSkipLocked(OutboxStatus.PENDING, Instant.now(), pageRequest)
                 .stream()
                 .map(OutboxEventJpaEntity::toDomain)
                 .collect(Collectors.toList());

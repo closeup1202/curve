@@ -3,6 +3,7 @@ package com.project.curve.core.outbox;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 /**
  * Transactional Outbox Pattern을 위한 이벤트 저장소 도메인 모델.
@@ -44,6 +45,7 @@ public class OutboxEvent {
     private int retryCount;
     private Instant publishedAt;
     private String errorMessage;
+    private Instant nextRetryAt;
 
     /**
      * Outbox 이벤트 생성자.
@@ -81,6 +83,7 @@ public class OutboxEvent {
         this.occurredAt = occurredAt;
         this.status = OutboxStatus.PENDING;
         this.retryCount = 0;
+        this.nextRetryAt = occurredAt; // 처음에는 발생 즉시 처리 대상
     }
 
     /**
@@ -98,6 +101,7 @@ public class OutboxEvent {
      * @param retryCount    재시도 횟수
      * @param publishedAt   발행 시각 (nullable)
      * @param errorMessage  에러 메시지 (nullable)
+     * @param nextRetryAt   다음 재시도 시각 (nullable)
      * @return 복원된 OutboxEvent
      */
     public static OutboxEvent restore(
@@ -110,13 +114,15 @@ public class OutboxEvent {
             OutboxStatus status,
             int retryCount,
             Instant publishedAt,
-            String errorMessage
+            String errorMessage,
+            Instant nextRetryAt
     ) {
         OutboxEvent event = new OutboxEvent(eventId, aggregateType, aggregateId, eventType, payload, occurredAt);
         event.status = status;
         event.retryCount = retryCount;
         event.publishedAt = publishedAt;
         event.errorMessage = errorMessage;
+        event.nextRetryAt = nextRetryAt != null ? nextRetryAt : occurredAt;
         return event;
     }
 
@@ -127,6 +133,7 @@ public class OutboxEvent {
         this.status = OutboxStatus.PUBLISHED;
         this.publishedAt = Instant.now();
         this.errorMessage = null;
+        this.nextRetryAt = null;
     }
 
     /**
@@ -137,15 +144,19 @@ public class OutboxEvent {
     public void markAsFailed(String errorMessage) {
         this.status = OutboxStatus.FAILED;
         this.errorMessage = errorMessage;
+        this.nextRetryAt = null;
     }
 
     /**
-     * 재시도 횟수 증가.
+     * 재시도 횟수 증가 및 다음 재시도 시간 설정.
      *
+     * @param backoffMs 재시도 지연 시간 (밀리초)
      * @return 증가된 재시도 횟수
      */
-    public int incrementRetryCount() {
-        return ++this.retryCount;
+    public int scheduleNextRetry(long backoffMs) {
+        this.retryCount++;
+        this.nextRetryAt = Instant.now().plus(backoffMs, ChronoUnit.MILLIS);
+        return this.retryCount;
     }
 
     /**
@@ -187,6 +198,7 @@ public class OutboxEvent {
                 ", status=" + status +
                 ", retryCount=" + retryCount +
                 ", occurredAt=" + occurredAt +
+                ", nextRetryAt=" + nextRetryAt +
                 '}';
     }
 }

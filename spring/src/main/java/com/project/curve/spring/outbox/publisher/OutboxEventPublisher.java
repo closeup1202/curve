@@ -4,6 +4,7 @@ import com.project.curve.core.outbox.OutboxEvent;
 import com.project.curve.core.outbox.OutboxEventRepository;
 import com.project.curve.core.outbox.OutboxStatus;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -86,6 +88,9 @@ public class OutboxEventPublisher {
     @Scheduled(fixedDelayString = "${curve.outbox.poll-interval-ms:1000}")
     @Transactional
     public void publishPendingEvents() {
+        // 스케줄러 실행 시 MDC 컨텍스트가 없을 수 있으므로, 필요한 경우 여기서 설정
+        // 예: MDC.put("traceId", UUID.randomUUID().toString());
+        
         try {
             List<OutboxEvent> pendingEvents = outboxRepository.findPendingForProcessing(batchSize);
 
@@ -170,10 +175,12 @@ public class OutboxEventPublisher {
      * @param error 발생한 예외
      */
     private void handlePublishFailure(OutboxEvent event, Exception error) {
-        int retryCount = event.incrementRetryCount();
+        // 지수 백오프 적용 (1초, 2초, 4초, 8초...)
+        long backoffMs = (long) Math.pow(2, event.getRetryCount()) * 1000L;
+        int retryCount = event.scheduleNextRetry(backoffMs);
 
-        log.warn("Failed to publish outbox event (attempt {}/{}): eventId={}, error={}",
-                retryCount, maxRetries, event.getEventId(), error.getMessage());
+        log.warn("Failed to publish outbox event (attempt {}/{}): eventId={}, nextRetryIn={}ms, error={}",
+                retryCount, maxRetries, event.getEventId(), backoffMs, error.getMessage());
 
         if (event.exceededMaxRetries(maxRetries)) {
             // 최대 재시도 초과

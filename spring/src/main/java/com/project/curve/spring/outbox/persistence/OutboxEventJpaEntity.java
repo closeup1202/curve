@@ -17,6 +17,7 @@ import java.time.Instant;
  *   <li>status: PENDING 이벤트 조회 최적화</li>
  *   <li>(aggregateType, aggregateId): Aggregate 기준 조회 최적화</li>
  *   <li>occurredAt: 시간순 정렬 최적화</li>
+ *   <li>nextRetryAt: 재시도 대상 조회 최적화</li>
  * </ul>
  *
  * @see OutboxEvent
@@ -28,7 +29,8 @@ import java.time.Instant;
         indexes = {
                 @Index(name = "idx_outbox_status", columnList = "status"),
                 @Index(name = "idx_outbox_aggregate", columnList = "aggregate_type, aggregate_id"),
-                @Index(name = "idx_outbox_occurred_at", columnList = "occurred_at")
+                @Index(name = "idx_outbox_occurred_at", columnList = "occurred_at"),
+                @Index(name = "idx_outbox_next_retry", columnList = "next_retry_at")
         }
 )
 public class OutboxEventJpaEntity {
@@ -65,6 +67,9 @@ public class OutboxEventJpaEntity {
     @Column(name = "error_message", length = 500)
     private String errorMessage;
 
+    @Column(name = "next_retry_at")
+    private Instant nextRetryAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -95,6 +100,7 @@ public class OutboxEventJpaEntity {
         this.occurredAt = occurredAt;
         this.status = OutboxStatus.PENDING;
         this.retryCount = 0;
+        this.nextRetryAt = occurredAt;
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
     }
@@ -115,7 +121,8 @@ public class OutboxEventJpaEntity {
                 status,
                 retryCount,
                 publishedAt,
-                errorMessage
+                errorMessage,
+                nextRetryAt
         );
     }
 
@@ -139,6 +146,7 @@ public class OutboxEventJpaEntity {
         entity.retryCount = domain.getRetryCount();
         entity.publishedAt = domain.getPublishedAt();
         entity.errorMessage = domain.getErrorMessage();
+        entity.nextRetryAt = domain.getNextRetryAt();
         entity.updatedAt = Instant.now();
 
         return entity;
@@ -154,6 +162,7 @@ public class OutboxEventJpaEntity {
         this.retryCount = domain.getRetryCount();
         this.publishedAt = domain.getPublishedAt();
         this.errorMessage = domain.getErrorMessage();
+        this.nextRetryAt = domain.getNextRetryAt();
         this.updatedAt = Instant.now();
     }
 

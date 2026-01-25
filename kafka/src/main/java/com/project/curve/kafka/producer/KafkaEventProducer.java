@@ -14,6 +14,7 @@ import com.project.curve.spring.publisher.AbstractEventPublisher;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.retry.support.RetryTemplate;
@@ -25,6 +26,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -194,26 +196,50 @@ public class KafkaEventProducer extends AbstractEventPublisher {
      * 전송 성공/실패를 콜백으로 처리하며, 메인 스레드를 블로킹하지 않음
      */
     private void sendAsync(String eventId, String eventType, String value, long startTime) {
+        // 현재 스레드의 MDC 컨텍스트 캡처
+        Map<String, String> contextMap = MDC.getCopyOfContextMap();
+
         kafkaTemplate.send(topic, eventId, value)
                 .whenComplete((result, ex) -> {
-                    if (ex != null) {
-                        log.error("Async send failed: eventId={}, topic={}", eventId, topic, ex);
-                        metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
-                        metricsCollector.recordKafkaError(ex.getClass().getSimpleName());
-                        handleSendFailure(eventId, eventType, value, ex);
-                    } else {
-                        metricsCollector.recordEventPublished(eventType, true, System.currentTimeMillis() - startTime);
-                        handleSendSuccess(eventId, result);
+                    // 콜백 스레드에 MDC 컨텍스트 복원
+                    if (contextMap != null) {
+                        MDC.setContextMap(contextMap);
+                    }
+                    try {
+                        if (ex != null) {
+                            log.error("Async send failed: eventId={}, topic={}", eventId, topic, ex);
+                            metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
+                            metricsCollector.recordKafkaError(ex.getClass().getSimpleName());
+                            handleSendFailure(eventId, eventType, value, ex);
+                        } else {
+                            metricsCollector.recordEventPublished(eventType, true, System.currentTimeMillis() - startTime);
+                            handleSendSuccess(eventId, result);
+                        }
+                    } finally {
+                        // MDC 컨텍스트 정리
+                        if (contextMap != null) {
+                            MDC.clear();
+                        }
                     }
                 })
                 .orTimeout(asyncTimeoutMs, TimeUnit.MILLISECONDS)
                 .exceptionally(ex -> {
-                    log.error("Async send timeout: eventId={}, topic={}, timeout={}ms",
-                            eventId, topic, asyncTimeoutMs, ex);
-                    metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
-                    metricsCollector.recordKafkaError("TimeoutException");
-                    handleSendFailure(eventId, eventType, value, ex);
-                    return null;
+                    // 타임아웃 예외 처리 시에도 MDC 컨텍스트 복원
+                    if (contextMap != null) {
+                        MDC.setContextMap(contextMap);
+                    }
+                    try {
+                        log.error("Async send timeout: eventId={}, topic={}, timeout={}ms",
+                                eventId, topic, asyncTimeoutMs, ex);
+                        metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
+                        metricsCollector.recordKafkaError("TimeoutException");
+                        handleSendFailure(eventId, eventType, value, ex);
+                        return null;
+                    } finally {
+                        if (contextMap != null) {
+                            MDC.clear();
+                        }
+                    }
                 });
 
         log.debug("Event sent asynchronously (non-blocking): eventId={}, topic={}", eventId, topic);
@@ -249,8 +275,22 @@ public class KafkaEventProducer extends AbstractEventPublisher {
      */
     private void dispatchToDlq(String eventId, String originalValue, Throwable originalException) {
         if (dlqExecutor != null) {
+            // 현재 스레드의 MDC 컨텍스트 캡처
+            Map<String, String> contextMap = MDC.getCopyOfContextMap();
+            
             // 비동기 전송 - 별도 ExecutorService를 사용하여 콜백 스레드 블로킹 방지
-            dlqExecutor.submit(() -> executeDlqSend(eventId, originalValue, originalException));
+            dlqExecutor.submit(() -> {
+                if (contextMap != null) {
+                    MDC.setContextMap(contextMap);
+                }
+                try {
+                    executeDlqSend(eventId, originalValue, originalException);
+                } finally {
+                    if (contextMap != null) {
+                        MDC.clear();
+                    }
+                }
+            });
         } else {
             // 동기 전송 - 이벤트 손실 방지를 위해 즉시 전송
             executeDlqSend(eventId, originalValue, originalException);

@@ -3,6 +3,8 @@ package com.project.curve.autoconfigure.envelope;
 import com.project.curve.autoconfigure.CurveProperties;
 import com.project.curve.core.port.ClockProvider;
 import com.project.curve.core.port.IdGenerator;
+import com.project.curve.core.validation.DefaultEventValidator;
+import com.project.curve.core.validation.EventValidator;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
 import com.project.curve.spring.infrastructure.SnowflakeIdGenerator;
 import com.project.curve.spring.infrastructure.UtcClockProvider;
@@ -40,5 +42,11 @@ public class CurveEnvelopeAutoConfiguration {
     @ConditionalOnMissingBean(EventEnvelopeFactory.class)
     public EventEnvelopeFactory eventEnvelopeFactory(ClockProvider clockProvider, IdGenerator idGenerator) {
         return new EventEnvelopeFactory(clockProvider, idGenerator);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(EventValidator.class)
+    public EventValidator eventValidator() {
+        return new DefaultEventValidator();
     }
 }
