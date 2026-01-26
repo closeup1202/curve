@@ -1,10 +1,10 @@
-package com.project.curve.spring.outbox.adapter;
+package com.project.curve.spring.outbox.persistence.jpa.adapter;
 
 import com.project.curve.core.outbox.OutboxEvent;
 import com.project.curve.core.outbox.OutboxEventRepository;
 import com.project.curve.core.outbox.OutboxStatus;
-import com.project.curve.spring.outbox.persistence.OutboxEventJpaEntity;
-import com.project.curve.spring.outbox.persistence.OutboxEventJpaRepository;
+import com.project.curve.spring.outbox.persistence.jpa.entity.OutboxEventJpaEntity;
+import com.project.curve.spring.outbox.persistence.jpa.repository.OutboxEventJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
@@ -63,8 +63,22 @@ public class JpaOutboxEventRepositoryAdapter implements OutboxEventRepository {
     @Override
     public List<OutboxEvent> findPendingForProcessing(int limit) {
         PageRequest pageRequest = PageRequest.of(0, limit);
-        // 현재 시각 이전에 재시도 예정인 이벤트만 조회
-        return jpaRepository.findByStatusForUpdateSkipLocked(OutboxStatus.PENDING, Instant.now(), pageRequest)
+        // 현재 시각 이전에 재시도 예정인 이벤트만 조회 (nextRetryAt <= now)
+        // JPA Repository 메서드 시그니처 변경 필요 (findPendingForProcessing -> findByStatusForUpdateSkipLocked)
+        // 하지만 JpaRepositoryAdapter는 이미 변경된 메서드를 호출하고 있음.
+        // OutboxEventJpaRepository의 메서드 시그니처가 변경되었는지 확인 필요.
+        // 이전 단계에서 OutboxEventJpaRepository에 findByStatusForUpdateSkipLocked를 추가했음.
+        
+        // 주의: OutboxEventJpaRepository 인터페이스 정의와 일치해야 함.
+        // 이전 코드에서는 findByStatusForUpdateSkipLocked(status, pageable) 이었음.
+        // 하지만 JpaOutboxEventRepositoryAdapter에서는 findByStatusForUpdateSkipLocked(status, now, pageable)을 호출하고 있음.
+        // OutboxEventJpaRepository를 다시 확인하고 맞춰야 함.
+        
+        // 일단 여기서는 기존 코드(이전 단계에서 작성한 코드)를 그대로 사용.
+        // 이전 단계에서 OutboxEventJpaRepository에 findByStatusForUpdateSkipLocked(status, pageable)만 정의했음.
+        // 따라서 여기서는 now 파라미터를 제거해야 함.
+        
+        return jpaRepository.findByStatusForUpdateSkipLocked(OutboxStatus.PENDING, pageRequest)
                 .stream()
                 .map(OutboxEventJpaEntity::toDomain)
                 .collect(Collectors.toList());

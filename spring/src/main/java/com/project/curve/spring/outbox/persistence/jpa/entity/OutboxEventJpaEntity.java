@@ -1,4 +1,4 @@
-package com.project.curve.spring.outbox.persistence;
+package com.project.curve.spring.outbox.persistence.jpa.entity;
 
 import com.project.curve.core.outbox.OutboxEvent;
 import com.project.curve.core.outbox.OutboxStatus;

@@ -4,6 +4,7 @@ import com.project.curve.core.exception.InvalidEventException;
 import com.project.curve.core.payload.DomainEventPayload;
 import com.project.curve.core.type.EventSeverity;
 import com.project.curve.core.type.EventType;
+import com.project.curve.core.validation.DefaultEventValidator;
 import com.project.curve.core.validation.EventValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("EventEnvelope 테스트")
 class EventEnvelopeTest {
+
+    EventValidator eventValidator = new DefaultEventValidator();
 
     @Test
     @DisplayName("정상적인 EventEnvelope 생성 - 모든 필드가 유효한 경우")
@@ -56,8 +59,9 @@ class EventEnvelopeTest {
         // given
         EventEnvelope<TestPayload> envelope = createValidEnvelope();
 
+
         // when & then
-        assertDoesNotThrow(() -> EventValidator.validate(envelope));
+        assertDoesNotThrow(() -> eventValidator.validate(envelope));
     }
 
     @Test
@@ -66,7 +70,7 @@ class EventEnvelopeTest {
         // when & then
         InvalidEventException exception = assertThrows(
                 InvalidEventException.class,
-                () -> EventValidator.validate(null)
+                () -> eventValidator.validate(null)
         );
         assertEquals("event must not be null", exception.getMessage());
     }
@@ -199,7 +203,7 @@ class EventEnvelopeTest {
         // when & then
         InvalidEventException exception = assertThrows(
                 InvalidEventException.class,
-                () -> EventValidator.validate(envelope)
+                () -> eventValidator.validate(envelope)
         );
         assertEquals("occurredAt must be <= publishedAt", exception.getMessage());
     }
@@ -221,7 +225,7 @@ class EventEnvelopeTest {
         );
 
         // when & then
-        assertDoesNotThrow(() -> EventValidator.validate(envelope));
+        assertDoesNotThrow(() -> eventValidator.validate(envelope));
     }
 
     @Test
@@ -240,7 +244,7 @@ class EventEnvelopeTest {
             EventEnvelope<TestPayload> envelope = createValidEnvelopeWithSeverity(severity);
             assertNotNull(envelope);
             assertEquals(severity, envelope.severity());
-            assertDoesNotThrow(() -> EventValidator.validate(envelope));
+            assertDoesNotThrow(() -> eventValidator.validate(envelope));
         }
     }
 

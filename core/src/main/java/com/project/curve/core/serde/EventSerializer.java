@@ -23,12 +23,12 @@ import com.project.curve.core.payload.DomainEventPayload;
 public interface EventSerializer {
 
     /**
-     * EventEnvelope를 문자열로 직렬화합니다.
+     * EventEnvelope를 직렬화합니다.
      *
      * @param envelope 직렬화할 이벤트 Envelope
      * @param <T>      이벤트 페이로드 타입
-     * @return 직렬화된 문자열 (예: JSON, XML, Avro 등)
+     * @return 직렬화된 객체 (String, byte[], GenericRecord 등)
      * @throws EventSerializationException 직렬화 실패 시
      */
-    <T extends DomainEventPayload> String serialize(EventEnvelope<T> envelope) throws EventSerializationException;
+    <T extends DomainEventPayload> Object serialize(EventEnvelope<T> envelope) throws EventSerializationException;
 }

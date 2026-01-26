@@ -313,6 +313,11 @@ public class CurveProperties {
          */
         private SerdeType type = SerdeType.JSON;
 
+        /**
+         * Schema Registry URL (Avro 사용 시 필수)
+         */
+        private String schemaRegistryUrl;
+
         public enum SerdeType {
             JSON, AVRO, PROTOBUF
         }

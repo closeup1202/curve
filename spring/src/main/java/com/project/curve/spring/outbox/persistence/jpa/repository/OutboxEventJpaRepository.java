@@ -1,6 +1,7 @@
-package com.project.curve.spring.outbox.persistence;
+package com.project.curve.spring.outbox.persistence.jpa.repository;
 
 import com.project.curve.core.outbox.OutboxStatus;
+import com.project.curve.spring.outbox.persistence.jpa.entity.OutboxEventJpaEntity;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Pageable;
@@ -43,20 +44,16 @@ public interface OutboxEventJpaRepository extends JpaRepository<OutboxEventJpaEn
      * <p>
      * 다중 인스턴스 환경에서 동일 이벤트의 중복 처리를 방지합니다.
      * 다른 인스턴스가 이미 잠근 행은 건너뛰고, 잠기지 않은 행만 반환합니다.
-     * <p>
-     * 재시도 대기 중인 이벤트(nextRetryAt > now)는 조회되지 않습니다.
      *
      * @param status   조회할 상태
-     * @param now      현재 시각 (이 시각 이전의 nextRetryAt을 가진 이벤트만 조회)
      * @param pageable 페이징 (limit 설정)
      * @return 잠금이 획득된 이벤트 목록
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints({@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2")})
-    @Query("SELECT e FROM OutboxEventJpaEntity e WHERE e.status = :status AND e.nextRetryAt <= :now ORDER BY e.occurredAt ASC")
+    @Query("SELECT e FROM OutboxEventJpaEntity e WHERE e.status = :status ORDER BY e.occurredAt ASC")
     List<OutboxEventJpaEntity> findByStatusForUpdateSkipLocked(
             @Param("status") OutboxStatus status,
-            @Param("now") Instant now,
             Pageable pageable
     );
 

@@ -14,6 +14,7 @@
 - [PII 보호 설정](#pii-보호-설정)
 - [Outbox 설정](#outbox-설정)
 - [직렬화 설정](#직렬화-설정)
+- [Avro 직렬화 설정](#avro-직렬화-설정)
 - [로깅 설정](#로깅-설정)
 
 ---
@@ -444,6 +445,60 @@ curve:
 curve:
   serde:
     type: JSON  # JSON (기본값), AVRO, PROTOBUF
+```
+
+---
+
+## Avro 직렬화 설정
+
+Avro를 사용하여 이벤트를 직렬화하려면 추가 설정이 필요합니다.
+
+### 1. Curve 설정
+
+```yaml
+curve:
+  serde:
+    type: AVRO
+    schema-registry-url: http://localhost:8081  # Schema Registry 주소
+```
+
+### 2. Spring Kafka 설정 (필수)
+
+Spring Kafka의 Producer 설정에 `value-serializer`를 명시적으로 지정해야 합니다.
+
+```yaml
+spring:
+  kafka:
+    producer:
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+    properties:
+      schema.registry.url: http://localhost:8081
+```
+
+**⚠️ 주의사항:**
+- `curve.serde.type=AVRO`로 설정하면 Curve는 내부적으로 `GenericRecord` 객체를 생성하여 KafkaTemplate으로 전달합니다.
+- 따라서 KafkaTemplate이 `GenericRecord`를 직렬화할 수 있도록 `KafkaAvroSerializer`를 사용해야 합니다.
+- `schema.registry.url`은 `curve.serde`와 `spring.kafka.properties` 양쪽에 모두 설정해야 할 수 있습니다 (Curve 내부 로직용 및 Kafka Serializer용).
+
+### Avro 스키마 구조
+
+Curve는 내부적으로 다음과 같은 고정된 Avro 스키마를 사용합니다. `payload`와 `metadata`의 일부 필드는 유연성을 위해 JSON 문자열로 저장됩니다.
+
+```json
+{
+  "type": "record",
+  "name": "EventEnvelope",
+  "namespace": "com.project.curve.core.envelope",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "eventType", "type": "string"},
+    {"name": "severity", "type": "string"},
+    {"name": "metadata", "type": { ... }},
+    {"name": "payload", "type": "string"}, // JSON String
+    {"name": "occurredAt", "type": "long", "logicalType": "timestamp-millis"},
+    {"name": "publishedAt", "type": "long", "logicalType": "timestamp-millis"}
+  ]
+}
 ```
 
 ---

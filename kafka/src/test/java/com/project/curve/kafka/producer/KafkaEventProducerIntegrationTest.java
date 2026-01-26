@@ -54,13 +54,13 @@ class KafkaEventProducerIntegrationTest {
     private static KafkaConsumer<String, String> consumer;
     private static KafkaConsumer<String, String> dlqConsumer;
 
-    private static @NotNull KafkaTemplate<String, String> getStringKafkaTemplate() {
+    private static @NotNull KafkaTemplate<String, Object> getStringKafkaTemplate() {
         Map<String, Object> producerProps = new HashMap<>();
         producerProps.put("bootstrap.servers", kafka.getBootstrapServers());
         producerProps.put("key.serializer", StringSerializer.class);
         producerProps.put("value.serializer", StringSerializer.class);
 
-        DefaultKafkaProducerFactory<String, String> producerFactory =
+        DefaultKafkaProducerFactory<String, Object> producerFactory =
                 new DefaultKafkaProducerFactory<>(producerProps);
         return new KafkaTemplate<>(producerFactory);
     }
@@ -68,7 +68,7 @@ class KafkaEventProducerIntegrationTest {
     @BeforeAll
     static void setUp() {
         // Kafka 프로듀서 설정
-        KafkaTemplate<String, String> kafkaTemplate = getStringKafkaTemplate();
+        KafkaTemplate<String, Object> kafkaTemplate = getStringKafkaTemplate();
 
         // ObjectMapper 설정
         ObjectMapper objectMapper = new ObjectMapper();
@@ -260,7 +260,6 @@ class KafkaEventProducerIntegrationTest {
     @DisplayName("DLQ 토픽이 정상적으로 설정되어 있다")
     void dlq_shouldBeConfigured() {
         // Given & When: DLQ Consumer가 구독되어 있음
-
         // Then: DLQ Consumer가 정상 동작
         assertThat(dlqConsumer.subscription()).contains("test-dlq-topic");
     }
@@ -269,7 +268,7 @@ class KafkaEventProducerIntegrationTest {
     @DisplayName("DLQ Consumer가 메시지를 수신할 수 있다")
     void dlq_shouldConsumeMessages() throws Exception {
         // Given: DLQ에 직접 메시지 전송 (실제 실패 시나리오 시뮬레이션)
-        KafkaTemplate<String, String> dlqTemplate = getStringKafkaTemplate();
+        KafkaTemplate<String, Object> dlqTemplate = getStringKafkaTemplate();
 
         // FailedEventRecord JSON 생성
         String testEventId = "failed-event-123";
@@ -308,7 +307,6 @@ class KafkaEventProducerIntegrationTest {
                 assertThat(parsedRecord).containsKey("originalTopic");
                 assertThat(parsedRecord).containsKey("exceptionClass");
                 assertThat(parsedRecord.get("eventId")).isEqualTo(testEventId);
-
                 break;
             }
         }

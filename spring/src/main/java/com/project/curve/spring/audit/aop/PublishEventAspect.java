@@ -182,9 +182,9 @@ public class PublishEventAspect {
             Expression expr = spelParser.parseExpression(expression);
             return expr.getValue(context);
         } catch (Exception e) {
-            throw new EventPublishException(
-                    "Failed to extract payload using SpEL expression '" + expression + "': " + e.getMessage(), e
-            );
+            // SpEL 파싱/실행 실패 시 로그를 남기고 null 반환 (비즈니스 로직 영향 최소화)
+            log.warn("Failed to extract payload using SpEL expression '{}': {}", expression, e.getMessage());
+            return null;
         }
     }
 

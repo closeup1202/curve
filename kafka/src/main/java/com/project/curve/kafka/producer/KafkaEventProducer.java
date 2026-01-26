@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Kafka 기반 이벤트 발행자.
  * <p>
- * 이벤트를 JSON으로 직렬화하여 Kafka 토픽에 발행합니다.
+ * 이벤트를 직렬화하여 Kafka 토픽에 발행합니다.
  *
  * <h2>주요 기능</h2>
  * <ul>
@@ -62,7 +62,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class KafkaEventProducer extends AbstractEventPublisher {
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     private final EventSerializer eventSerializer;
     private final ObjectMapper objectMapper;
     private final String topic;
@@ -80,7 +80,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     public KafkaEventProducer(
             @NonNull EventEnvelopeFactory envelopeFactory,
             @NonNull EventContextProvider eventContextProvider,
-            @NonNull KafkaTemplate<String, String> kafkaTemplate,
+            @NonNull KafkaTemplate<String, Object> kafkaTemplate,
             @NonNull EventSerializer eventSerializer,
             @NonNull ObjectMapper objectMapper,
             @NonNull String topic,
@@ -123,7 +123,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         long startTime = System.currentTimeMillis();
 
         try {
-            String value = eventSerializer.serialize(envelope);
+            Object value = eventSerializer.serialize(envelope);
             doSend(eventId, eventType, value, startTime);
         } catch (EventSerializationException e) {
             handleSerializationError(eventId, eventType, startTime, e);
@@ -132,7 +132,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         }
     }
 
-    private void doSend(String eventId, String eventType, String value, long startTime) {
+    private void doSend(String eventId, String eventType, Object value, long startTime) {
         log.debug("Sending event to Kafka: eventId={}, topic={}, mode={}", eventId, topic, asyncMode ? "async" : "sync");
 
         if (asyncMode) {
@@ -142,7 +142,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         }
     }
 
-    private void sendSync(String eventId, String eventType, String value, long startTime) {
+    private void sendSync(String eventId, String eventType, Object value, long startTime) {
         if (retryTemplate != null) {
             sendWithRetry(eventId, eventType, value, startTime);
         } else {
@@ -165,7 +165,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         metricsCollector.recordKafkaError(errorType);
     }
 
-    private void sendWithRetry(String eventId, String eventType, String value, long startTime) {
+    private void sendWithRetry(String eventId, String eventType, Object value, long startTime) {
         try {
             retryTemplate.execute(context -> {
                 if (context.getRetryCount() > 0) {
@@ -181,7 +181,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         }
     }
 
-    private void sendWithoutRetry(String eventId, String eventType, String value, long startTime) {
+    private void sendWithoutRetry(String eventId, String eventType, Object value, long startTime) {
         try {
             doSendSync(eventId, eventType, value, startTime);
         } catch (Exception e) {
@@ -195,7 +195,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
      * 비동기 전송 - CompletableFuture 기반
      * 전송 성공/실패를 콜백으로 처리하며, 메인 스레드를 블로킹하지 않음
      */
-    private void sendAsync(String eventId, String eventType, String value, long startTime) {
+    private void sendAsync(String eventId, String eventType, Object value, long startTime) {
         // 현재 스레드의 MDC 컨텍스트 캡처
         Map<String, String> contextMap = MDC.getCopyOfContextMap();
 
@@ -245,8 +245,8 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         log.debug("Event sent asynchronously (non-blocking): eventId={}, topic={}", eventId, topic);
     }
 
-    private SendResult<String, String> doSendSync(String eventId, String eventType, String value, long startTime) throws Exception {
-        SendResult<String, String> result = kafkaTemplate
+    private SendResult<String, Object> doSendSync(String eventId, String eventType, Object value, long startTime) throws Exception {
+        SendResult<String, Object> result = kafkaTemplate
                 .send(topic, eventId, value)
                 .get(syncTimeoutSeconds, TimeUnit.SECONDS);
 
@@ -255,13 +255,13 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         return result;
     }
 
-    private void handleSendSuccess(String eventId, SendResult<String, String> result) {
+    private void handleSendSuccess(String eventId, SendResult<String, Object> result) {
         var metadata = result.getRecordMetadata();
         log.debug("Event sent successfully: eventId={}, topic={}, partition={}, offset={}",
                 eventId, metadata.topic(), metadata.partition(), metadata.offset());
     }
 
-    private void handleSendFailure(String eventId, String eventType, String originalValue, Throwable ex) {
+    private void handleSendFailure(String eventId, String eventType, Object originalValue, Throwable ex) {
         if (dlqEnabled) {
             metricsCollector.recordDlqEvent(eventType, ex.getClass().getSimpleName());
             dispatchToDlq(eventId, originalValue, ex);
@@ -273,7 +273,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     /**
      * DLQ 전송 디스패치 - ExecutorService 존재 여부에 따라 비동기/동기 전송 결정
      */
-    private void dispatchToDlq(String eventId, String originalValue, Throwable originalException) {
+    private void dispatchToDlq(String eventId, Object originalValue, Throwable originalException) {
         if (dlqExecutor != null) {
             // 현재 스레드의 MDC 컨텍스트 캡처
             Map<String, String> contextMap = MDC.getCopyOfContextMap();
@@ -300,14 +300,14 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     /**
      * DLQ 전송 실행 - 실제 Kafka DLQ 전송 로직
      */
-    private void executeDlqSend(String eventId, String originalValue, Throwable originalException) {
+    private void executeDlqSend(String eventId, Object originalValue, Throwable originalException) {
         String mode = dlqExecutor != null ? "async" : "sync";
         try {
             log.warn("Sending failed event to DLQ ({}): eventId={}, dlqTopic={}", mode, eventId, dlqTopic);
 
             String dlqValue = createDlqPayload(eventId, originalValue, originalException);
 
-            SendResult<String, String> result = kafkaTemplate
+            SendResult<String, Object> result = kafkaTemplate
                     .send(dlqTopic, eventId, dlqValue)
                     .get(syncTimeoutSeconds, TimeUnit.SECONDS);
 
@@ -324,12 +324,26 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     /**
      * DLQ 페이로드 생성 - FailedEventRecord를 JSON으로 직렬화
      */
-    private String createDlqPayload(String eventId, String originalValue, Throwable originalException)
+    private String createDlqPayload(String eventId, Object originalValue, Throwable originalException)
             throws JsonProcessingException {
+        
+        String payloadString;
+        if (originalValue instanceof String) {
+            payloadString = (String) originalValue;
+        } else {
+            // Avro 객체 등은 toString() 또는 별도 직렬화 필요
+            // 여기서는 안전하게 toString() 사용하거나 JSON으로 변환 시도
+            try {
+                payloadString = objectMapper.writeValueAsString(originalValue);
+            } catch (Exception e) {
+                payloadString = String.valueOf(originalValue);
+            }
+        }
+        
         FailedEventRecord failedRecord = new FailedEventRecord(
                 eventId,
                 topic,
-                originalValue,
+                payloadString,
                 originalException.getClass().getName(),
                 originalException.getMessage(),
                 System.currentTimeMillis()
@@ -364,22 +378,33 @@ public class KafkaEventProducer extends AbstractEventPublisher {
      * @param eventId       이벤트 ID
      * @param originalValue 직렬화된 이벤트 페이로드 (PII 마스킹 적용된 상태)
      */
-    private void backupToLocalFile(String eventId, String originalValue) {
+    private void backupToLocalFile(String eventId, Object originalValue) {
         try {
             Path backupDir = Paths.get(dlqBackupPath);
             Files.createDirectories(backupDir);
 
             Path backupFile = backupDir.resolve(eventId + ".json");
+            
+            String content;
+            if (originalValue instanceof String) {
+                content = (String) originalValue;
+            } else {
+                try {
+                    content = objectMapper.writeValueAsString(originalValue);
+                } catch (Exception e) {
+                    content = String.valueOf(originalValue);
+                }
+            }
 
             // POSIX 파일 시스템인 경우 파일 권한 설정 (rw-------)
             try {
                 Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-------");
-                Files.writeString(backupFile, originalValue, StandardOpenOption.CREATE);
+                Files.writeString(backupFile, content, StandardOpenOption.CREATE);
                 Files.setPosixFilePermissions(backupFile, perms);
                 log.error("Event backed up to file with restricted permissions: eventId={}, file={}", eventId, backupFile);
             } catch (UnsupportedOperationException e) {
                 // Windows 등 POSIX를 지원하지 않는 시스템
-                Files.writeString(backupFile, originalValue, StandardOpenOption.CREATE);
+                Files.writeString(backupFile, content, StandardOpenOption.CREATE);
                 log.error("Event backed up to file (POSIX not supported): eventId={}, file={}", eventId, backupFile);
                 log.warn("Consider manual security configuration on non-POSIX systems like windows : {}", backupFile);
             }

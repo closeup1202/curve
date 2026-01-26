@@ -79,7 +79,7 @@ public class CurveKafkaAutoConfiguration {
     public EventProducer eventProducer(
             EventEnvelopeFactory envelopeFactory,
             EventContextProvider eventContextProvider,
-            KafkaTemplate<String, String> kafkaTemplate,
+            KafkaTemplate<String, Object> kafkaTemplate,
             EventSerializer eventSerializer,
             ObjectMapper objectMapper,
             CurveProperties properties,
@@ -110,8 +110,8 @@ public class CurveKafkaAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(KafkaTemplate.class)
-    public KafkaTemplate<String, String> kafkaTemplate(
-            ProducerFactory<String, String> producerFactory
+    public KafkaTemplate<String, Object> kafkaTemplate(
+            ProducerFactory<String, Object> producerFactory
     ) {
         log.debug("Creating default KafkaTemplate");
         return new KafkaTemplate<>(producerFactory);
@@ -119,7 +119,7 @@ public class CurveKafkaAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ProducerFactory.class)
-    public ProducerFactory<String, String> producerFactory(
+    public ProducerFactory<String, Object> producerFactory(
             KafkaProperties kafkaProperties,
             CurveProperties curveProperties
     ) {

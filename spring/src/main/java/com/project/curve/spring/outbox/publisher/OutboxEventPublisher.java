@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class OutboxEventPublisher {
 
     private final OutboxEventRepository outboxRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     private final String topic;
     private final int batchSize;
     private final int maxRetries;
@@ -59,7 +59,7 @@ public class OutboxEventPublisher {
 
     public OutboxEventPublisher(
             OutboxEventRepository outboxRepository,
-            KafkaTemplate<String, String> kafkaTemplate,
+            KafkaTemplate<String, Object> kafkaTemplate,
             String topic,
             int batchSize,
             int maxRetries,

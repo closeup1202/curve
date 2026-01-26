@@ -1,18 +1,15 @@
 package com.project.curve.autoconfigure;
 
-import com.project.curve.autoconfigure.aop.CurveAopAutoConfiguration;
-import com.project.curve.autoconfigure.context.CurveContextAutoConfiguration;
-import com.project.curve.autoconfigure.envelope.CurveEnvelopeAutoConfiguration;
-import com.project.curve.autoconfigure.jackson.CurveJacksonAutoConfiguration;
-import com.project.curve.autoconfigure.kafka.CurveKafkaAutoConfiguration;
-import com.project.curve.autoconfigure.pii.CurvePiiAutoConfiguration;
-import com.project.curve.autoconfigure.retry.CurveRetryAutoConfiguration;
 import com.project.curve.core.port.EventProducer;
+import com.project.curve.spring.audit.aop.PublishEventAspect;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.retry.support.RetryTemplate;
@@ -27,15 +24,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("CurveAutoConfiguration 테스트")
 class CurveAutoConfigurationTest {
 
-    // 기본 컨텍스트 러너 - CurveAutoConfiguration만 등록하면 @Import로 나머지가 로드됨
+    // 기본 컨텍스트 러너
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(
                     CurveAutoConfiguration.class,
-                    KafkaAutoConfiguration.class
+                    KafkaAutoConfiguration.class,
+                    DataSourceAutoConfiguration.class,
+                    JdbcTemplateAutoConfiguration.class,
+                    JacksonAutoConfiguration.class
             ))
             .withPropertyValues(
                     "spring.kafka.bootstrap-servers=localhost:9092",
-                    "curve.kafka.topic=test-topic"
+                    "curve.kafka.topic=test-topic",
+                    "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
+                    "spring.datasource.driver-class-name=org.h2.Driver",
+                    "spring.datasource.username=sa",
+                    "spring.datasource.password="
             );
 
     @Nested
@@ -50,6 +54,8 @@ class CurveAutoConfigurationTest {
                     .run(context -> {
                         assertThat(context).hasSingleBean(CurveProperties.class);
                         assertThat(context).hasSingleBean(EventEnvelopeFactory.class);
+                        assertThat(context).hasSingleBean(EventProducer.class);
+                        assertThat(context).hasSingleBean(RetryTemplate.class);
                     });
         }
 
@@ -59,6 +65,7 @@ class CurveAutoConfigurationTest {
             contextRunner
                     .run(context -> {
                         assertThat(context).hasSingleBean(CurveProperties.class);
+                        assertThat(context).hasSingleBean(EventEnvelopeFactory.class);
                     });
         }
 
@@ -68,8 +75,12 @@ class CurveAutoConfigurationTest {
             contextRunner
                     .withPropertyValues("curve.enabled=false")
                     .run(context -> {
-                        // CurveAutoConfiguration이 비활성화되면 EventEnvelopeFactory가 등록되지 않음
                         assertThat(context).doesNotHaveBean(EventEnvelopeFactory.class);
+                        assertThat(context).doesNotHaveBean(EventProducer.class);
+                        assertThat(context).doesNotHaveBean(RetryTemplate.class);
+                        // CurveProperties는 @EnableConfigurationProperties로 등록되므로
+                        // CurveAutoConfiguration이 로드되지 않으면 등록되지 않아야 함
+                        assertThat(context).doesNotHaveBean(CurveProperties.class);
                     });
         }
     }
@@ -146,7 +157,10 @@ class CurveAutoConfigurationTest {
                             "curve.kafka.async-timeout-ms=10000",
                             "curve.retry.max-attempts=5",
                             "curve.retry.initial-interval=2000",
-                            "curve.id-generator.worker-id=100"
+                            "curve.id-generator.worker-id=100",
+                            "curve.outbox.enabled=true",
+                            "curve.outbox.poll-interval-ms=500",
+                            "curve.serde.type=AVRO"
                     )
                     .run(context -> {
                         CurveProperties props = context.getBean(CurveProperties.class);
@@ -158,6 +172,8 @@ class CurveAutoConfigurationTest {
                         assertThat(props.getRetry().getMaxAttempts()).isEqualTo(5);
                         assertThat(props.getRetry().getInitialInterval()).isEqualTo(2000L);
                         assertThat(props.getIdGenerator().getWorkerId()).isEqualTo(100L);
+                        assertThat(props.getOutbox().getPollIntervalMs()).isEqualTo(500L);
+                        assertThat(props.getSerde().getType()).isEqualTo(CurveProperties.Serde.SerdeType.AVRO);
                     });
         }
 
@@ -178,6 +194,8 @@ class CurveAutoConfigurationTest {
                         assertThat(props.getRetry().getMultiplier()).isEqualTo(2.0);
                         assertThat(props.getIdGenerator().getWorkerId()).isEqualTo(1L);
                         assertThat(props.getIdGenerator().isAutoGenerate()).isFalse();
+                        assertThat(props.getOutbox().isEnabled()).isFalse();
+                        assertThat(props.getSerde().getType()).isEqualTo(CurveProperties.Serde.SerdeType.JSON);
                     });
         }
     }
@@ -194,6 +212,19 @@ class CurveAutoConfigurationTest {
                     .run(context -> {
                         CurveProperties props = context.getBean(CurveProperties.class);
                         assertThat(props.getAop().isEnabled()).isFalse();
+                        assertThat(context).doesNotHaveBean("publishEventAspect");
+                    });
+        }
+
+        @Test
+        @DisplayName("curve.aop.enabled=true일 때 Aspect가 등록되어야 한다")
+        void shouldRegisterAspectWhenEnabled() {
+            contextRunner
+                    .withPropertyValues("curve.aop.enabled=true")
+                    .run(context -> {
+                        CurveProperties props = context.getBean(CurveProperties.class);
+                        assertThat(props.getAop().isEnabled()).isTrue();
+                        assertThat(context).hasSingleBean(PublishEventAspect.class);
                     });
         }
     }

@@ -13,8 +13,13 @@ dependencies {
     compileOnly 'org.springframework:spring-web'
     compileOnly 'org.springframework.boot:spring-boot-starter-actuator'
     compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa'
+    compileOnly 'org.springframework.boot:spring-boot-starter-jdbc'
 
     api project(':core')
     api project(':spring')
     api project(':kafka')
+
+    testImplementation 'org.apache.avro:avro:1.11.4'
+    testImplementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    testRuntimeOnly 'com.h2database:h2'
 }

@@ -2,6 +2,7 @@ package com.project.curve.autoconfigure.aop;
 
 import com.project.curve.core.port.EventProducer;
 import com.project.curve.spring.audit.aop.PublishEventAspect;
+import com.project.curve.spring.audit.validation.SpelExpressionValidator;
 import com.project.curve.spring.metrics.CurveMetricsCollector;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -28,5 +29,10 @@ public class CurveAopAutoConfiguration {
     ) {
         log.debug("Initializing PublishEventAspect for @PublishEvent annotation support");
         return new PublishEventAspect(eventProducer, metricsCollector);
+    }
+
+    @Bean
+    public SpelExpressionValidator spelExpressionValidator() {
+        return new SpelExpressionValidator();
     }
 }
