@@ -3,7 +3,9 @@ package com.project.curve.spring.outbox.persistence.jpa.entity;
 import com.project.curve.core.outbox.OutboxEvent;
 import com.project.curve.core.outbox.OutboxStatus;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
@@ -33,6 +35,7 @@ import java.time.Instant;
                 @Index(name = "idx_outbox_next_retry", columnList = "next_retry_at")
         }
 )
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OutboxEventJpaEntity {
 
     @Id
@@ -79,10 +82,6 @@ public class OutboxEventJpaEntity {
     @Version
     @Column(name = "version")
     private Long version;
-
-    protected OutboxEventJpaEntity() {
-        // JPA requires default constructor
-    }
 
     public OutboxEventJpaEntity(
             String eventId,

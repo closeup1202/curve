@@ -3,7 +3,6 @@ package com.project.curve.autoconfigure.health;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
 
 /**
  * Curve 이벤트 발행 시스템의 Health Indicator.
@@ -22,20 +21,13 @@ import org.springframework.kafka.core.ProducerFactory;
  *   <li>producerMetrics: Producer 메트릭 수 (connection 상태 간접 확인)</li>
  * </ul>
  *
- * @see org.springframework.boot.actuate.health.HealthIndicator
- * @see org.springframework.kafka.core.KafkaTemplate
+ * @see HealthIndicator
+ * @see KafkaTemplate
  */
-public class CurveHealthIndicator implements HealthIndicator {
-
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final String topic;
-    private final String dlqTopic;
-
-    public CurveHealthIndicator(KafkaTemplate<String, String> kafkaTemplate, String topic, String dlqTopic) {
-        this.kafkaTemplate = kafkaTemplate;
-        this.topic = topic;
-        this.dlqTopic = dlqTopic;
-    }
+public record CurveHealthIndicator(
+        KafkaTemplate<String, Object> kafkaTemplate,
+        String topic,
+        String dlqTopic) implements HealthIndicator {
 
     @Override
     public Health health() {
@@ -43,13 +35,6 @@ public class CurveHealthIndicator implements HealthIndicator {
             if (kafkaTemplate == null) {
                 return Health.down()
                         .withDetail("error", "KafkaTemplate is not initialized")
-                        .build();
-            }
-
-            ProducerFactory<String, String> producerFactory = kafkaTemplate.getProducerFactory();
-            if (producerFactory == null) {
-                return Health.down()
-                        .withDetail("error", "ProducerFactory is not available")
                         .build();
             }
 

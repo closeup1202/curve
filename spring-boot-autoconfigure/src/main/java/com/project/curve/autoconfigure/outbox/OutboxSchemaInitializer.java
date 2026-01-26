@@ -115,6 +115,7 @@ public class OutboxSchemaInitializer implements InitializingBean {
                     retry_count     INT             NOT NULL DEFAULT 0,
                     published_at    TIMESTAMP,
                     error_message   VARCHAR(500),
+                    next_retry_at   TIMESTAMP,
                     created_at      TIMESTAMP       NOT NULL,
                     updated_at      TIMESTAMP       NOT NULL,
                     version         BIGINT
@@ -134,6 +135,7 @@ public class OutboxSchemaInitializer implements InitializingBean {
                     retry_count     INT             NOT NULL DEFAULT 0,
                     published_at    TIMESTAMP(6)    NULL,
                     error_message   VARCHAR(500),
+                    next_retry_at   TIMESTAMP(6)    NULL,
                     created_at      TIMESTAMP(6)    NOT NULL,
                     updated_at      TIMESTAMP(6)    NOT NULL,
                     version         BIGINT,
@@ -154,6 +156,7 @@ public class OutboxSchemaInitializer implements InitializingBean {
                     retry_count     NUMBER(10)      DEFAULT 0 NOT NULL,
                     published_at    TIMESTAMP,
                     error_message   VARCHAR2(500),
+                    next_retry_at   TIMESTAMP,
                     created_at      TIMESTAMP       NOT NULL,
                     updated_at      TIMESTAMP       NOT NULL,
                     version         NUMBER(19)
@@ -173,6 +176,7 @@ public class OutboxSchemaInitializer implements InitializingBean {
                     retry_count     INTEGER     NOT NULL DEFAULT 0,
                     published_at    TEXT,
                     error_message   TEXT,
+                    next_retry_at   TEXT,
                     created_at      TEXT        NOT NULL,
                     updated_at      TEXT        NOT NULL,
                     version         INTEGER
@@ -192,6 +196,7 @@ public class OutboxSchemaInitializer implements InitializingBean {
                     retry_count     INT             NOT NULL DEFAULT 0,
                     published_at    TIMESTAMP,
                     error_message   VARCHAR(500),
+                    next_retry_at   TIMESTAMP,
                     created_at      TIMESTAMP       NOT NULL,
                     updated_at      TIMESTAMP       NOT NULL,
                     version         BIGINT
@@ -202,6 +207,7 @@ public class OutboxSchemaInitializer implements InitializingBean {
         createIndex(jdbcTemplate, dbName, "idx_outbox_status", "status");
         createIndex(jdbcTemplate, dbName, "idx_outbox_aggregate", "aggregate_type, aggregate_id");
         createIndex(jdbcTemplate, dbName, "idx_outbox_occurred_at", "occurred_at");
+        createIndex(jdbcTemplate, dbName, "idx_outbox_next_retry", "next_retry_at");
     }
 
     private void createIndex(JdbcTemplate jdbcTemplate, String dbName, String indexName, String columns) {

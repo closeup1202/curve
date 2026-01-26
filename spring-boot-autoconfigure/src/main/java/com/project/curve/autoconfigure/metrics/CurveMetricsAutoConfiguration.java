@@ -1,5 +1,6 @@
 package com.project.curve.autoconfigure.metrics;
 
+import com.project.curve.autoconfigure.actuator.CurveMetricsEndpoint;
 import com.project.curve.spring.metrics.CurveMetricsCollector;
 import com.project.curve.spring.metrics.MicrometerCurveMetricsCollector;
 import com.project.curve.spring.metrics.NoOpCurveMetricsCollector;
@@ -28,5 +29,11 @@ public class CurveMetricsAutoConfiguration {
     @ConditionalOnMissingBean(CurveMetricsCollector.class)
     public CurveMetricsCollector noOpCurveMetricsCollector() {
         return new NoOpCurveMetricsCollector();
+    }
+
+    @Bean
+    @ConditionalOnBean(MeterRegistry.class)
+    public CurveMetricsEndpoint curveMetricsEndpoint(MeterRegistry meterRegistry) {
+        return new CurveMetricsEndpoint(meterRegistry);
     }
 }

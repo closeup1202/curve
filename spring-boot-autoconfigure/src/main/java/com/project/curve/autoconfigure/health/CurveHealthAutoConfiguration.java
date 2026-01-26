@@ -37,7 +37,7 @@ public class CurveHealthAutoConfiguration {
 
     @Bean
     public CurveHealthIndicator curveHealthIndicator(
-            KafkaTemplate<String, String> kafkaTemplate,
+            KafkaTemplate<String, Object> kafkaTemplate,
             CurveProperties properties
     ) {
         return new CurveHealthIndicator(

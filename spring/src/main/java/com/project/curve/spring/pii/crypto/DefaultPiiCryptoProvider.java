@@ -1,6 +1,7 @@
 package com.project.curve.spring.pii.crypto;
 
 import com.project.curve.spring.exception.PiiCryptoException;
+import lombok.Getter;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -36,6 +37,7 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
     private final Map<String, SecretKey> keyStore;
     private final String salt;
     private final SecureRandom secureRandom;
+    @Getter
     private final boolean encryptionEnabled;
 
     /**
@@ -50,15 +52,6 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
         this.keyStore = new ConcurrentHashMap<>();
         this.salt = salt != null ? salt : "";
         this.secureRandom = new SecureRandom();
-    }
-
-    /**
-     * 암호화 기능이 활성화되어 있는지 확인한다.
-     *
-     * @return 암호화 키가 설정되어 있으면 true
-     */
-    public boolean isEncryptionEnabled() {
-        return encryptionEnabled;
     }
 
     /**

@@ -13,6 +13,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackage;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -38,7 +39,7 @@ import javax.sql.DataSource;
  * <h3>등록되는 빈</h3>
  * <ul>
  *   <li>OutboxEventRepository (JPA 또는 JDBC 구현체)</li>
- *   <li>OutboxEventPublisher - 주기적 발행 스케줄러</li>
+ *   <li>OutboxEventPublisher - 주기적 발행 스케줄러 (curve.outbox.publisher-enabled=true일 때)</li>
  * </ul>
  */
 @Slf4j
@@ -62,9 +63,10 @@ public class CurveOutboxAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(name = "curve.outbox.publisher-enabled", havingValue = "true", matchIfMissing = true)
     public OutboxEventPublisher outboxEventPublisher(
             OutboxEventRepository outboxRepository,
-            KafkaTemplate<String, String> kafkaTemplate,
+            KafkaTemplate<String, Object> kafkaTemplate,
             CurveProperties properties
     ) {
         CurveProperties.Outbox outboxConfig = properties.getOutbox();
@@ -107,14 +109,11 @@ public class CurveOutboxAutoConfiguration {
     /**
      * JPA가 없을 때 활성화되는 JDBC 설정.
      */
-    @Configuration
+    @Bean
+    @ConditionalOnMissingClass("org.springframework.data.jpa.repository.JpaRepository")
     @ConditionalOnMissingBean(OutboxEventRepository.class)
-    static class JdbcOutboxConfiguration {
-
-        @Bean
-        public OutboxEventRepository jdbcOutboxEventRepository(JdbcTemplate jdbcTemplate, DataSource dataSource) {
-            log.info("Registering OutboxEventRepository (JDBC implementation)");
-            return new JdbcOutboxEventRepository(jdbcTemplate, dataSource);
-        }
+    public OutboxEventRepository jdbcOutboxEventRepository(JdbcTemplate jdbcTemplate, DataSource dataSource) {
+        log.info("Registering OutboxEventRepository (JDBC implementation)");
+        return new JdbcOutboxEventRepository(jdbcTemplate, dataSource);
     }
 }

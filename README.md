@@ -45,7 +45,7 @@ public User createUser(CreateUserRequest request) {
 public class UserService {
 
     @Autowired
-    private KafkaTemplate<String, String> kafka;
+    private KafkaTemplate<String, Object> kafka;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -136,7 +136,7 @@ Zero event loss even when Kafka is down for 24 hours.
 
 ### ⚡ High Performance
 - **Sync mode**: ~500 TPS
-- **Async mode**: ~10,000+ TPS
+- **Async mode**: ~10,000+ TPS (with MDC Context Propagation)
 - **Transactional Outbox**: Guarantees atomicity and consistency.
 
 ### 🏗️ Hexagonal Architecture
@@ -146,7 +146,10 @@ Framework-independent core for maximum flexibility.
 - Spring Actuator Health Indicator
 - Custom metrics endpoint (`/actuator/curve-metrics`)
 - Detailed event tracking
-- Async context propagation (MDC, RequestContext)
+- **Async Context Propagation**: MDC (Trace ID) is preserved even in async threads.
+
+### 🧪 Testability
+- Provides `MockEventProducer` for easy unit/integration testing without Kafka.
 
 ---
 
@@ -278,7 +281,8 @@ curve/
 │   ├── context/                   # Spring-based Context Provider implementations
 │   ├── factory/                   # EventEnvelopeFactory
 │   ├── infrastructure/            # SnowflakeIdGenerator, UtcClockProvider
-│   └── publisher/                 # AbstractEventPublisher
+│   ├── publisher/                 # AbstractEventPublisher
+│   └── test/                      # Test utilities (MockEventProducer)
 │
 ├── kafka/                         # Kafka adapter
 │   ├── producer/                  # KafkaEventProducer
@@ -524,6 +528,9 @@ Distributed unique ID generation without collisions.
 ### 2. Transactional Outbox Pattern
 
 Guarantees atomicity between DB transactions and event publishing.
+
+- **Exponential Backoff**: Automatically retries failed events with increasing delays (1s, 2s, 4s...) to reduce DB load.
+- **SKIP LOCKED**: Uses pessimistic locking to prevent duplicate processing in multi-instance environments.
 
 ```java
 @Transactional

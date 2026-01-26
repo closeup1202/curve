@@ -3,7 +3,6 @@ package com.project.curve.spring.metrics;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
@@ -14,10 +13,7 @@ import java.util.concurrent.TimeUnit;
  * Micrometer가 클래스패스에 있을 때 자동 등록됩니다.
  */
 @Slf4j
-@RequiredArgsConstructor
-public class MicrometerCurveMetricsCollector implements CurveMetricsCollector {
-
-    private final MeterRegistry meterRegistry;
+public record MicrometerCurveMetricsCollector(MeterRegistry meterRegistry) implements CurveMetricsCollector {
 
     @Override
     public void recordEventPublished(String eventType, boolean success, long durationMs) {

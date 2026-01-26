@@ -243,6 +243,14 @@ public class CurveProperties {
         private boolean enabled = false;
 
         /**
+         * Outbox 이벤트 발행기(Publisher) 활성화 여부 (기본값: true)
+         * <p>
+         * true: 애플리케이션 내에서 주기적으로 PENDING 이벤트를 조회하여 Kafka로 발행 (Polling 방식)
+         * false: 발행은 하지 않고 DB 저장만 수행. CDC(Debezium 등)를 사용하여 외부에서 발행할 때 사용.
+         */
+        private boolean publisherEnabled = true;
+
+        /**
          * Outbox 테이블 스키마 초기화 모드 (기본값: embedded)
          * <p>
          * embedded: 임베디드 DB(H2, HSQLDB)에서만 자동 생성

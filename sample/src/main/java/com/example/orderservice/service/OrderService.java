@@ -238,4 +238,21 @@ public class OrderService {
                 .status(OrderStatus.PENDING)
                 .build();
     }
+
+    /**
+     * 고객 정보 업데이트 (SpEL 테스트용)
+     * <p>
+     * SpEL을 사용하여 파라미터의 특정 필드만 추출하여 이벤트 페이로드로 사용합니다.
+     *
+     * @param customerId 고객 ID
+     * @param newEmail 새로운 이메일
+     */
+    @PublishEvent(
+            eventType = "CUSTOMER_EMAIL_UPDATED",
+            payload = "#newEmail" // SpEL: 파라미터 이름으로 접근
+    )
+    public void updateCustomerEmail(String customerId, String newEmail) {
+        log.info("Updating customer email: customerId={}, newEmail={}", customerId, newEmail);
+        // 실제 로직 생략
+    }
 }

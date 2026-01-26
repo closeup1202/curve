@@ -45,7 +45,7 @@ public User createUser(CreateUserRequest request) {
 public class UserService {
 
     @Autowired
-    private KafkaTemplate<String, String> kafka;
+    private KafkaTemplate<String, Object> kafka;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -136,7 +136,7 @@ Kafka가 24시간 장애여도 이벤트 손실 제로
 
 ### ⚡ 고성능
 - **동기 모드**: ~500 TPS
-- **비동기 모드**: ~10,000+ TPS
+- **비동기 모드**: ~10,000+ TPS (MDC 컨텍스트 전파 포함)
 - **Transactional Outbox**: 원자성 및 일관성 보장
 
 ### 🏗️ Hexagonal Architecture
@@ -146,7 +146,10 @@ Kafka가 24시간 장애여도 이벤트 손실 제로
 - Spring Actuator Health Indicator
 - 커스텀 메트릭 엔드포인트 (`/actuator/curve-metrics`)
 - 상세한 이벤트 추적
-- 비동기 컨텍스트 전파 (MDC, RequestContext)
+- **비동기 컨텍스트 전파**: 비동기 스레드에서도 MDC(Trace ID)가 유지됩니다.
+
+### 🧪 테스트 용이성
+- Kafka 없이 단위/통합 테스트를 할 수 있는 `MockEventProducer` 제공.
 
 ---
 
@@ -278,7 +281,8 @@ curve/
 │   ├── context/                   # Spring 기반 Context Provider 구현
 │   ├── factory/                   # EventEnvelopeFactory
 │   ├── infrastructure/            # SnowflakeIdGenerator, UtcClockProvider
-│   └── publisher/                 # AbstractEventPublisher
+│   ├── publisher/                 # AbstractEventPublisher
+│   └── test/                      # 테스트 유틸리티 (MockEventProducer)
 │
 ├── kafka/                         # Kafka 어댑터
 │   ├── producer/                  # KafkaEventProducer
@@ -524,6 +528,9 @@ curve:
 ### 2. Transactional Outbox Pattern
 
 DB 트랜잭션과 이벤트 발행의 원자성을 보장합니다.
+
+- **지수 백오프(Exponential Backoff)**: 실패한 이벤트를 1초, 2초, 4초... 간격으로 재시도하여 DB 부하를 줄입니다.
+- **SKIP LOCKED**: 다중 인스턴스 환경에서 중복 처리를 방지하기 위해 비관적 락을 사용합니다.
 
 ```java
 @Transactional
