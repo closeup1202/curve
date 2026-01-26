@@ -4,10 +4,13 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -30,13 +33,10 @@ import java.util.stream.Collectors;
  * @see MeterRegistry
  */
 @Endpoint(id = "curve-metrics")
+@RequiredArgsConstructor
 public class CurveMetricsEndpoint {
 
     private final MeterRegistry meterRegistry;
-
-    public CurveMetricsEndpoint(MeterRegistry meterRegistry) {
-        this.meterRegistry = meterRegistry;
-    }
 
     /**
      * Curve 관련 메트릭을 모두 조회합니다.

@@ -14,7 +14,7 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:8081/api/orders/{{orderId}}
+GET http://localhost:8081/api/orders/fc43643b-0f49-4bdc-9a46-6b7a022a890c
 
 ###
 POST http://localhost:8081/api/orders/{{orderId}}/cancel

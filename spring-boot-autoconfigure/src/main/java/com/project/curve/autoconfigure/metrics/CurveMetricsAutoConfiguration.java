@@ -5,7 +5,12 @@ import com.project.curve.spring.metrics.CurveMetricsCollector;
 import com.project.curve.spring.metrics.MicrometerCurveMetricsCollector;
 import com.project.curve.spring.metrics.NoOpCurveMetricsCollector;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,23 +22,33 @@ import org.springframework.context.annotation.Configuration;
  * 없으면 NoOp 구현체를 등록하여 null 체크 없이 안전하게 동작합니다.
  */
 @Configuration
+@ConditionalOnClass(MeterRegistry.class)
+@AutoConfigureAfter({
+    MetricsAutoConfiguration.class,
+    PrometheusMetricsExportAutoConfiguration.class,
+    org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration.class
+})
+@Slf4j
 public class CurveMetricsAutoConfiguration {
 
     @Bean
-    @ConditionalOnBean(MeterRegistry.class)
-    public CurveMetricsCollector micrometerCurveMetricsCollector(MeterRegistry meterRegistry) {
-        return new MicrometerCurveMetricsCollector(meterRegistry);
-    }
-
-    @Bean
     @ConditionalOnMissingBean(CurveMetricsCollector.class)
-    public CurveMetricsCollector noOpCurveMetricsCollector() {
-        return new NoOpCurveMetricsCollector();
+    public CurveMetricsCollector curveMetricsCollector(ObjectProvider<MeterRegistry> meterRegistryProvider) {
+        MeterRegistry meterRegistry = meterRegistryProvider.getIfAvailable();
+        if (meterRegistry != null) {
+            log.debug("MeterRegistry is available. Using MicrometerCurveMetricsCollector");
+            return new MicrometerCurveMetricsCollector(meterRegistry);
+        } else {
+            return new NoOpCurveMetricsCollector();
+        }
     }
 
     @Bean
-    @ConditionalOnBean(MeterRegistry.class)
-    public CurveMetricsEndpoint curveMetricsEndpoint(MeterRegistry meterRegistry) {
-        return new CurveMetricsEndpoint(meterRegistry);
+    public CurveMetricsEndpoint curveMetricsEndpoint(ObjectProvider<MeterRegistry> meterRegistryProvider) {
+        MeterRegistry meterRegistry = meterRegistryProvider.getIfAvailable();
+        if (meterRegistry != null) {
+            return new CurveMetricsEndpoint(meterRegistry);
+        }
+        return null; // MeterRegistry가 없으면 엔드포인트 등록 안 함
     }
 }
