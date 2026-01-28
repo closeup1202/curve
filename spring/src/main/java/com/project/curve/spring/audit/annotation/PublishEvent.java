@@ -8,7 +8,63 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 메서드 실행 시 자동으로 이벤트를 발행하는 어노테이션
+ * Annotation for automatic event publishing on method execution.
+ * <p>
+ * This annotation enables declarative event publishing using Spring AOP. Simply add this
+ * annotation to any Spring-managed bean method, and an event will be automatically published
+ * when the method executes.
+ * </p>
+ *
+ * <h3>Basic Usage:</h3>
+ * <pre>{@code
+ * @Service
+ * public class OrderService {
+ *
+ *     @PublishEvent(eventType = "ORDER_CREATED")
+ *     public Order createOrder(CreateOrderRequest request) {
+ *         return orderRepository.save(new Order(request));
+ *     }
+ * }
+ * }</pre>
+ *
+ * <h3>With SpEL for Payload Extraction:</h3>
+ * <pre>{@code
+ * @PublishEvent(
+ *     eventType = "USER_UPDATED",
+ *     payload = "#args[0].toEventDto()"
+ * )
+ * public User updateUser(UserUpdateRequest request) {
+ *     return userRepository.save(request.toEntity());
+ * }
+ * }</pre>
+ *
+ * <h3>With Transactional Outbox:</h3>
+ * <pre>{@code
+ * @PublishEvent(
+ *     eventType = "ORDER_CREATED",
+ *     outbox = true,
+ *     aggregateType = "Order",
+ *     aggregateId = "#result.orderId"
+ * )
+ * @Transactional
+ * public Order createOrder(CreateOrderRequest request) {
+ *     return orderRepository.save(new Order(request));
+ * }
+ * }</pre>
+ *
+ * <h3>Key Features:</h3>
+ * <ul>
+ *   <li>Automatic event envelope creation with rich metadata</li>
+ *   <li>SpEL support for flexible payload extraction</li>
+ *   <li>Multiple execution phases (BEFORE, AFTER_RETURNING, AFTER)</li>
+ *   <li>Transactional Outbox Pattern support for data consistency</li>
+ *   <li>PII field masking/encryption support</li>
+ *   <li>Configurable error handling</li>
+ * </ul>
+ *
+ * @see com.project.curve.core.port.EventProducer
+ * @see com.project.curve.spring.audit.aop.PublishEventAspect
+ * @since 0.0.1
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

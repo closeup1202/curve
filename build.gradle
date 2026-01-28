@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.9'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'com.project'
@@ -32,6 +33,7 @@ allprojects {
     apply plugin: 'java-library'
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'jacoco'
 
     java {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -53,6 +55,91 @@ allprojects {
 
     test {
         useJUnitPlatform()
+        finalizedBy jacocoTestReport
+    }
+
+    jacoco {
+        toolVersion = "0.8.12"
+    }
+
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            xml.required = true
+            html.required = true
+            csv.required = false
+        }
+
+        afterEvaluate {
+            classDirectories.setFrom(files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: [
+                    '**/config/**',
+                    '**/configuration/**',
+                    '**/autoconfigure/**',
+                    '**/*Application.*',
+                    '**/*Config.*',
+                    '**/*Properties.*'
+                ])
+            }))
+        }
+    }
+
+    jacocoTestCoverageVerification {
+        dependsOn jacocoTestReport
+        violationRules {
+            rule {
+                enabled = true
+                element = 'CLASS'
+                limit {
+                    counter = 'LINE'
+                    value = 'COVEREDRATIO'
+                    minimum = 0.70
+                }
+                excludes = [
+                    '*.config.*',
+                    '*.configuration.*',
+                    '*.autoconfigure.*',
+                    '*Application',
+                    '*Config',
+                    '*Properties'
+                ]
+            }
+        }
+    }
+
+    javadoc {
+        options.encoding = 'UTF-8'
+        options.charSet = 'UTF-8'
+        options.docEncoding = 'UTF-8'
+        options.addStringOption('Xdoclint:none', '-quiet')
+        if (JavaVersion.current().isJava9Compatible()) {
+            options.addBooleanOption('html5', true)
+        }
+
+        afterEvaluate {
+            if (project != rootProject && project.name != 'sample') {
+                options.links(
+                    'https://docs.oracle.com/en/java/javase/17/docs/api/',
+                    'https://docs.spring.io/spring-framework/docs/current/javadoc-api/',
+                    'https://docs.spring.io/spring-boot/docs/current/api/'
+                )
+            }
+        }
+    }
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        archiveClassifier.set('javadoc')
+        from javadoc.destinationDir
+    }
+
+    task sourcesJar(type: Jar) {
+        archiveClassifier.set('sources')
+        from sourceSets.main.allSource
+    }
+
+    artifacts {
+        archives javadocJar
+        archives sourcesJar
     }
 }
 
