@@ -194,4 +194,51 @@ class SnowflakeIdGeneratorTest {
         assertThat(id2).isNotNull();
         assertThat(id1.value()).isNotEqualTo(id2.value());
     }
+
+    @Test
+    @DisplayName("MAC 주소 기반 자동 Worker ID로 ID 생성이 가능하다")
+    void createWithAutoWorkerId_shouldGenerateId() {
+        // Given
+        SnowflakeIdGenerator generator = SnowflakeIdGenerator.createWithAutoWorkerId();
+
+        // When
+        EventId id = generator.generate();
+
+        // Then
+        assertThat(id).isNotNull();
+        assertThat(id.value()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("자동 생성된 Worker ID로도 고유한 ID를 생성한다")
+    void createWithAutoWorkerId_shouldGenerateUniqueIds() {
+        // Given
+        SnowflakeIdGenerator generator = SnowflakeIdGenerator.createWithAutoWorkerId();
+        Set<String> ids = new HashSet<>();
+
+        // When
+        for (int i = 0; i < 100; i++) {
+            EventId id = generator.generate();
+            ids.add(id.value());
+        }
+
+        // Then
+        assertThat(ids).hasSize(100);
+    }
+
+    @Test
+    @DisplayName("연속 생성된 ID는 시간순으로 증가한다")
+    void generate_consecutiveIds_shouldBeMonotonicallyIncreasing() {
+        // Given
+        SnowflakeIdGenerator generator = new SnowflakeIdGenerator(1L);
+
+        // When
+        long id1 = Long.parseLong(generator.generate().value());
+        long id2 = Long.parseLong(generator.generate().value());
+        long id3 = Long.parseLong(generator.generate().value());
+
+        // Then
+        assertThat(id2).isGreaterThan(id1);
+        assertThat(id3).isGreaterThan(id2);
+    }
 }

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew clean test jacocoTestReport:*)",
+      "Bash(./gradlew jacocoTestCoverageVerification:*)",
+      "Bash(./gradlew :kafka:test:*)",
+      "Bash(./gradlew clean test jacocoTestCoverageVerification:*)",
+      "Bash(./gradlew:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

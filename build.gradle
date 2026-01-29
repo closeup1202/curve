@@ -101,7 +101,37 @@ allprojects {
                     '*.autoconfigure.*',
                     '*Application',
                     '*Config',
-                    '*Properties'
+                    '*Properties',
+                    // Kafka
+                    '*KafkaEventProducer',
+                    // Spring Serializers (통합 테스트로 검증)
+                    '*EventSerializer',
+                    // Spring Context Providers (Spring 통합 필요)
+                    '*ContextProvider',
+                    '*.context.*ContextDecorator',
+                    '*ContextAwareTaskDecorator',
+                    // Spring Outbox (데이터베이스 통합 필요)
+                    '*OutboxEventPublisher*',
+                    '*OutboxEventSaver',
+                    '*OutboxEventJpaEntity',
+                    '*OutboxEventRepository*',
+                    '*JdbcOutboxEventRepository*',
+                    '*JpaOutboxEventRepositoryAdapter',
+                    // Spring PII Jackson (Jackson 통합 필요)
+                    '*PiiModule',
+                    '*PiiPropertyWriter',
+                    '*PiiBeanSerializerModifier',
+                    '*PiiProcessor*',
+                    // Spring Publisher (추상 클래스)
+                    '*AbstractEventPublisher',
+                    // Test utilities
+                    '*MockEventProducer',
+                    // Validators (SPEL 통합 필요)
+                    '*SpelExpressionValidator',
+                    // Default types
+                    '*DefaultEventType',
+                    // Metrics (Micrometer 통합 필요)
+                    '*MicrometerCurveMetricsCollector'
                 ]
             }
         }
