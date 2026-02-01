@@ -10,8 +10,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * PiiProcessor 레지스트리.
- * 전략에 맞는 프로세서를 찾아 처리를 위임한다.
+ * PiiProcessor registry.
+ * Finds the processor matching the strategy and delegates processing.
  */
 @Component
 public class PiiProcessorRegistry {
@@ -28,20 +28,20 @@ public class PiiProcessorRegistry {
     }
 
     /**
-     * PiiField 어노테이션에 따라 값을 처리한다.
+     * Processes the value according to the PiiField annotation.
      *
-     * @param value 원본 값
-     * @param piiField PiiField 어노테이션
-     * @return 처리된 값, EXCLUDE 전략이면 null
+     * @param value Original value
+     * @param piiField PiiField annotation
+     * @return Processed value, null if EXCLUDE strategy
      */
     public String process(String value, PiiField piiField) {
         if (piiField.strategy() == PiiStrategy.EXCLUDE) {
-            return null; // Jackson에서 필드 제외 처리
+            return null; // Field exclusion handled by Jackson
         }
 
         PiiProcessor processor = processorMap.get(piiField.strategy());
         if (processor == null) {
-            // 프로세서가 없으면 원본 반환 (안전한 폴백)
+            // Return original if processor not found (safe fallback)
             return value;
         }
 
@@ -49,7 +49,7 @@ public class PiiProcessorRegistry {
     }
 
     /**
-     * 특정 전략의 프로세서가 등록되어 있는지 확인한다.
+     * Checks if a processor for the specified strategy is registered.
      */
     public boolean hasProcessor(PiiStrategy strategy) {
         return processorMap.containsKey(strategy);

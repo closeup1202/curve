@@ -3,9 +3,9 @@ package com.project.curve.core.validation;
 import com.project.curve.core.envelope.EventEnvelope;
 
 /**
- * 기본 이벤트 검증기.
+ * Default event validator.
  * <p>
- * 필수 필드 존재 여부와 시간 순서만 검증합니다.
+ * Validates only the presence of required fields and time ordering.
  */
 public class DefaultEventValidator implements EventValidator {
 

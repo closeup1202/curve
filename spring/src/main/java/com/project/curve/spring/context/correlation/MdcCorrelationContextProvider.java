@@ -6,31 +6,31 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 
 /**
- * SLF4J MDC 기반 Correlation Context Provider.
+ * SLF4J MDC-based Correlation Context Provider.
  * <p>
- * MDC(Mapped Diagnostic Context)를 사용하여 Correlation ID, Causation ID, Root Event ID를 관리합니다.
+ * Uses MDC (Mapped Diagnostic Context) to manage Correlation ID, Causation ID, and Root Event ID.
  *
- * <h3>MDC 키</h3>
+ * <h3>MDC Keys</h3>
  * <ul>
- *   <li>correlationId: 비즈니스 트랜잭션 ID</li>
- *   <li>causationId: 이 이벤트를 유발한 이벤트 ID</li>
- *   <li>rootEventId: 이벤트 체인의 최초 이벤트 ID</li>
+ *   <li>correlationId: Business transaction ID</li>
+ *   <li>causationId: ID of the event that caused this event</li>
+ *   <li>rootEventId: ID of the first event in the event chain</li>
  * </ul>
  *
- * <h3>사용 예시</h3>
+ * <h3>Usage Example</h3>
  * <pre>
- * // 1. HTTP Filter에서 설정
+ * // 1. Set in HTTP Filter
  * String correlationId = request.getHeader("X-Correlation-ID");
  * if (correlationId == null) {
  *     correlationId = UUID.randomUUID().toString();
  * }
  * MDC.put("correlationId", correlationId);
  *
- * // 2. 이벤트 발행 시 자동으로 포함됨
+ * // 2. Automatically included when publishing events
  * @PublishEvent(eventType = "ORDER_CREATED")
  * public Order createOrder() { ... }
  *
- * // 3. 요청 완료 후 정리
+ * // 3. Clean up after request completion
  * MDC.clear();
  * </pre>
  *
@@ -99,7 +99,7 @@ public class MdcCorrelationContextProvider implements CorrelationContextProvider
     }
 
     /**
-     * 모든 MDC 정리 (디버깅용).
+     * Clears all MDC context (for debugging).
      */
     public void clearAll() {
         MDC.clear();

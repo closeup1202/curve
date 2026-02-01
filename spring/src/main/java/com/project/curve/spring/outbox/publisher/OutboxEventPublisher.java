@@ -12,31 +12,32 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Outbox 이벤트를 주기적으로 Kafka로 발행하는 Publisher.
+ * Publisher that periodically publishes Outbox events to Kafka.
  * <p>
- * Transactional Outbox Pattern의 핵심 컴포넌트입니다.
+ * Core component of the Transactional Outbox Pattern.
  *
- * <h3>동작 방식</h3>
+ * <h3>Operation</h3>
  * <ol>
- *   <li>고정 주기(기본 1초)로 PENDING 상태의 이벤트 조회</li>
- *   <li>조회된 이벤트를 Kafka로 발행 시도</li>
- *   <li>성공 시 PUBLISHED 상태로 변경</li>
- *   <li>실패 시 재시도 카운트 증가, 최대 횟수 초과 시 FAILED 상태로 변경</li>
+ *   <li>Query PENDING events at fixed intervals (default 1 second)</li>
+ *   <li>Attempt to publish queried events to Kafka</li>
+ *   <li>On success, change to PUBLISHED status</li>
+ *   <li>On failure, increment retry count; change to FAILED status when max retries exceeded</li>
  * </ol>
  *
- * <h3>설정</h3>
+ * <h3>Configuration</h3>
  * <pre>
  * curve:
  *   outbox:
  *     enabled: true
- *     poll-interval-ms: 1000      # 폴링 주기
- *     batch-size: 100              # 한 번에 처리할 이벤트 수
- *     max-retries: 3               # 최대 재시도 횟수
+ *     poll-interval-ms: 1000      # Polling interval
+ *     batch-size: 100              # Number of events to process at once
+ *     max-retries: 3               # Maximum retry count
  * </pre>
  *
  * @see OutboxEvent
@@ -53,9 +54,23 @@ public class OutboxEventPublisher {
     private final int sendTimeoutSeconds;
     private final boolean cleanupEnabled;
     private final int retentionDays;
+    private final boolean dynamicBatchingEnabled;
+    private final boolean circuitBreakerEnabled;
 
+    // Statistics and metrics
     private final AtomicInteger publishedCount = new AtomicInteger(0);
     private final AtomicInteger failedCount = new AtomicInteger(0);
+
+    // Circuit Breaker state
+    private final AtomicInteger consecutiveFailures = new AtomicInteger(0);
+    private final AtomicLong lastSuccessTime = new AtomicLong(System.currentTimeMillis());
+    private volatile boolean circuitOpen = false;
+    private volatile long circuitOpenedAt = 0;
+
+    // Circuit Breaker configuration
+    private static final int FAILURE_THRESHOLD = 5; // Open circuit after 5 consecutive failures
+    private static final long CIRCUIT_OPEN_DURATION_MS = 60000L; // Attempt Half-Open after 1 minute
+    private static final int HALF_OPEN_MAX_ATTEMPTS = 3; // Maximum attempts in Half-Open state
 
     public OutboxEventPublisher(
             OutboxEventRepository outboxRepository,
@@ -65,7 +80,9 @@ public class OutboxEventPublisher {
             int maxRetries,
             int sendTimeoutSeconds,
             boolean cleanupEnabled,
-            int retentionDays
+            int retentionDays,
+            boolean dynamicBatchingEnabled,
+            boolean circuitBreakerEnabled
     ) {
         this.outboxRepository = outboxRepository;
         this.kafkaTemplate = kafkaTemplate;
@@ -75,44 +92,170 @@ public class OutboxEventPublisher {
         this.sendTimeoutSeconds = sendTimeoutSeconds;
         this.cleanupEnabled = cleanupEnabled;
         this.retentionDays = retentionDays;
+        this.dynamicBatchingEnabled = dynamicBatchingEnabled;
+        this.circuitBreakerEnabled = circuitBreakerEnabled;
 
-        log.info("OutboxEventPublisher initialized: topic={}, batchSize={}, maxRetries={}, sendTimeoutSeconds={}, cleanupEnabled={}, retentionDays={}",
-                topic, batchSize, maxRetries, sendTimeoutSeconds, cleanupEnabled, retentionDays);
+        log.info("OutboxEventPublisher initialized: topic={}, batchSize={}, maxRetries={}, sendTimeoutSeconds={}, " +
+                        "cleanupEnabled={}, retentionDays={}, dynamicBatching={}, circuitBreaker={}",
+                topic, batchSize, maxRetries, sendTimeoutSeconds, cleanupEnabled, retentionDays,
+                dynamicBatchingEnabled, circuitBreakerEnabled);
     }
 
     /**
-     * PENDING 이벤트를 주기적으로 Kafka로 발행.
+     * Periodically publish PENDING events to Kafka.
      * <p>
-     * 설정된 poll-interval-ms 주기로 실행됩니다.
+     * Runs at configured poll-interval-ms intervals.
+     * Supports Circuit Breaker and dynamic batch size adjustment.
      */
     @Scheduled(fixedDelayString = "${curve.outbox.poll-interval-ms:1000}")
     @Transactional
     public void publishPendingEvents() {
-        // 스케줄러 실행 시 MDC 컨텍스트가 없을 수 있으므로, 필요한 경우 여기서 설정
-        // 예: MDC.put("traceId", UUID.randomUUID().toString());
-        
+        // Check Circuit Breaker
+        if (circuitBreakerEnabled && !shouldAllowRequest()) {
+            log.debug("Circuit breaker is OPEN, skipping outbox processing");
+            return;
+        }
+
         try {
-            List<OutboxEvent> pendingEvents = outboxRepository.findPendingForProcessing(batchSize);
+            // Calculate dynamic batch size
+            int effectiveBatchSize = calculateEffectiveBatchSize();
+
+            List<OutboxEvent> pendingEvents = outboxRepository.findPendingForProcessing(effectiveBatchSize);
 
             if (pendingEvents.isEmpty()) {
                 return;
             }
 
-            log.debug("Processing {} pending outbox events", pendingEvents.size());
+            log.debug("Processing {} pending outbox events (batchSize: {}, circuitState: {})",
+                    pendingEvents.size(), effectiveBatchSize, getCircuitState());
+
+            // Process events
+            int successCount = 0;
+            int failureCount = 0;
 
             for (OutboxEvent event : pendingEvents) {
-                processEvent(event);
+                try {
+                    processEvent(event);
+                    successCount++;
+                    recordSuccess();
+                } catch (Exception e) {
+                    failureCount++;
+                    recordFailure();
+                    log.warn("Failed to process outbox event: eventId={}", event.getEventId(), e);
+                }
             }
+
+            log.debug("Outbox batch completed: success={}, failure={}, total={}",
+                    successCount, failureCount, pendingEvents.size());
 
         } catch (Exception e) {
             log.error("Failed to process pending outbox events", e);
+            recordFailure();
         }
     }
 
     /**
-     * 오래된 PUBLISHED 이벤트 정리.
+     * Calculate dynamic batch size.
      * <p>
-     * 설정된 cleanup-cron 주기로 실행됩니다.
+     * Adjusts batch size based on queue depth (number of pending events).
+     * Deeper queues are processed with larger batches to increase throughput.
+     */
+    private int calculateEffectiveBatchSize() {
+        if (!dynamicBatchingEnabled) {
+            return batchSize;
+        }
+
+        long pendingCount = outboxRepository.countByStatus(OutboxStatus.PENDING);
+
+        // Dynamic batch size calculation logic
+        // Example: Double batch size if pending count is 1000 or more
+        if (pendingCount > 1000) {
+            int dynamicSize = Math.min(batchSize * 2, 500); // Maximum 500
+            log.debug("High queue depth detected ({}), increasing batch size to {}", pendingCount, dynamicSize);
+            return dynamicSize;
+        } else if (pendingCount > 500) {
+            int dynamicSize = Math.min((int) (batchSize * 1.5), 300); // Maximum 300
+            return dynamicSize;
+        } else if (pendingCount < 10) {
+            // Use smaller batch if queue is nearly empty
+            return Math.min(batchSize, 10);
+        }
+
+        return batchSize;
+    }
+
+    /**
+     * Circuit Breaker: Check whether to allow request.
+     */
+    private boolean shouldAllowRequest() {
+        if (!circuitOpen) {
+            return true; // Circuit Closed (normal)
+        }
+
+        // Attempt Half-Open (after certain time elapsed since circuit opened)
+        long now = System.currentTimeMillis();
+        if (now - circuitOpenedAt >= CIRCUIT_OPEN_DURATION_MS) {
+            log.info("Circuit breaker transitioning to HALF-OPEN state, attempting recovery");
+            return true;
+        }
+
+        return false; // Circuit Open (blocked)
+    }
+
+    /**
+     * Record success (Circuit Breaker).
+     */
+    private void recordSuccess() {
+        consecutiveFailures.set(0);
+        lastSuccessTime.set(System.currentTimeMillis());
+
+        if (circuitOpen) {
+            log.info("Circuit breaker transitioning to CLOSED state after successful request");
+            circuitOpen = false;
+            circuitOpenedAt = 0;
+        }
+    }
+
+    /**
+     * Record failure (Circuit Breaker).
+     */
+    private void recordFailure() {
+        if (!circuitBreakerEnabled) {
+            return;
+        }
+
+        int failures = consecutiveFailures.incrementAndGet();
+
+        if (!circuitOpen && failures >= FAILURE_THRESHOLD) {
+            circuitOpen = true;
+            circuitOpenedAt = System.currentTimeMillis();
+            log.error("Circuit breaker OPENED after {} consecutive failures. " +
+                            "Will retry after {}ms. This indicates Kafka may be unhealthy.",
+                    failures, CIRCUIT_OPEN_DURATION_MS);
+        }
+    }
+
+    /**
+     * Query Circuit Breaker state.
+     */
+    private String getCircuitState() {
+        if (!circuitBreakerEnabled) {
+            return "DISABLED";
+        }
+        if (!circuitOpen) {
+            return "CLOSED";
+        }
+        long now = System.currentTimeMillis();
+        if (now - circuitOpenedAt >= CIRCUIT_OPEN_DURATION_MS) {
+            return "HALF-OPEN";
+        }
+        return "OPEN";
+    }
+
+    /**
+     * Clean up old PUBLISHED events.
+     * <p>
+     * Runs at configured cleanup-cron intervals.
      */
     @Scheduled(cron = "${curve.outbox.cleanup-cron:0 0 2 * * *}")
     @Transactional
@@ -124,10 +267,10 @@ public class OutboxEventPublisher {
         log.info("Starting outbox cleanup job (retentionDays={})", retentionDays);
         Instant before = Instant.now().minus(retentionDays, ChronoUnit.DAYS);
         int deletedCount = 0;
-        int batchDeleteSize = 1000; // 한 번에 삭제할 최대 개수
+        int batchDeleteSize = 1000; // Maximum number to delete at once
 
         try {
-            // 반복적으로 삭제하여 대량 삭제 시 트랜잭션 부하 분산
+            // Delete iteratively to distribute transaction load during bulk deletion
             while (true) {
                 int count = outboxRepository.deleteByStatusAndOccurredAtBefore(
                         OutboxStatus.PUBLISHED, before, batchDeleteSize
@@ -144,17 +287,17 @@ public class OutboxEventPublisher {
     }
 
     /**
-     * 개별 이벤트 처리.
+     * Process individual event.
      *
-     * @param event 처리할 이벤트
+     * @param event Event to process
      */
     private void processEvent(OutboxEvent event) {
         try {
-            // Kafka로 발행 (타임아웃 적용)
+            // Publish to Kafka (with timeout)
             kafkaTemplate.send(topic, event.getEventId(), event.getPayload())
                     .get(sendTimeoutSeconds, TimeUnit.SECONDS);
 
-            // 발행 성공
+            // Publish success
             event.markAsPublished();
             outboxRepository.save(event);
             publishedCount.incrementAndGet();
@@ -163,19 +306,19 @@ public class OutboxEventPublisher {
                     event.getEventId(), event.getAggregateType(), event.getAggregateId());
 
         } catch (Exception e) {
-            // 발행 실패
+            // Publish failure
             handlePublishFailure(event, e);
         }
     }
 
     /**
-     * 발행 실패 처리.
+     * Handle publish failure.
      *
-     * @param event 실패한 이벤트
-     * @param error 발생한 예외
+     * @param event Failed event
+     * @param error Exception that occurred
      */
     private void handlePublishFailure(OutboxEvent event, Exception error) {
-        // 지수 백오프 적용 (1초, 2초, 4초, 8초...)
+        // Apply exponential backoff (1 second, 2 seconds, 4 seconds, 8 seconds...)
         long backoffMs = (long) Math.pow(2, event.getRetryCount()) * 1000L;
         int retryCount = event.scheduleNextRetry(backoffMs);
 
@@ -183,7 +326,7 @@ public class OutboxEventPublisher {
                 retryCount, maxRetries, event.getEventId(), backoffMs, error.getMessage());
 
         if (event.exceededMaxRetries(maxRetries)) {
-            // 최대 재시도 초과
+            // Maximum retries exceeded
             event.markAsFailed(truncate(error.getMessage(), 500));
             failedCount.incrementAndGet();
 
@@ -195,9 +338,9 @@ public class OutboxEventPublisher {
     }
 
     /**
-     * 게시 통계 조회.
+     * Query publishing statistics.
      *
-     * @return 통계 정보
+     * @return Statistics information
      */
     public PublisherStats getStats() {
         long totalPending = outboxRepository.countByStatus(OutboxStatus.PENDING);
@@ -209,16 +352,23 @@ public class OutboxEventPublisher {
                 totalPublished,
                 totalFailed,
                 publishedCount.get(),
-                failedCount.get()
+                failedCount.get(),
+                getCircuitState(),
+                consecutiveFailures.get(),
+                System.currentTimeMillis() - lastSuccessTime.get()
         );
     }
 
     /**
-     * 통계 초기화.
+     * Reset statistics.
      */
     public void resetStats() {
         publishedCount.set(0);
         failedCount.set(0);
+        consecutiveFailures.set(0);
+        circuitOpen = false;
+        circuitOpenedAt = 0;
+        lastSuccessTime.set(System.currentTimeMillis());
     }
 
     private String truncate(String text, int maxLength) {
@@ -229,14 +379,26 @@ public class OutboxEventPublisher {
     }
 
     /**
-     * Outbox Publisher 통계.
+     * Outbox Publisher statistics.
+     *
+     * @param totalPending             Total PENDING events count
+     * @param totalPublished           Total PUBLISHED events count
+     * @param totalFailed              Total FAILED events count
+     * @param publishedCountSinceStart Published events count since start
+     * @param failedCountSinceStart    Failed events count since start
+     * @param circuitBreakerState      Circuit Breaker state (CLOSED, OPEN, HALF-OPEN, DISABLED)
+     * @param consecutiveFailures      Consecutive failures count
+     * @param timeSinceLastSuccessMs   Time elapsed since last success (milliseconds)
      */
     public record PublisherStats(
             long totalPending,
             long totalPublished,
             long totalFailed,
             int publishedCountSinceStart,
-            int failedCountSinceStart
+            int failedCountSinceStart,
+            String circuitBreakerState,
+            int consecutiveFailures,
+            long timeSinceLastSuccessMs
     ) {
     }
 }

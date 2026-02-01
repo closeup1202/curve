@@ -12,11 +12,11 @@ import org.apache.avro.generic.GenericRecord;
 import java.util.Map;
 
 /**
- * Avro 기반 이벤트 직렬화 구현체.
+ * Avro-based event serialization implementation.
  * <p>
- * EventEnvelope의 구조를 Avro 스키마로 정의하고,
- * payload와 metadata의 일부 필드는 JSON 문자열로 변환하여 저장합니다.
- * 이를 통해 스키마 호환성을 유지하면서도 페이로드의 유연성을 보장합니다.
+ * Defines the EventEnvelope structure as an Avro schema,
+ * converting payload and some metadata fields to JSON strings for storage.
+ * This ensures payload flexibility while maintaining schema compatibility.
  */
 public class AvroEventSerializer implements EventSerializer {
 

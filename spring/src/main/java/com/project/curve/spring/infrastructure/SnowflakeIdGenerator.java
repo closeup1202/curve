@@ -21,15 +21,26 @@ public final class SnowflakeIdGenerator implements IdGenerator {
     private static final long SEQUENCE_MASK = ~(-1L << SEQUENCE_BITS); // 4095
 
     /**
-     * 시간 역행 시 대기할 최대 시간 (밀리초)
+     * Maximum wait time when clock moved backwards (milliseconds)
      */
     private static final long MAX_BACKWARD_MS = 100L;
 
     /**
-     * waitUntilNextMillis 메서드의 타임아웃 (밀리초)
-     * 무한 대기를 방지하기 위한 안전 장치
+     * Timeout for waitUntilNextMillis method (milliseconds)
+     * Safety mechanism to prevent infinite waiting
+     * Set to 5 seconds considering NTP synchronization environments
      */
-    private static final long WAIT_TIMEOUT_MS = 1000L;
+    private static final long WAIT_TIMEOUT_MS = 5000L;
+
+    /**
+     * Initial wait time for exponential backoff (milliseconds)
+     */
+    private static final long INITIAL_BACKOFF_MS = 1L;
+
+    /**
+     * Maximum wait time for exponential backoff (milliseconds)
+     */
+    private static final long MAX_BACKOFF_MS = 100L;
 
     private final long workerId;
     private final Lock lock = new ReentrantLock();
@@ -37,9 +48,9 @@ public final class SnowflakeIdGenerator implements IdGenerator {
     private long sequence = 0L;
 
     /**
-     * Worker ID를 명시적으로 지정하는 생성자
+     * Constructor that explicitly specifies Worker ID
      *
-     * @param workerId 0 ~ 1023 사이의 고유 Worker ID
+     * @param workerId Unique Worker ID between 0 and 1023
      */
     public SnowflakeIdGenerator(long workerId) {
         if (workerId > MAX_WORKER_ID || workerId < 0) {
@@ -51,8 +62,8 @@ public final class SnowflakeIdGenerator implements IdGenerator {
     }
 
     /**
-     * MAC 주소 기반으로 Worker ID를 자동 생성하는 생성자
-     * 주의: 네트워크 환경에 따라 충돌 가능성이 있음
+     * Constructor that auto-generates Worker ID based on MAC address
+     * Warning: Collision possibility exists depending on network environment
      */
     public static SnowflakeIdGenerator createWithAutoWorkerId() {
         long generatedWorkerId = generateWorkerIdFromMacAddress();
@@ -62,8 +73,8 @@ public final class SnowflakeIdGenerator implements IdGenerator {
     }
 
     /**
-     * MAC 주소를 기반으로 Worker ID를 생성
-     * MAC 주소의 하위 10비트를 사용 (0 ~ 1023)
+     * Generates Worker ID based on MAC address
+     * Uses lower 10 bits of MAC address (0 to 1023)
      */
     private static long generateWorkerIdFromMacAddress() {
         try {
@@ -73,7 +84,7 @@ public final class SnowflakeIdGenerator implements IdGenerator {
                 byte[] mac = networkInterface.getHardwareAddress();
 
                 if (mac != null && mac.length >= 6) {
-                    // MAC 주소의 마지막 2바이트를 사용하여 Worker ID 생성
+                    // Generate Worker ID using last 2 bytes of MAC address
                     long workerId = ((0x000000FF & (long) mac[mac.length - 2]) << 2)
                             | ((0x000000FF & (long) mac[mac.length - 1]) >> 6);
                     return workerId & MAX_WORKER_ID;
@@ -82,7 +93,7 @@ public final class SnowflakeIdGenerator implements IdGenerator {
         } catch (SocketException e) {
             log.warn("Failed to get MAC address, using default worker ID: 1", e);
         }
-        // MAC 주소를 가져올 수 없는 경우 기본값 1 반환
+        // Return default value 1 if MAC address cannot be obtained
         return 1L;
     }
 
@@ -92,15 +103,15 @@ public final class SnowflakeIdGenerator implements IdGenerator {
         try {
             long timestamp = currentTimeMillis();
 
-            // 시간이 역행한 경우
+            // Handle clock moved backwards case
             if (timestamp < lastTimestamp) {
                 long backwardMs = lastTimestamp - timestamp;
 
-                // 작은 역행(100ms 이하)은 대기 후 재시도
+                // For small clock moves backwards (100ms or less), wait and retry
                 if (backwardMs <= MAX_BACKWARD_MS) {
                     timestamp = waitUntilNextMillis(lastTimestamp);
                 } else {
-                    // 큰 역행은 예외 발생
+                    // For large clock moves backwards, throw exception
                     throw new ClockMovedBackwardsException(lastTimestamp, timestamp);
                 }
             }
@@ -126,29 +137,62 @@ public final class SnowflakeIdGenerator implements IdGenerator {
         }
     }
 
+    /**
+     * Wait until next millisecond (with exponential backoff).
+     * <p>
+     * Uses exponential backoff considering repeated time adjustments in NTP synchronization environments.
+     * Reduces CPU spinning and minimizes system load.
+     *
+     * @param lastTimestamp Previous timestamp
+     * @return New timestamp
+     * @throws ClockMovedBackwardsException When timeout or interrupt occurs
+     */
     private long waitUntilNextMillis(long lastTimestamp) {
         long startTime = System.currentTimeMillis();
         long timestamp = currentTimeMillis();
+        long backoffMs = INITIAL_BACKOFF_MS;
+        int attempts = 0;
 
         while (timestamp <= lastTimestamp) {
-            // 타임아웃 체크
-            if (System.currentTimeMillis() - startTime > WAIT_TIMEOUT_MS) {
+            // Check timeout
+            long elapsedMs = System.currentTimeMillis() - startTime;
+            if (elapsedMs > WAIT_TIMEOUT_MS) {
+                long backwardMs = lastTimestamp - timestamp;
+                log.error("Clock skew timeout: waited {}ms, clock still backward by {}ms. " +
+                                "This may indicate NTP sync issues or system clock problems. " +
+                                "lastTimestamp={}, currentTimestamp={}, attempts={}",
+                        elapsedMs, backwardMs, lastTimestamp, timestamp, attempts);
                 throw new ClockMovedBackwardsException(
                         String.format("Timeout waiting for clock to advance. " +
                                         "Waited for %dms but clock is still at or before %d. Current time: %d",
                                 WAIT_TIMEOUT_MS, lastTimestamp, timestamp));
             }
 
-            // CPU 스핀을 줄이기 위한 짧은 대기
+            // Exponential backoff wait (1ms -> 2ms -> 4ms -> ... -> 100ms)
             try {
-                Thread.sleep(1);
+                Thread.sleep(backoffMs);
+                attempts++;
+
+                // Double the backoff time (up to MAX_BACKOFF_MS)
+                backoffMs = Math.min(backoffMs * 2, MAX_BACKOFF_MS);
+
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                log.warn("Interrupted while waiting for clock to advance after {} attempts", attempts);
                 throw new ClockMovedBackwardsException("Interrupted while waiting for clock to advance", e);
             }
 
             timestamp = currentTimeMillis();
         }
+
+        if (attempts > 0) {
+            long waitedMs = System.currentTimeMillis() - startTime;
+            log.warn("Clock skew resolved: waited {}ms over {} attempts. " +
+                            "Consider monitoring NTP sync if this occurs frequently. " +
+                            "lastTimestamp={}, newTimestamp={}",
+                    waitedMs, attempts, lastTimestamp, timestamp);
+        }
+
         return timestamp;
     }
 

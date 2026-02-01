@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 주문 취소 요청 DTO
+ * Cancel order request DTO
  */
 @Data
 @Builder
@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class CancelOrderRequest {
 
     /**
-     * 취소 사유
+     * Cancellation reason
      */
     private String reason;
 }

@@ -10,10 +10,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
- * Outbox JPA Repository 활성화 및 Adapter 빈 등록 설정.
+ * Configuration for enabling Outbox JPA Repository and registering Adapter beans.
  * <p>
- * {@link OutboxEventJpaRepository}와 동일 모듈에 위치하여
- * Spring Data JPA 리포지토리 프록시 생성을 담당합니다.
+ * Located in the same module as {@link OutboxEventJpaRepository}
+ * to handle Spring Data JPA repository proxy creation.
  */
 @Slf4j
 @Configuration

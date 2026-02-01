@@ -1,46 +1,46 @@
 package com.project.curve.core.envelope;
 
 /**
- * 이벤트의 출처 정보.
+ * Event source information.
  * <p>
- * Event Chain Tracking을 지원하여 마이크로서비스 환경에서 이벤트 흐름을 추적할 수 있습니다.
+ * Supports Event Chain Tracking to trace event flows in microservice environments.
  *
  * <h3>Event Chain Tracking</h3>
  * <ul>
- *   <li>correlationId: 같은 비즈니스 트랜잭션의 모든 이벤트를 그룹화</li>
- *   <li>causationId: 이 이벤트를 유발한 이벤트 ID (부모 이벤트)</li>
- *   <li>rootEventId: 이벤트 체인의 최초 이벤트 ID</li>
+ *   <li>correlationId: Groups all events of the same business transaction</li>
+ *   <li>causationId: ID of the event that triggered this event (parent event)</li>
+ *   <li>rootEventId: ID of the first event in the event chain</li>
  * </ul>
  *
- * <h3>예시: 주문 흐름</h3>
+ * <h3>Example: Order Flow</h3>
  * <pre>
  * 1. ORDER_CREATED
  *    - eventId: "evt-001"
  *    - correlationId: "txn-123"
- *    - causationId: null (최초 이벤트)
+ *    - causationId: null (initial event)
  *    - rootEventId: "evt-001"
  *
- * 2. PAYMENT_PROCESSED (ORDER_CREATED에 의해 발생)
+ * 2. PAYMENT_PROCESSED (triggered by ORDER_CREATED)
  *    - eventId: "evt-002"
- *    - correlationId: "txn-123" (같은 트랜잭션)
- *    - causationId: "evt-001" (ORDER_CREATED가 유발)
+ *    - correlationId: "txn-123" (same transaction)
+ *    - causationId: "evt-001" (triggered by ORDER_CREATED)
  *    - rootEventId: "evt-001"
  *
- * 3. INVENTORY_RESERVED (PAYMENT_PROCESSED에 의해 발생)
+ * 3. INVENTORY_RESERVED (triggered by PAYMENT_PROCESSED)
  *    - eventId: "evt-003"
  *    - correlationId: "txn-123"
- *    - causationId: "evt-002" (PAYMENT_PROCESSED가 유발)
+ *    - causationId: "evt-002" (triggered by PAYMENT_PROCESSED)
  *    - rootEventId: "evt-001"
  * </pre>
  *
- * @param service       서비스 이름 (예: "order-service")
- * @param environment   환경 (예: "prod", "dev")
- * @param instanceId    인스턴스 ID
- * @param host          호스트 정보
- * @param version       서비스 버전
- * @param correlationId Correlation ID (비즈니스 트랜잭션 그룹화)
- * @param causationId   Causation ID (이 이벤트를 유발한 이벤트 ID)
- * @param rootEventId   Root Event ID (이벤트 체인의 최초 이벤트)
+ * @param service       Service name (e.g., "order-service")
+ * @param environment   Environment (e.g., "prod", "dev")
+ * @param instanceId    Instance ID
+ * @param host          Host information
+ * @param version       Service version
+ * @param correlationId Correlation ID (groups business transactions)
+ * @param causationId   Causation ID (ID of the event that triggered this event)
+ * @param rootEventId   Root Event ID (first event in the chain)
  */
 public record EventSource(
         String service,
@@ -59,7 +59,7 @@ public record EventSource(
     }
 
     /**
-     * Event Chain Tracking 없이 생성 (하위 호환).
+     * Creates without Event Chain Tracking (backward compatible).
      */
     public EventSource(
             String service,
@@ -72,38 +72,38 @@ public record EventSource(
     }
 
     /**
-     * Event Chain이 있는지 확인.
+     * Checks if Event Chain exists.
      *
-     * @return correlationId가 존재하면 true
+     * @return true if correlationId exists
      */
     public boolean hasEventChain() {
         return correlationId != null && !correlationId.isBlank();
     }
 
     /**
-     * 최초 이벤트인지 확인 (causationId가 없음).
+     * Checks if this is the root event (no causationId).
      *
-     * @return causationId가 없으면 true
+     * @return true if causationId is absent
      */
     public boolean isRootEvent() {
         return causationId == null || causationId.isBlank();
     }
 
     /**
-     * 이벤트 체인 깊이 계산 (대략적, 실제로는 DB 조회 필요).
+     * Calculates event chain depth (approximate, requires DB query for accuracy).
      * <p>
-     * rootEventId가 있으면 최소 1 이상
+     * At least 1 if rootEventId exists
      *
-     * @return 이벤트 체인 깊이 (추정값)
+     * @return Event chain depth (estimated)
      */
     public int estimateChainDepth() {
         if (!hasEventChain()) {
             return 0;
         }
         if (isRootEvent()) {
-            return 1; // 최초 이벤트
+            return 1; // Initial event
         }
-        // causationId가 있으면 최소 2 이상 (실제로는 DB 조회 필요)
+        // At least 2 if causationId exists (requires DB query for actual depth)
         return 2;
     }
 }

@@ -7,20 +7,20 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
- * Spring Security 기반 Actor Context Provider
+ * Spring Security-based Actor Context Provider.
  * <p>
- * Spring Security의 인증 정보를 사용하여 EventActor를 생성합니다.
- * 인증되지 않은 요청은 SYSTEM 사용자로 처리됩니다.
+ * Creates EventActor using Spring Security authentication information.
+ * Unauthenticated requests are treated as SYSTEM user.
  * <p>
- * <h3>클라이언트 IP 처리 방식</h3>
- * <p>Spring Boot의 ForwardedHeaderFilter를 사용하면 request.getRemoteAddr()가
- * 자동으로 X-Forwarded-For 헤더를 처리하여 올바른 클라이언트 IP를 반환합니다.</p>
+ * <h3>Client IP Handling</h3>
+ * <p>When using Spring Boot's ForwardedHeaderFilter, request.getRemoteAddr()
+ * automatically processes the X-Forwarded-For header to return the correct client IP.</p>
  *
- * <h3>보안 설정 (권장)</h3>
+ * <h3>Security Configuration (Recommended)</h3>
  * <pre>
  * # application.yml
  * server:
- *   forward-headers-strategy: framework  # Spring Boot의 ForwardedHeaderFilter 활성화
+ *   forward-headers-strategy: framework  # Enable Spring Boot's ForwardedHeaderFilter
  *   tomcat:
  *     remoteip:
  *       internal-proxies: 10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3}
@@ -43,7 +43,7 @@ public class SpringSecurityActorContextProvider implements ActorContextProvider 
 
         String userId = auth.getName();
 
-        // 권한 정보 (첫 번째 권한 추출)
+        // Extract authority information (first authority)
         String role = auth.getAuthorities().stream()
                 .findFirst()
                 .map(Object::toString)

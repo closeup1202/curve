@@ -1,31 +1,31 @@
 package com.example.orderservice.domain;
 
 /**
- * 주문 상태
+ * Order status
  */
 public enum OrderStatus {
     /**
-     * 주문 대기 중
+     * Order pending
      */
     PENDING,
 
     /**
-     * 결제 완료
+     * Payment completed
      */
     PAID,
 
     /**
-     * 배송 중
+     * Shipping in progress
      */
     SHIPPED,
 
     /**
-     * 배송 완료
+     * Delivery completed
      */
     DELIVERED,
 
     /**
-     * 주문 취소
+     * Order cancelled
      */
     CANCELLED
 }

@@ -16,15 +16,15 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 기본 PII 암호화 제공자.
+ * Default PII encryption provider.
  * <p>
- * AES-256-GCM 암호화와 SHA-256 해싱을 지원한다.
+ * Supports AES-256-GCM encryption and SHA-256 hashing.
  * <p>
- * <b>보안 주의사항:</b>
+ * <b>Security Notes:</b>
  * <ul>
- *   <li>암호화 기능을 사용하려면 반드시 {@code curve.pii.crypto.default-key}를 설정해야 합니다.</li>
- *   <li>키가 설정되지 않은 상태에서 {@link #encrypt} 호출 시 예외가 발생합니다.</li>
- *   <li>해싱 기능은 키 없이도 사용 가능하지만, salt 설정을 권장합니다.</li>
+ *   <li>To use encryption features, {@code curve.pii.crypto.default-key} must be configured.</li>
+ *   <li>An exception is thrown if {@link #encrypt} is called without a key configured.</li>
+ *   <li>Hashing can be used without a key, but configuring a salt is recommended.</li>
  * </ul>
  */
 public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
@@ -41,10 +41,10 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
     private final boolean encryptionEnabled;
 
     /**
-     * DefaultPiiCryptoProvider를 생성한다.
+     * Creates a DefaultPiiCryptoProvider.
      *
-     * @param defaultKeyBase64 Base64로 인코딩된 AES-256 암호화 키 (null 가능, 암호화 비활성화)
-     * @param salt             해싱에 사용할 솔트 (null 가능)
+     * @param defaultKeyBase64 Base64-encoded AES-256 encryption key (nullable, disables encryption if null)
+     * @param salt             Salt for hashing (nullable)
      */
     public DefaultPiiCryptoProvider(String defaultKeyBase64, String salt) {
         this.encryptionEnabled = defaultKeyBase64 != null && !defaultKeyBase64.isBlank();
@@ -55,15 +55,15 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
     }
 
     /**
-     * 추가 키를 등록한다.
+     * Registers an additional key.
      *
-     * @param alias     키 별칭
-     * @param keyBase64 Base64로 인코딩된 AES-256 키
-     * @throws IllegalArgumentException 키가 null이거나 비어있는 경우
+     * @param alias     Key alias
+     * @param keyBase64 Base64-encoded AES-256 key
+     * @throws IllegalArgumentException if the key is null or blank
      */
     public void registerKey(String alias, String keyBase64) {
         if (keyBase64 == null || keyBase64.isBlank()) {
-            throw new IllegalArgumentException("암호화 키는 null이거나 비어있을 수 없습니다. alias: " + alias);
+            throw new IllegalArgumentException("Encryption key cannot be null or blank. alias: " + alias);
         }
         keyStore.put(alias, createKey(keyBase64));
     }
@@ -71,9 +71,9 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
     private SecretKey createKey(String keyBase64) {
         if (keyBase64 == null || keyBase64.isBlank()) {
             throw new IllegalArgumentException(
-                    "PII 암호화 키가 설정되지 않았습니다. " +
-                    "curve.pii.crypto.default-key 설정이 필요합니다. " +
-                    "환경변수 PII_ENCRYPTION_KEY 사용을 권장합니다."
+                    "PII encryption key is not configured. " +
+                    "curve.pii.crypto.default-key configuration is required. " +
+                    "Using PII_ENCRYPTION_KEY environment variable is recommended."
             );
         }
 
@@ -81,10 +81,10 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
         try {
             keyBytes = Base64.getDecoder().decode(keyBase64);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("잘못된 Base64 형식의 암호화 키입니다.", e);
+            throw new IllegalArgumentException("Invalid Base64 format for encryption key.", e);
         }
 
-        // 키 길이를 32바이트(256비트)로 맞춤
+        // Adjust key length to 32 bytes (256 bits)
         if (keyBytes.length < 32) {
             keyBytes = Arrays.copyOf(keyBytes, 32);
         } else if (keyBytes.length > 32) {
@@ -94,12 +94,12 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
     }
 
     /**
-     * 값을 AES-256-GCM으로 암호화한다.
+     * Encrypts a value using AES-256-GCM.
      *
-     * @param value    암호화할 원본 값
-     * @param keyAlias 사용할 키 별칭 (null이면 기본 키 사용)
-     * @return Base64로 인코딩된 암호문 (IV 포함)
-     * @throws PiiCryptoException 암호화 키가 설정되지 않았거나 암호화 실패 시
+     * @param value    Original value to encrypt
+     * @param keyAlias Key alias to use (uses default key if null)
+     * @return Base64-encoded ciphertext (includes IV)
+     * @throws PiiCryptoException if encryption key is not configured or encryption fails
      */
     @Override
     public String encrypt(String value, String keyAlias) {
@@ -107,9 +107,9 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
 
         if (!encryptionEnabled) {
             throw new PiiCryptoException(
-                    "PII 암호화가 비활성화되어 있습니다. " +
-                    "curve.pii.crypto.default-key를 설정하세요. " +
-                    "환경변수: PII_ENCRYPTION_KEY"
+                    "PII encryption is disabled. " +
+                    "Set curve.pii.crypto.default-key. " +
+                    "Environment variable: PII_ENCRYPTION_KEY"
             );
         }
 
@@ -125,7 +125,7 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
 
             byte[] encryptedBytes = cipher.doFinal(value.getBytes(StandardCharsets.UTF_8));
 
-            // IV + 암호문을 합쳐서 반환
+            // Combine IV + ciphertext and return
             byte[] combined = new byte[iv.length + encryptedBytes.length];
             System.arraycopy(iv, 0, combined, 0, iv.length);
             System.arraycopy(encryptedBytes, 0, combined, iv.length, encryptedBytes.length);
@@ -134,17 +134,17 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
         } catch (PiiCryptoException e) {
             throw e;
         } catch (Exception e) {
-            throw new PiiCryptoException("암호화 실패: " + e.getMessage(), e);
+            throw new PiiCryptoException("Encryption failed: " + e.getMessage(), e);
         }
     }
 
     /**
-     * AES-256-GCM으로 암호화된 값을 복호화한다.
+     * Decrypts a value encrypted with AES-256-GCM.
      *
-     * @param encryptedValue Base64로 인코딩된 암호문 (IV 포함)
-     * @param keyAlias       사용할 키 별칭 (null이면 기본 키 사용)
-     * @return 복호화된 원본 값
-     * @throws PiiCryptoException 암호화 키가 설정되지 않았거나 복호화 실패 시
+     * @param encryptedValue Base64-encoded ciphertext (includes IV)
+     * @param keyAlias       Key alias to use (uses default key if null)
+     * @return Decrypted original value
+     * @throws PiiCryptoException if encryption key is not configured or decryption fails
      */
     @Override
     public String decrypt(String encryptedValue, String keyAlias) {
@@ -152,8 +152,8 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
 
         if (!encryptionEnabled) {
             throw new PiiCryptoException(
-                    "PII 암호화가 비활성화되어 있습니다. " +
-                    "curve.pii.crypto.default-key를 설정하세요."
+                    "PII encryption is disabled. " +
+                    "Set curve.pii.crypto.default-key."
             );
         }
 
@@ -173,18 +173,18 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
         } catch (PiiCryptoException e) {
             throw e;
         } catch (Exception e) {
-            throw new PiiCryptoException("복호화 실패: " + e.getMessage(), e);
+            throw new PiiCryptoException("Decryption failed: " + e.getMessage(), e);
         }
     }
 
     /**
-     * 값을 SHA-256으로 해싱한다.
+     * Hashes a value using SHA-256.
      * <p>
-     * 해싱은 암호화 키 없이도 사용할 수 있으나, salt 설정을 권장한다.
+     * Hashing can be used without an encryption key, but configuring a salt is recommended.
      *
-     * @param value 해싱할 원본 값
-     * @return Base64로 인코딩된 해시 값
-     * @throws PiiCryptoException 해싱 실패 시
+     * @param value Original value to hash
+     * @return Base64-encoded hash value
+     * @throws PiiCryptoException if hashing fails
      */
     @Override
     public String hash(String value) {
@@ -196,15 +196,15 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
             byte[] hashBytes = digest.digest(saltedValue.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hashBytes);
         } catch (Exception e) {
-            throw new PiiCryptoException("해싱 실패: " + e.getMessage(), e);
+            throw new PiiCryptoException("Hashing failed: " + e.getMessage(), e);
         }
     }
 
     /**
-     * 키 별칭으로 사용할 키를 찾는다.
+     * Resolves the key to use by key alias.
      *
-     * @param keyAlias 키 별칭 (null이거나 빈 문자열이면 기본 키 사용)
-     * @return 해당 키 또는 기본 키
+     * @param keyAlias Key alias (uses default key if null or empty)
+     * @return The corresponding key or default key
      */
     private SecretKey resolveKey(String keyAlias) {
         if (keyAlias == null || keyAlias.isEmpty()) {

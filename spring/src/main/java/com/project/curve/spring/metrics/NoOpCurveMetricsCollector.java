@@ -1,10 +1,10 @@
 package com.project.curve.spring.metrics;
 
 /**
- * 메트릭 수집을 하지 않는 NoOp 구현체.
+ * NoOp implementation that does not collect metrics.
  * <p>
- * Micrometer가 클래스패스에 없을 때 자동 등록되어
- * null 체크 없이 안전하게 메트릭 호출을 무시합니다.
+ * Automatically registered when Micrometer is not present in the classpath,
+ * safely ignoring metric calls without null checks.
  */
 public class NoOpCurveMetricsCollector implements CurveMetricsCollector {
 

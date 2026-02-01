@@ -13,15 +13,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.KafkaTemplate;
 
 /**
- * Curve Health Indicator & Metrics Endpoint Auto-Configuration.
+ * Curve Health Indicator &amp; Metrics Endpoint Auto-Configuration.
  * <p>
- * Spring Boot Actuator가 클래스패스에 있을 때만 활성화됩니다.
+ * Activated only when Spring Boot Actuator is present on the classpath.
  *
- * <h3>활성화 조건</h3>
+ * <h3>Activation Conditions</h3>
  * <ul>
- *   <li>curve.enabled=true (기본값)</li>
- *   <li>spring-boot-actuator가 클래스패스에 존재</li>
- *   <li>management.health.curve.enabled=true (기본값)</li>
+ *   <li>curve.enabled=true (default)</li>
+ *   <li>spring-boot-actuator is present on the classpath</li>
+ *   <li>management.health.curve.enabled=true (default)</li>
  * </ul>
  *
  * @see CurveHealthIndicator

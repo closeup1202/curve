@@ -16,7 +16,7 @@ class DefaultPiiCryptoProviderTest {
 
     @BeforeEach
     void setUp() {
-        // 32바이트 AES 키 생성 (Base64 인코딩)
+        // Generate 32-byte AES key (Base64 encoded)
         byte[] keyBytes = new byte[32];
         for (int i = 0; i < 32; i++) {
             keyBytes[i] = (byte) i;
@@ -27,7 +27,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("문자열을 암호화하면 원본과 다른 값을 반환한다")
+    @DisplayName("Encrypts a string and returns a different value from the original")
     void encrypt_shouldReturnDifferentValue() {
         // Given
         String plainText = "sensitive-data";
@@ -42,7 +42,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("같은 문자열을 여러 번 암호화하면 매번 다른 값을 반환한다 (IV가 랜덤이므로)")
+    @DisplayName("Encrypts the same string multiple times and returns different values each time (due to random IV)")
     void encrypt_samePlainText_shouldReturnDifferentValues() {
         // Given
         String plainText = "sensitive-data";
@@ -56,7 +56,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("암호화된 문자열을 복호화하면 원본을 반환한다")
+    @DisplayName("Decrypts an encrypted string and returns the original value")
     void decrypt_shouldReturnOriginalValue() {
         // Given
         String plainText = "sensitive-data";
@@ -70,7 +70,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("null을 암호화하면 null을 반환한다")
+    @DisplayName("Encrypts null and returns null")
     void encrypt_withNull_shouldReturnNull() {
         // When
         String encrypted = cryptoProvider.encrypt(null, null);
@@ -80,7 +80,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("null을 복호화하면 null을 반환한다")
+    @DisplayName("Decrypts null and returns null")
     void decrypt_withNull_shouldReturnNull() {
         // When
         String decrypted = cryptoProvider.decrypt(null, null);
@@ -90,7 +90,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("잘못된 암호문을 복호화하면 예외가 발생한다")
+    @DisplayName("Decrypts invalid ciphertext and throws an exception")
     void decrypt_withInvalidCiphertext_shouldThrowException() {
         // Given
         String invalidCiphertext = "invalid-base64-!!!";
@@ -102,7 +102,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("해싱은 항상 같은 결과를 반환한다")
+    @DisplayName("Hashes the same value and always returns the same result")
     void hash_sameValue_shouldReturnSameHash() {
         // Given
         String value = "test@example.com";
@@ -117,7 +117,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("다른 값을 해싱하면 다른 결과를 반환한다")
+    @DisplayName("Hashes different values and returns different results")
     void hash_differentValues_shouldReturnDifferentHashes() {
         // Given
         String value1 = "test1@example.com";
@@ -132,7 +132,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("null을 해싱하면 null을 반환한다")
+    @DisplayName("Hashes null and returns null")
     void hash_withNull_shouldReturnNull() {
         // When
         String hash = cryptoProvider.hash(null);
@@ -142,7 +142,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("추가 키를 등록하고 사용할 수 있다")
+    @DisplayName("Registers an additional key and allows encryption with it")
     void registerKey_shouldAllowEncryptionWithCustomKey() {
         // Given
         byte[] customKeyBytes = new byte[32];
@@ -162,7 +162,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("다른 키로 암호화된 데이터는 다른 키로 복호화할 수 없다")
+    @DisplayName("Fails to decrypt data encrypted with a different key")
     void decrypt_withDifferentKey_shouldFail() {
         // Given
         byte[] customKeyBytes = new byte[32];
@@ -174,14 +174,14 @@ class DefaultPiiCryptoProviderTest {
         String plainText = "sensitive-data";
         String encryptedWithDefaultKey = cryptoProvider.encrypt(plainText, null);
 
-        // When & Then: 다른 키로 복호화 시도
+        // When & Then: Attempt to decrypt with a different key
         assertThatThrownBy(() -> cryptoProvider.decrypt(encryptedWithDefaultKey, "custom-key"))
                 .isInstanceOf(PiiCryptoException.class)
                 .hasMessageContaining("복호화 실패");
     }
 
     @Test
-    @DisplayName("빈 문자열을 암호화하고 복호화할 수 있다")
+    @DisplayName("Encrypts and decrypts an empty string successfully")
     void encrypt_decrypt_emptyString_shouldWork() {
         // Given
         String emptyString = "";
@@ -195,7 +195,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("긴 문자열을 암호화하고 복호화할 수 있다")
+    @DisplayName("Encrypts and decrypts a long string successfully")
     void encrypt_decrypt_longString_shouldWork() {
         // Given
         String longString = "a".repeat(10000);
@@ -209,7 +209,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("특수 문자를 포함한 문자열을 암호화하고 복호화할 수 있다")
+    @DisplayName("Encrypts and decrypts a string containing special characters successfully")
     void encrypt_decrypt_specialCharacters_shouldWork() {
         // Given
         String specialString = "!@#$%^&*()_+-=[]{}|;':\",./<>?\\`~한글テスト中文";
@@ -223,14 +223,14 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("키가 설정되면 암호화가 활성화된다")
+    @DisplayName("Enables encryption when a key is set")
     void isEncryptionEnabled_withKey_shouldReturnTrue() {
         // Given & When & Then
         assertThat(cryptoProvider.isEncryptionEnabled()).isTrue();
     }
 
     @Test
-    @DisplayName("키가 null이면 암호화가 비활성화된다")
+    @DisplayName("Disables encryption when the key is null")
     void isEncryptionEnabled_withNullKey_shouldReturnFalse() {
         // Given
         DefaultPiiCryptoProvider providerWithoutKey = new DefaultPiiCryptoProvider(null, salt);
@@ -240,7 +240,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("키가 빈 문자열이면 암호화가 비활성화된다")
+    @DisplayName("Disables encryption when the key is an empty string")
     void isEncryptionEnabled_withEmptyKey_shouldReturnFalse() {
         // Given
         DefaultPiiCryptoProvider providerWithEmptyKey = new DefaultPiiCryptoProvider("", salt);
@@ -250,7 +250,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("키가 공백만 있으면 암호화가 비활성화된다")
+    @DisplayName("Disables encryption when the key contains only whitespace")
     void isEncryptionEnabled_withBlankKey_shouldReturnFalse() {
         // Given
         DefaultPiiCryptoProvider providerWithBlankKey = new DefaultPiiCryptoProvider("   ", salt);
@@ -260,7 +260,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("암호화가 비활성화된 상태에서 encrypt 호출 시 예외가 발생한다")
+    @DisplayName("Throws an exception when encrypt is called with encryption disabled")
     void encrypt_withoutKey_shouldThrowException() {
         // Given
         DefaultPiiCryptoProvider providerWithoutKey = new DefaultPiiCryptoProvider(null, salt);
@@ -274,7 +274,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("암호화가 비활성화된 상태에서 decrypt 호출 시 예외가 발생한다")
+    @DisplayName("Throws an exception when decrypt is called with encryption disabled")
     void decrypt_withoutKey_shouldThrowException() {
         // Given
         DefaultPiiCryptoProvider providerWithoutKey = new DefaultPiiCryptoProvider(null, salt);
@@ -287,7 +287,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("암호화가 비활성화된 상태에서도 해싱은 가능하다")
+    @DisplayName("Allows hashing even when encryption is disabled")
     void hash_withoutKey_shouldWork() {
         // Given
         DefaultPiiCryptoProvider providerWithoutKey = new DefaultPiiCryptoProvider(null, salt);
@@ -302,7 +302,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("잘못된 Base64 형식의 키로 초기화하면 예외가 발생한다")
+    @DisplayName("Throws an exception when initialized with an invalid Base64 format key")
     void constructor_withInvalidBase64Key_shouldThrowException() {
         // Given
         String invalidBase64Key = "not-valid-base64!!!";
@@ -314,7 +314,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("빈 키로 registerKey를 호출하면 예외가 발생한다")
+    @DisplayName("Throws an exception when registerKey is called with an empty key")
     void registerKey_withEmptyKey_shouldThrowException() {
         // When & Then
         assertThatThrownBy(() -> cryptoProvider.registerKey("alias", ""))
@@ -323,7 +323,7 @@ class DefaultPiiCryptoProviderTest {
     }
 
     @Test
-    @DisplayName("null 키로 registerKey를 호출하면 예외가 발생한다")
+    @DisplayName("Throws an exception when registerKey is called with a null key")
     void registerKey_withNullKey_shouldThrowException() {
         // When & Then
         assertThatThrownBy(() -> cryptoProvider.registerKey("alias", null))

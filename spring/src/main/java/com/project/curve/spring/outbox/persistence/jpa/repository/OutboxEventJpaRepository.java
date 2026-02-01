@@ -16,22 +16,22 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Outbox 이벤트 Spring Data JPA 리포지토리.
+ * Outbox event Spring Data JPA repository.
  * <p>
- * PENDING 이벤트를 효율적으로 조회하기 위한 커스텀 쿼리를 제공합니다.
+ * Provides custom queries for efficiently retrieving PENDING events.
  *
  * @see OutboxEventJpaEntity
  */
 public interface OutboxEventJpaRepository extends JpaRepository<OutboxEventJpaEntity, String> {
 
     /**
-     * 상태별 이벤트 조회 (발생 시각 오름차순, Limit 지원).
+     * Retrieves events by status (ascending order by occurrence time, supports limit).
      * <p>
-     * 오래된 이벤트부터 처리하여 순서 보장을 돕습니다.
+     * Helps guarantee ordering by processing older events first.
      *
-     * @param status   조회할 상태
-     * @param pageable 페이징 (limit 설정)
-     * @return 이벤트 목록
+     * @param status   Status to query
+     * @param pageable Paging (limit setting)
+     * @return List of events
      */
     @Query("SELECT e FROM OutboxEventJpaEntity e WHERE e.status = :status ORDER BY e.occurredAt ASC")
     List<OutboxEventJpaEntity> findByStatusOrderByOccurredAtAsc(
@@ -40,14 +40,14 @@ public interface OutboxEventJpaRepository extends JpaRepository<OutboxEventJpaEn
     );
 
     /**
-     * PENDING 이벤트를 비관적 잠금(FOR UPDATE SKIP LOCKED)으로 조회.
+     * Retrieves PENDING events with pessimistic locking (FOR UPDATE SKIP LOCKED).
      * <p>
-     * 다중 인스턴스 환경에서 동일 이벤트의 중복 처리를 방지합니다.
-     * 다른 인스턴스가 이미 잠근 행은 건너뛰고, 잠기지 않은 행만 반환합니다.
+     * Prevents duplicate processing of the same event in a multi-instance environment.
+     * Skips rows already locked by other instances and returns only unlocked rows.
      *
-     * @param status   조회할 상태
-     * @param pageable 페이징 (limit 설정)
-     * @return 잠금이 획득된 이벤트 목록
+     * @param status   Status to query
+     * @param pageable Paging (limit setting)
+     * @return List of events with acquired locks
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints({@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2")})
@@ -58,11 +58,11 @@ public interface OutboxEventJpaRepository extends JpaRepository<OutboxEventJpaEn
     );
 
     /**
-     * 집합체 기준 이벤트 조회 (발생 시각 오름차순).
+     * Retrieves events by aggregate (ascending order by occurrence time).
      *
-     * @param aggregateType 집합체 타입
-     * @param aggregateId   집합체 ID
-     * @return 이벤트 목록
+     * @param aggregateType Aggregate type
+     * @param aggregateId   Aggregate ID
+     * @return List of events
      */
     List<OutboxEventJpaEntity> findByAggregateTypeAndAggregateIdOrderByOccurredAtAsc(
             String aggregateType,
@@ -70,21 +70,21 @@ public interface OutboxEventJpaRepository extends JpaRepository<OutboxEventJpaEn
     );
 
     /**
-     * 상태별 이벤트 개수 조회.
+     * Retrieves the count of events by status.
      *
-     * @param status 조회할 상태
-     * @return 이벤트 개수
+     * @param status Status to query
+     * @return Event count
      */
     long countByStatus(OutboxStatus status);
 
     /**
-     * 오래된 이벤트 삭제 (배치 처리용).
+     * Deletes old events (for batch processing).
      * <p>
-     * JPQL은 LIMIT를 직접 지원하지 않으므로, 서브쿼리나 네이티브 쿼리를 사용해야 할 수 있습니다.
-     * 여기서는 ID 목록을 조회 후 삭제하는 방식을 사용하거나, 네이티브 쿼리를 사용할 수 있습니다.
-     * DB 호환성을 위해 ID 조회 후 삭제 방식을 권장하지만, 성능을 위해 네이티브 쿼리를 사용할 수도 있습니다.
+     * Since JPQL does not directly support LIMIT, subqueries or native queries may be needed.
+     * Here we can use the approach of querying ID list then deleting, or use native queries.
+     * For DB compatibility, the ID query then delete approach is recommended, but native queries can be used for performance.
      * <p>
-     * 여기서는 ID 목록을 먼저 조회하는 방식을 사용하기 위해 조회 메서드를 추가합니다.
+     * Here we add a query method to first retrieve the ID list.
      */
     @Query("SELECT e.eventId FROM OutboxEventJpaEntity e WHERE e.status = :status AND e.occurredAt < :before")
     List<String> findIdsByStatusAndOccurredAtBefore(

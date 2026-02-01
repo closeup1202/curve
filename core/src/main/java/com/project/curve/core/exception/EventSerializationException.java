@@ -1,10 +1,10 @@
 package com.project.curve.core.exception;
 
 /**
- * 이벤트 직렬화 실패 예외
+ * Exception thrown when event serialization fails.
  * <p>
- * EventEnvelope을 특정 형식(JSON, Avro 등)으로 직렬화할 때 발생하는 예외
- * 주로 EventProducer 구현체에서 발생
+ * Occurs when serializing EventEnvelope to a specific format (JSON, Avro, etc.).
+ * Primarily thrown by EventProducer implementations.
  */
 public class EventSerializationException extends RuntimeException {
 

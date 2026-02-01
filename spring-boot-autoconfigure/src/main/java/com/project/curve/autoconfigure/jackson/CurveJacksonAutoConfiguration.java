@@ -11,8 +11,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 /**
- * Jackson ObjectMapper 자동 설정
- * Java 8 Time API (Instant, LocalDateTime 등) 직렬화 지원을 위한 JavaTimeModule 등록
+ * Jackson ObjectMapper auto-configuration.
+ * Registers JavaTimeModule to support Java 8 Time API (Instant, LocalDateTime, etc.) serialization.
  */
 @Slf4j
 @Configuration

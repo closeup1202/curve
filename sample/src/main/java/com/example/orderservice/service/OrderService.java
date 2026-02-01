@@ -17,34 +17,34 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 주문 서비스
- * - @PublishEvent 어노테이션으로 자동 이벤트 발행
- * - PII 데이터는 자동으로 마스킹/암호화
+ * Order Service
+ * - Automatic event publishing with @PublishEvent annotation
+ * - PII data is automatically masked/encrypted
  */
 @Slf4j
 @Service
 public class OrderService {
 
-    // 간단한 인메모리 저장소 (실제로는 DB 사용)
+    // Simple in-memory storage (actual implementation would use a database)
     private final Map<String, Order> orderStorage = new ConcurrentHashMap<>();
 
     /**
-     * 주문 생성
-     * - AFTER_RETURNING: 메서드 정상 완료 후 이벤트 발행
-     * - payloadIndex = -1: 반환값(Order)을 페이로드로 사용
+     * Create order
+     * - AFTER_RETURNING: Publishes event after method completes successfully
+     * - payloadIndex = -1: Uses return value (Order) as payload
      *
-     * @param customer 고객 정보
-     * @param productName 상품명
-     * @param quantity 수량
-     * @param totalAmount 총 금액
-     * @return 생성된 주문
+     * @param customer Customer information
+     * @param productName Product name
+     * @param quantity Quantity
+     * @param totalAmount Total amount
+     * @return Created order
      */
     @PublishEvent(
             eventType = "ORDER_CREATED",
             severity = EventSeverity.INFO,
             phase = PublishEvent.Phase.AFTER_RETURNING,
-            payloadIndex = -1,  // 반환값 사용
-            failOnError = false  // 이벤트 발행 실패해도 비즈니스 로직은 계속 진행
+            payloadIndex = -1,  // Use return value
+            failOnError = false  // Business logic continues even if event publishing fails
     )
     public OrderCreatedPayload createOrder(
             Customer customer,
@@ -55,7 +55,7 @@ public class OrderService {
         log.info("Creating order: customer={}, product={}, quantity={}, amount={}",
                 customer.getCustomerId(), productName, quantity, totalAmount);
 
-        // 주문 생성
+        // Create order
         String orderId = UUID.randomUUID().toString();
         Instant now = Instant.now();
 
@@ -70,12 +70,12 @@ public class OrderService {
                 .updatedAt(now)
                 .build();
 
-        // 저장
+        // Save
         orderStorage.put(orderId, order);
 
         log.info("Order created successfully: orderId={}", orderId);
 
-        // 이벤트 페이로드 반환 (자동으로 Kafka에 발행됨)
+        // Return event payload (automatically published to Kafka)
         return OrderCreatedPayload.builder()
                 .orderId(orderId)
                 .customer(customer)
@@ -87,13 +87,13 @@ public class OrderService {
     }
 
     /**
-     * 주문 취소
-     * - AFTER: 메서드 완료 후 항상 이벤트 발행 (예외 발생해도)
-     * - payloadIndex = 1: 두 번째 파라미터(reason)를 페이로드에 포함
+     * Cancel order
+     * - AFTER: Always publishes event after method completes (even if exception occurs)
+     * - payloadIndex = 1: Includes second parameter (reason) in payload
      *
-     * @param orderId 주문 ID
-     * @param reason 취소 사유
-     * @return 취소된 주문
+     * @param orderId Order ID
+     * @param reason Cancellation reason
+     * @return Cancelled order
      */
     @PublishEvent(
             eventType = "ORDER_CANCELLED",
@@ -114,13 +114,13 @@ public class OrderService {
             throw new IllegalStateException("Order already cancelled: " + orderId);
         }
 
-        // 주문 취소 처리
+        // Process order cancellation
         order.setStatus(OrderStatus.CANCELLED);
         order.setUpdatedAt(Instant.now());
 
         log.info("Order cancelled successfully: orderId={}", orderId);
 
-        // 이벤트 페이로드 반환
+        // Return event payload
         return OrderCancelledPayload.builder()
                 .orderId(orderId)
                 .customerId(order.getCustomer().getCustomerId())
@@ -129,10 +129,10 @@ public class OrderService {
     }
 
     /**
-     * 주문 조회
+     * Retrieve order
      *
-     * @param orderId 주문 ID
-     * @return 주문 정보
+     * @param orderId Order ID
+     * @return Order information
      */
     public Order getOrder(String orderId) {
         Order order = orderStorage.get(orderId);
@@ -143,17 +143,17 @@ public class OrderService {
     }
 
     /**
-     * 주문 상태 업데이트
-     * - BEFORE: 메서드 실행 전 이벤트 발행
+     * Update order status
+     * - BEFORE: Publishes event before method execution
      *
-     * @param orderId 주문 ID
-     * @param newStatus 새로운 상태
+     * @param orderId Order ID
+     * @param newStatus New status
      */
     @PublishEvent(
             eventType = "ORDER_STATUS_CHANGED",
             severity = EventSeverity.INFO,
             phase = PublishEvent.Phase.BEFORE,
-            payloadIndex = 0,  // 첫 번째 파라미터(orderId) 사용
+            payloadIndex = 0,  // Use first parameter (orderId)
             failOnError = false
     )
     public void updateOrderStatus(String orderId, OrderStatus newStatus) {
@@ -172,30 +172,30 @@ public class OrderService {
     }
 
     /**
-     * 주문 생성 (Transactional Outbox Pattern 사용).
+     * Create order (using Transactional Outbox Pattern).
      * <p>
-     * outbox=true로 설정하여 DB 트랜잭션과 이벤트 발행의 원자성을 보장합니다.
+     * Set outbox=true to ensure atomicity between DB transaction and event publishing.
      * <p>
-     * - DB 저장과 Outbox 이벤트 저장이 같은 트랜잭션에서 수행됩니다.
-     * - 별도 스케줄러가 Outbox 테이블의 PENDING 이벤트를 Kafka로 발행합니다.
-     * - Kafka가 다운되어도 데이터 손실이 없습니다.
+     * - DB save and Outbox event save are performed in the same transaction.
+     * - A separate scheduler publishes PENDING events from the Outbox table to Kafka.
+     * - No data loss even if Kafka is down.
      *
-     * @param customer 고객 정보
-     * @param productName 상품명
-     * @param quantity 수량
-     * @param totalAmount 총 금액
-     * @return 생성된 주문 페이로드
+     * @param customer Customer information
+     * @param productName Product name
+     * @param quantity Quantity
+     * @param totalAmount Total amount
+     * @return Created order payload
      */
     @PublishEvent(
             eventType = "ORDER_CREATED_WITH_OUTBOX",
             severity = EventSeverity.INFO,
             phase = PublishEvent.Phase.AFTER_RETURNING,
-            payloadIndex = -1,  // 반환값 사용
+            payloadIndex = -1,  // Use return value
             failOnError = false,
-            // Transactional Outbox Pattern 설정
+            // Transactional Outbox Pattern configuration
             outbox = true,
             aggregateType = "Order",
-            aggregateId = "#result.orderId"  // SpEL: 반환값의 orderId 필드
+            aggregateId = "#result.orderId"  // SpEL: orderId field of return value
     )
     public OrderCreatedPayload createOrderWithOutbox(
             Customer customer,
@@ -206,7 +206,7 @@ public class OrderService {
         log.info("[OUTBOX] Creating order: customer={}, product={}, quantity={}, amount={}",
                 customer.getCustomerId(), productName, quantity, totalAmount);
 
-        // 주문 생성
+        // Create order
         String orderId = UUID.randomUUID().toString();
         Instant now = Instant.now();
 
@@ -221,14 +221,14 @@ public class OrderService {
                 .updatedAt(now)
                 .build();
 
-        // 저장
+        // Save
         orderStorage.put(orderId, order);
 
         log.info("[OUTBOX] Order created successfully: orderId={}", orderId);
         log.info("[OUTBOX] Event will be saved to outbox table in the same transaction");
         log.info("[OUTBOX] OutboxEventPublisher will publish it to Kafka asynchronously");
 
-        // 이벤트 페이로드 반환
+        // Return event payload
         return OrderCreatedPayload.builder()
                 .orderId(orderId)
                 .customer(customer)
@@ -240,19 +240,19 @@ public class OrderService {
     }
 
     /**
-     * 고객 정보 업데이트 (SpEL 테스트용)
+     * Update customer information (for SpEL testing)
      * <p>
-     * SpEL을 사용하여 파라미터의 특정 필드만 추출하여 이벤트 페이로드로 사용합니다.
+     * Uses SpEL to extract only specific fields from parameters as event payload.
      *
-     * @param customerId 고객 ID
-     * @param newEmail 새로운 이메일
+     * @param customerId Customer ID
+     * @param newEmail New email
      */
     @PublishEvent(
             eventType = "CUSTOMER_EMAIL_UPDATED",
-            payload = "#newEmail" // SpEL: 파라미터 이름으로 접근
+            payload = "#newEmail" // SpEL: Access by parameter name
     )
     public void updateCustomerEmail(String customerId, String newEmail) {
         log.info("Updating customer email: customerId={}, newEmail={}", customerId, newEmail);
-        // 실제 로직 생략
+        // Actual logic omitted
     }
 }

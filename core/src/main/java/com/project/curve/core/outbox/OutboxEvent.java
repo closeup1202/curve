@@ -6,27 +6,27 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 /**
- * Transactional Outbox Pattern을 위한 이벤트 저장소 도메인 모델.
+ * Domain model for event storage using Transactional Outbox Pattern.
  * <p>
- * DB 트랜잭션과 이벤트 발행의 원자성을 보장하기 위해 사용됩니다.
+ * Used to guarantee atomicity between DB transactions and event publishing.
  *
- * <h3>동작 방식</h3>
+ * <h3>How It Works</h3>
  * <ol>
- *   <li>비즈니스 로직과 같은 트랜잭션에 OutboxEvent 저장</li>
- *   <li>트랜잭션 커밋 → DB에 OutboxEvent 영구 저장</li>
- *   <li>별도 스케줄러가 PENDING 상태의 이벤트를 Kafka로 발행</li>
- *   <li>발행 성공 시 PUBLISHED, 실패 시 재시도 카운트 증가</li>
+ *   <li>Save OutboxEvent in the same transaction as business logic</li>
+ *   <li>Transaction commit → OutboxEvent permanently stored in DB</li>
+ *   <li>Separate scheduler publishes PENDING events to Kafka</li>
+ *   <li>On success: PUBLISHED, on failure: increment retry count</li>
  * </ol>
  *
- * <h3>원자성 보장</h3>
+ * <h3>Atomicity Guarantee</h3>
  * <pre>
  * @Transactional
  * public Order createOrder() {
- *     Order order = orderRepo.save(...);     // DB 저장
- *     outboxRepo.save(outboxEvent);          // Outbox 저장 (같은 트랜잭션)
+ *     Order order = orderRepo.save(...);     // DB save
+ *     outboxRepo.save(outboxEvent);          // Outbox save (same transaction)
  *     return order;
  * }
- * // 트랜잭션 커밋 → 둘 다 저장되거나 둘 다 롤백
+ * // Transaction commit → both saved or both rolled back
  * </pre>
  *
  * @see OutboxStatus
@@ -48,14 +48,14 @@ public class OutboxEvent {
     private Instant nextRetryAt;
 
     /**
-     * Outbox 이벤트 생성자.
+     * Outbox event constructor.
      *
-     * @param eventId       이벤트 고유 ID
-     * @param aggregateType 집합체 타입 (예: "Order", "User")
-     * @param aggregateId   집합체 ID (예: orderId)
-     * @param eventType     이벤트 타입 (예: "ORDER_CREATED")
-     * @param payload       이벤트 페이로드 (JSON)
-     * @param occurredAt    이벤트 발생 시각
+     * @param eventId       Unique event ID
+     * @param aggregateType Aggregate type (e.g., "Order", "User")
+     * @param aggregateId   Aggregate ID (e.g., orderId)
+     * @param eventType     Event type (e.g., "ORDER_CREATED")
+     * @param payload       Event payload (JSON)
+     * @param occurredAt    Event occurrence time
      */
     public OutboxEvent(
             String eventId,
@@ -83,26 +83,26 @@ public class OutboxEvent {
         this.occurredAt = occurredAt;
         this.status = OutboxStatus.PENDING;
         this.retryCount = 0;
-        this.nextRetryAt = occurredAt; // 처음에는 발생 즉시 처리 대상
+        this.nextRetryAt = occurredAt; // Initially eligible for immediate processing
     }
 
     /**
-     * 영속성 계층에서 도메인 모델을 복원할 때 사용하는 팩토리 메서드.
+     * Factory method for restoring domain model from persistence layer.
      * <p>
-     * 생성자와 달리 기존 상태(status, retryCount 등)를 직접 설정합니다.
+     * Unlike constructor, directly sets existing state (status, retryCount, etc.).
      *
-     * @param eventId       이벤트 ID
-     * @param aggregateType 집합체 타입
-     * @param aggregateId   집합체 ID
-     * @param eventType     이벤트 타입
-     * @param payload       페이로드
-     * @param occurredAt    발생 시각
-     * @param status        현재 상태
-     * @param retryCount    재시도 횟수
-     * @param publishedAt   발행 시각 (nullable)
-     * @param errorMessage  에러 메시지 (nullable)
-     * @param nextRetryAt   다음 재시도 시각 (nullable)
-     * @return 복원된 OutboxEvent
+     * @param eventId       Event ID
+     * @param aggregateType Aggregate type
+     * @param aggregateId   Aggregate ID
+     * @param eventType     Event type
+     * @param payload       Payload
+     * @param occurredAt    Occurrence time
+     * @param status        Current status
+     * @param retryCount    Retry count
+     * @param publishedAt   Publish time (nullable)
+     * @param errorMessage  Error message (nullable)
+     * @param nextRetryAt   Next retry time (nullable)
+     * @return Restored OutboxEvent
      */
     public static OutboxEvent restore(
             String eventId,
@@ -127,7 +127,7 @@ public class OutboxEvent {
     }
 
     /**
-     * 이벤트 발행 성공 처리.
+     * Marks event as successfully published.
      */
     public void markAsPublished() {
         this.status = OutboxStatus.PUBLISHED;
@@ -137,9 +137,9 @@ public class OutboxEvent {
     }
 
     /**
-     * 이벤트 발행 실패 처리.
+     * Marks event as failed.
      *
-     * @param errorMessage 실패 원인
+     * @param errorMessage Failure reason
      */
     public void markAsFailed(String errorMessage) {
         this.status = OutboxStatus.FAILED;
@@ -148,10 +148,10 @@ public class OutboxEvent {
     }
 
     /**
-     * 재시도 횟수 증가 및 다음 재시도 시간 설정.
+     * Increments retry count and sets next retry time.
      *
-     * @param backoffMs 재시도 지연 시간 (밀리초)
-     * @return 증가된 재시도 횟수
+     * @param backoffMs Retry delay time (milliseconds)
+     * @return Incremented retry count
      */
     public int scheduleNextRetry(long backoffMs) {
         this.retryCount++;
@@ -160,19 +160,19 @@ public class OutboxEvent {
     }
 
     /**
-     * 최대 재시도 횟수 초과 여부 확인.
+     * Checks if maximum retry count is exceeded.
      *
-     * @param maxRetries 최대 재시도 횟수
-     * @return 초과 여부
+     * @param maxRetries Maximum retry count
+     * @return true if exceeded
      */
     public boolean exceededMaxRetries(int maxRetries) {
         return this.retryCount >= maxRetries;
     }
 
     /**
-     * 발행 가능 여부 확인.
+     * Checks if event can be published.
      *
-     * @return PENDING 상태이면 true
+     * @return true if status is PENDING
      */
     public boolean canPublish() {
         return this.status == OutboxStatus.PENDING;

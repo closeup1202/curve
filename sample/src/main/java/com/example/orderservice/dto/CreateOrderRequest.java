@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 /**
- * 주문 생성 요청 DTO
+ * Create order request DTO
  */
 @Data
 @Builder
@@ -17,42 +17,42 @@ import java.math.BigDecimal;
 public class CreateOrderRequest {
 
     /**
-     * 고객 ID
+     * Customer ID
      */
     private String customerId;
 
     /**
-     * 고객 이름
+     * Customer name
      */
     private String customerName;
 
     /**
-     * 이메일
+     * Email
      */
     private String email;
 
     /**
-     * 전화번호
+     * Phone number
      */
     private String phone;
 
     /**
-     * 배송 주소
+     * Shipping address
      */
     private String address;
 
     /**
-     * 상품명
+     * Product name
      */
     private String productName;
 
     /**
-     * 수량
+     * Quantity
      */
     private int quantity;
 
     /**
-     * 총 금액
+     * Total amount
      */
     private BigDecimal totalAmount;
 }

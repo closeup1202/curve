@@ -12,8 +12,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * MASK 전략 프로세서.
- * PiiType에 맞는 마스커를 찾아 마스킹 처리한다.
+ * MASK strategy processor.
+ * Finds the masker matching the PiiType and performs masking.
  */
 @Component
 public class MaskingPiiProcessor implements PiiProcessor {

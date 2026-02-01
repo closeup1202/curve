@@ -17,9 +17,9 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.reflect.Method;
 
 /**
- * 애플리케이션 시작 시 @PublishEvent의 SpEL 표현식 유효성을 검사하는 Validator.
+ * Validator that checks the validity of SpEL expressions in @PublishEvent annotations at application startup.
  * <p>
- * 잘못된 SpEL 표현식이 있는 경우 경고 로그를 출력하여 개발자가 인지할 수 있도록 합니다.
+ * Outputs warning logs for invalid SpEL expressions so developers can be notified.
  */
 @Slf4j
 @Component
@@ -46,11 +46,11 @@ public class SpelExpressionValidator implements ApplicationListener<ContextRefre
                 Object bean = applicationContext.getBean(beanName);
                 Class<?> targetClass = AopUtils.getTargetClass(bean);
                 
-                // Spring 내부 빈이나 프록시 제외 필터링을 할 수도 있지만, 
-                // ReflectionUtils.doWithMethods가 안전하게 처리하므로 모든 빈 검사
+                // Could filter out Spring internal beans or proxies,
+                // but check all beans as ReflectionUtils.doWithMethods handles safely
                 ReflectionUtils.doWithMethods(targetClass, method -> validateMethod(targetClass, method));
             } catch (Exception e) {
-                // 특정 빈 로드 실패 시 무시하고 계속 진행
+                // Ignore and continue if specific bean loading fails
                 log.trace("Failed to validate bean '{}': {}", beanName, e.getMessage());
             }
         }

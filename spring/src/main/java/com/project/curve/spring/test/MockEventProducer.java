@@ -12,11 +12,11 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * 테스트용 EventProducer 구현체.
+ * EventProducer implementation for testing purposes.
  * <p>
- * 실제 Kafka로 발행하지 않고 메모리에 이벤트를 저장하여 검증을 돕습니다.
+ * Stores events in memory instead of publishing to Kafka for verification.
  *
- * <h3>사용 예시</h3>
+ * <h3>Usage Example</h3>
  * <pre>
  * @TestConfiguration
  * public class TestConfig {

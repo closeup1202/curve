@@ -13,8 +13,8 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 /**
- * 주문 생성 이벤트 페이로드
- * - PII 데이터(Customer)는 자동으로 마스킹/암호화됨
+ * Order created event payload
+ * - PII data (Customer) is automatically masked/encrypted
  */
 @Data
 @Builder
@@ -24,32 +24,32 @@ import java.math.BigDecimal;
 public class OrderCreatedPayload implements DomainEventPayload {
 
     /**
-     * 주문 ID
+     * Order ID
      */
     private String orderId;
 
     /**
-     * 고객 정보 (PII 필드 포함)
+     * Customer information (includes PII fields)
      */
     private Customer customer;
 
     /**
-     * 상품명
+     * Product name
      */
     private String productName;
 
     /**
-     * 수량
+     * Quantity
      */
     private int quantity;
 
     /**
-     * 총 금액
+     * Total amount
      */
     private BigDecimal totalAmount;
 
     /**
-     * 주문 상태
+     * Order status
      */
     private OrderStatus status;
 

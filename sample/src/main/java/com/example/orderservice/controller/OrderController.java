@@ -16,9 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 주문 REST API 컨트롤러
- * - Curve를 통해 모든 주문 이벤트가 자동으로 Kafka에 발행됨
- * - PII 데이터는 자동으로 마스킹/암호화됨
+ * Order REST API Controller
+ * - All order events are automatically published to Kafka through Curve
+ * - PII data is automatically masked/encrypted
  */
 @Slf4j
 @RestController
@@ -33,7 +33,7 @@ public class OrderController {
         log.info("Received order creation request: customerId={}, product={}",
                 request.getCustomerId(), request.getProductName());
 
-        // Customer 객체 생성 (PII 필드 포함)
+        // Create Customer object (includes PII fields)
         Customer customer = Customer.builder()
                 .customerId(request.getCustomerId())
                 .name(request.getCustomerName())
@@ -42,7 +42,7 @@ public class OrderController {
                 .address(request.getAddress())
                 .build();
 
-        // 주문 생성 (자동으로 ORDER_CREATED 이벤트 발행)
+        // Create order (automatically publishes ORDER_CREATED event)
         OrderCreatedPayload payload = orderService.createOrder(
                 customer,
                 request.getProductName(),
@@ -50,7 +50,7 @@ public class OrderController {
                 request.getTotalAmount()
         );
 
-        // 응답 생성
+        // Create response
         OrderResponse response = OrderResponse.builder()
                 .orderId(payload.getOrderId())
                 .customerId(customer.getCustomerId())
@@ -94,10 +94,10 @@ public class OrderController {
     ) {
         log.info("Cancelling order: orderId={}, reason={}", orderId, request.getReason());
 
-        // 주문 취소 (자동으로 ORDER_CANCELLED 이벤트 발행)
+        // Cancel order (automatically publishes ORDER_CANCELLED event)
         OrderCancelledPayload payload = orderService.cancelOrder(orderId, request.getReason());
 
-        // 업데이트된 주문 조회
+        // Retrieve updated order
         Order order = orderService.getOrder(orderId);
 
         OrderResponse response = OrderResponse.builder()
@@ -122,10 +122,10 @@ public class OrderController {
     ) {
         log.info("Updating order status: orderId={}, newStatus={}", orderId, newStatus);
 
-        // 주문 상태 업데이트 (자동으로 ORDER_STATUS_CHANGED 이벤트 발행)
+        // Update order status (automatically publishes ORDER_STATUS_CHANGED event)
         orderService.updateOrderStatus(orderId, newStatus);
 
-        // 업데이트된 주문 조회
+        // Retrieve updated order
         Order order = orderService.getOrder(orderId);
 
         OrderResponse response = OrderResponse.builder()

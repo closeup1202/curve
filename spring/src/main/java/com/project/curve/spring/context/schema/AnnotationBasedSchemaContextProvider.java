@@ -9,12 +9,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 어노테이션 기반 스키마 컨텍스트 제공자
+ * Annotation-based schema context provider.
  *
- * <p>페이로드 클래스에 {@link PayloadSchema} 어노테이션이 있으면 해당 정보를 사용하고,
- * 없으면 클래스명을 스키마 이름으로, 버전은 1로 사용합니다.</p>
+ * <p>If a payload class has a {@link PayloadSchema} annotation, uses that information;
+ * otherwise, uses the class name as the schema name and version 1 as the default.</p>
  *
- * <p>성능을 위해 스키마 정보를 캐싱합니다.</p>
+ * <p>Caches schema information for performance.</p>
  */
 public class AnnotationBasedSchemaContextProvider implements SchemaContextProvider {
 

@@ -16,16 +16,16 @@ public class NameMasker implements PiiMasker {
 
         return switch (level) {
             case WEAK -> {
-                // 첫 글자만 표시: "홍길동" → "홍**"
+                // Show first char only: "John Doe" → "J*******"
                 if (length == 1) yield "*";
                 yield value.charAt(0) + "*".repeat(length - 1);
             }
             case NORMAL -> {
-                // 첫 글자와 마지막 글자 표시: "홍길동" → "홍*동"
+                // Show first and last char: "John Doe" → "J******e"
                 if (length <= 2) yield value.charAt(0) + "*";
                 yield value.charAt(0) + "*".repeat(length - 2) + value.charAt(length - 1);
             }
-            case STRONG -> "*".repeat(length); // 전체 마스킹: "홍길동" → "***"
+            case STRONG -> "*".repeat(length); // Mask entire name: "John Doe" → "********"
         };
     }
 

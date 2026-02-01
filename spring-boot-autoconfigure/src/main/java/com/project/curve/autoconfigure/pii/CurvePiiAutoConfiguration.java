@@ -19,9 +19,9 @@ import org.springframework.context.annotation.Bean;
 import java.util.List;
 
 /**
- * PII 처리 자동 설정.
+ * PII (Personally Identifiable Information) processing auto-configuration.
  *
- * @PiiField 어노테이션이 붙은 필드를 Jackson 직렬화 시 자동으로 마스킹/암호화/해싱 처리한다.
+ * Automatically masks/encrypts/hashes fields annotated with @PiiField during Jackson serialization.
  */
 @Slf4j
 @AutoConfiguration(after = JacksonAutoConfiguration.class)
@@ -57,34 +57,34 @@ public class CurvePiiAutoConfiguration {
     }
 
     /**
-     * 암호화 키를 환경변수 또는 설정값에서 해석합니다.
-     * 환경변수 PII_ENCRYPTION_KEY가 설정되어 있으면 우선 사용합니다.
+     * Resolves the encryption key from environment variables or configuration.
+     * Prioritizes the PII_ENCRYPTION_KEY environment variable if set.
      */
     private String resolveEncryptionKey(String configuredKey) {
-        // 환경변수 우선
+        // Environment variable takes priority
         String envKey = System.getenv("PII_ENCRYPTION_KEY");
         if (envKey != null && !envKey.isBlank()) {
-            log.debug("PII 암호화 키를 환경변수 PII_ENCRYPTION_KEY에서 로드했습니다.");
+            log.debug("PII encryption key loaded from PII_ENCRYPTION_KEY environment variable.");
             return envKey;
         }
         return configuredKey;
     }
 
     /**
-     * 솔트를 환경변수 또는 설정값에서 해석합니다.
-     * 환경변수 PII_HASH_SALT가 설정되어 있으면 우선 사용합니다.
+     * Resolves the salt from environment variables or configuration.
+     * Prioritizes the PII_HASH_SALT environment variable if set.
      */
     private String resolveSalt(String configuredSalt) {
-        // 환경변수 우선
+        // Environment variable takes priority
         String envSalt = System.getenv("PII_HASH_SALT");
         if (envSalt != null && !envSalt.isBlank()) {
-            log.debug("PII 해싱 솔트를 환경변수 PII_HASH_SALT에서 로드했습니다.");
+            log.debug("PII hashing salt loaded from PII_HASH_SALT environment variable.");
             return envSalt;
         }
         return configuredSalt;
     }
 
-    // 마스커 빈들
+    // Masker beans
     @Bean
     @ConditionalOnMissingBean(name = "emailMasker")
     public PiiMasker emailMasker() {
@@ -109,7 +109,7 @@ public class CurvePiiAutoConfiguration {
         return new DefaultMasker();
     }
 
-    // 프로세서 빈들
+    // Processor beans
     @Bean
     @ConditionalOnMissingBean
     public MaskingPiiProcessor maskingPiiProcessor(List<PiiMasker> maskers) {
@@ -141,8 +141,8 @@ public class CurvePiiAutoConfiguration {
     }
 
     /**
-     * ObjectMapper에 PiiModule을 자동 등록하는 Customizer.
-     * Spring Boot의 Jackson 자동 설정과 통합되어 BeanPostProcessor 경고를 방지합니다.
+     * Customizer that automatically registers PiiModule to ObjectMapper.
+     * Integrates with Spring Boot's Jackson auto-configuration to prevent BeanPostProcessor warnings.
      */
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer piiModuleCustomizer(PiiModule piiModule) {

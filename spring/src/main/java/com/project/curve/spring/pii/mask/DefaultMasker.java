@@ -16,16 +16,16 @@ public class DefaultMasker implements PiiMasker {
 
         return switch (level) {
             case WEAK -> {
-                // 앞 절반 표시: "abcdef" → "abc***"
+                // Show first half: "abcdef" → "abc***"
                 int showCount = Math.max(1, length / 2);
                 yield value.substring(0, showCount) + "*".repeat(length - showCount);
             }
             case NORMAL -> {
-                // 앞 2자 표시: "abcdef" → "ab****"
+                // Show first 2 chars: "abcdef" → "ab****"
                 int showCount = Math.min(2, length);
                 yield value.substring(0, showCount) + "*".repeat(length - showCount);
             }
-            case STRONG -> "*".repeat(length); // 전체 마스킹: "abcdef" → "******"
+            case STRONG -> "*".repeat(length); // Mask entire value: "abcdef" → "******"
         };
     }
 

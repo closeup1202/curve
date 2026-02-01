@@ -1,13 +1,13 @@
 package com.project.curve.core.schema;
 
 /**
- * 이벤트 스키마 버전 정보를 표현하는 Record.
+ * Record representing event schema version information.
  * <p>
- * 각 이벤트 페이로드는 특정 스키마 버전을 가지며, 버전 간 마이그레이션을 지원합니다.
+ * Each event payload has a specific schema version and supports migration between versions.
  *
- * @param name        스키마 이름 (예: "OrderCreated", "UserRegistered")
- * @param version     스키마 버전 (1부터 시작)
- * @param payloadClass 페이로드 클래스
+ * @param name        Schema name (e.g., "OrderCreated", "UserRegistered")
+ * @param version     Schema version (starts from 1)
+ * @param payloadClass Payload class
  */
 public record SchemaVersion(
     String name,
@@ -15,12 +15,12 @@ public record SchemaVersion(
     Class<?> payloadClass
 ) {
     /**
-     * SchemaVersion을 생성합니다.
+     * Creates a SchemaVersion.
      *
-     * @param name         스키마 이름
-     * @param version      스키마 버전
-     * @param payloadClass 페이로드 클래스
-     * @throws IllegalArgumentException 이름이 null이거나 빈 문자열이거나, 버전이 1 미만인 경우
+     * @param name         Schema name
+     * @param version      Schema version
+     * @param payloadClass Payload class
+     * @throws IllegalArgumentException if name is null or blank, or version is less than 1
      */
     public SchemaVersion {
         if (name == null || name.trim().isEmpty()) {
@@ -35,21 +35,21 @@ public record SchemaVersion(
     }
 
     /**
-     * 스키마의 전체 키를 반환합니다.
+     * Returns the full key of the schema.
      * <p>
-     * 형식: {name}:v{version} (예: "OrderCreated:v1")
+     * Format: {name}:v{version} (e.g., "OrderCreated:v1")
      *
-     * @return 스키마 전체 키
+     * @return Full schema key
      */
     public String getKey() {
         return name + ":v" + version;
     }
 
     /**
-     * 다른 버전과 비교합니다.
+     * Compares with another version.
      *
-     * @param other 비교할 버전
-     * @return 이 버전이 더 크면 양수, 같으면 0, 작으면 음수
+     * @param other Version to compare
+     * @return Positive if this version is greater, 0 if equal, negative if less
      */
     public int compareVersion(SchemaVersion other) {
         if (!this.name.equals(other.name)) {
@@ -61,22 +61,22 @@ public record SchemaVersion(
     }
 
     /**
-     * 이 버전이 다른 버전보다 최신인지 확인합니다.
+     * Checks if this version is newer than another version.
      *
-     * @param other 비교할 버전
-     * @return 이 버전이 더 최신이면 true
+     * @param other Version to compare
+     * @return true if this version is newer
      */
     public boolean isNewerThan(SchemaVersion other) {
         return compareVersion(other) > 0;
     }
 
     /**
-     * 이 버전이 다른 버전과 호환 가능한지 확인합니다.
+     * Checks if this version is compatible with another version.
      * <p>
-     * 기본적으로 같은 스키마 이름이면 호환 가능한 것으로 간주합니다.
+     * By default, versions with the same schema name are considered compatible.
      *
-     * @param other 비교할 버전
-     * @return 호환 가능하면 true
+     * @param other Version to compare
+     * @return true if compatible
      */
     public boolean isCompatibleWith(SchemaVersion other) {
         return this.name.equals(other.name);

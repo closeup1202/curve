@@ -71,85 +71,123 @@ import java.lang.annotation.Target;
 public @interface PublishEvent {
 
     /**
-     * 이벤트 타입 이름
-     * 기본값: 메서드 이름을 기반으로 생성
+     * The event type name.
+     * <p>
+     * Default: Generated based on the method name (ClassName.methodName)
+     *
+     * @return the event type
      */
     String eventType() default "";
 
     /**
-     * 이벤트 심각도
+     * The event severity level.
+     *
+     * @return the event severity (default: INFO)
      */
     EventSeverity severity() default EventSeverity.INFO;
 
     /**
-     * 이벤트 페이로드로 사용할 파라미터 인덱스
-     * -1: 반환값 사용 (기본값)
-     * 0 이상: 해당 인덱스의 파라미터 사용
+     * The parameter index to use as the event payload.
+     * <ul>
+     *   <li>-1: Use return value (default)</li>
+     *   <li>0 or greater: Use the parameter at this index</li>
+     * </ul>
      * <p>
-     * payload() 속성이 설정되어 있으면 이 값은 무시됩니다.
+     * This value is ignored if the {@link #payload()} attribute is set.
+     *
+     * @return the payload parameter index
      */
     int payloadIndex() default -1;
 
     /**
-     * 이벤트 페이로드 추출을 위한 SpEL 표현식.
+     * SpEL expression for extracting the event payload.
      * <p>
-     * 설정 시 payloadIndex보다 우선순위가 높습니다.
+     * When set, this takes precedence over {@link #payloadIndex()}.
      *
-     * <h3>사용 가능한 변수</h3>
+     * <h3>Available Variables</h3>
      * <ul>
-     *   <li>#result - 메서드 반환값 (AFTER_RETURNING 시)</li>
-     *   <li>#args - 메서드 파라미터 배열</li>
-     *   <li>#p0, #p1, ... - 각 파라미터</li>
-     *   <li>파라미터 이름 - 컴파일 시 -parameters 옵션이 켜져있을 경우 사용 가능</li>
+     *   <li>#result - Method return value (for AFTER_RETURNING phase)</li>
+     *   <li>#args - Method parameter array</li>
+     *   <li>#p0, #p1, ... - Individual parameters</li>
+     *   <li>Parameter names - Available if compiled with -parameters option</li>
      * </ul>
      *
-     * <h3>예시</h3>
+     * <h3>Examples</h3>
      * <pre>
-     * // 요청 객체의 특정 필드만 추출
+     * // Extract specific fields from request object
      * payload = "#args[0].toEventDto()"
      *
-     * // 반환값과 파라미터 조합
+     * // Combine return value and parameters
      * payload = "new com.example.Event(#result.id, #args[0].name)"
      * </pre>
+     *
+     * @return the SpEL expression
      */
     String payload() default "";
 
     /**
-     * 이벤트 발행 시점
+     * The phase when the event should be published.
+     *
+     * @return the event publishing phase (default: AFTER_RETURNING)
      */
     Phase phase() default Phase.AFTER_RETURNING;
 
     /**
-     * 이벤트 발행 실패 시 예외 전파 여부
-     * <p>
-     * true: 이벤트 발행 실패 시 예외를 던져 비즈니스 로직도 실패
-     * false: 이벤트 발행 실패해도 비즈니스 로직은 정상 진행 (기본값)
+     * Whether to propagate exceptions when event publishing fails.
+     * <ul>
+     *   <li>true: Throw exception on event publishing failure, causing business logic to fail</li>
+     *   <li>false: Log error but continue business logic execution (default)</li>
+     * </ul>
+     *
+     * @return whether to fail on error
      */
     boolean failOnError() default false;
 
     /**
-     * Transactional Outbox Pattern 사용 여부.
+     * Whether to use the Transactional Outbox Pattern.
+     * <p>
+     * When enabled, events are saved to the database within the same transaction
+     * as the business logic, ensuring atomicity and consistency.
+     *
+     * @return whether to use outbox pattern
      */
     boolean outbox() default false;
 
     /**
-     * 집합체(Aggregate) 타입.
-     * outbox=true일 때 필수 항목입니다.
+     * The aggregate type for the outbox pattern.
+     * <p>
+     * Required when {@code outbox=true}.
+     *
+     * @return the aggregate type
      */
     String aggregateType() default "";
 
     /**
-     * 집합체(Aggregate) ID 추출 SpEL 표현식.
-     * outbox=true일 때 필수 항목입니다.
+     * SpEL expression for extracting the aggregate ID.
+     * <p>
+     * Required when {@code outbox=true}.
+     *
+     * @return the SpEL expression for aggregate ID
      */
     String aggregateId() default "";
 
     /**
-     * 이벤트 발행 시점
+     * Enumeration of event publishing phases.
      */
     enum Phase {
+        /**
+         * Publish event before method execution.
+         */
         BEFORE,
+
+        /**
+         * Publish event after method returns successfully.
+         */
         AFTER_RETURNING,
+
+        /**
+         * Publish event after method execution (regardless of success or failure).
+         */
         AFTER
     }
 }

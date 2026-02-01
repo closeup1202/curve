@@ -16,10 +16,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Curve 메트릭 수집기 Auto-Configuration.
+ * Curve metrics collector auto-configuration.
  * <p>
- * Micrometer의 {@link MeterRegistry}가 존재하면 실제 메트릭을 수집하고,
- * 없으면 NoOp 구현체를 등록하여 null 체크 없이 안전하게 동작합니다.
+ * If Micrometer's {@link MeterRegistry} exists, collects actual metrics,
+ * otherwise registers a NoOp implementation to operate safely without null checks.
  */
 @Configuration
 @ConditionalOnClass(MeterRegistry.class)
@@ -49,6 +49,6 @@ public class CurveMetricsAutoConfiguration {
         if (meterRegistry != null) {
             return new CurveMetricsEndpoint(meterRegistry);
         }
-        return null; // MeterRegistry가 없으면 엔드포인트 등록 안 함
+        return null; // Do not register endpoint if MeterRegistry is not available
     }
 }

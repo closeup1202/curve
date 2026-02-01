@@ -49,6 +49,14 @@ curve:
     # 비동기 모드에서 DLQ 전송 시 콜백 스레드 블로킹 방지
     dlq-executor-threads: 2
 
+    # ===== 보안 설정 =====
+    # 프로덕션 환경 여부 (기본값: false)
+    # true: DLQ 백업 파일 보안 실패 시 예외 발생 (권장)
+    # false: 개발 모드 - 보안 실패 시 경고만 출력
+    # 주의: 프로덕션 환경에서는 반드시 true로 설정
+    #       Windows 환경에서는 ACL 지원 필수, POSIX 시스템 권장
+    is-production: false
+
   # ===== Retry 설정 =====
   retry:
     # 재시도 활성화 여부
@@ -278,3 +286,70 @@ curve:
 server:
   # 로컬에서는 프록시 헤더 처리 비활성화
   forward-headers-strategy: none
+
+---
+# =====================================
+# Transactional Outbox Pattern 설정
+# =====================================
+spring:
+  config:
+    activate:
+      on-profile: outbox
+
+curve:
+  # ===== Outbox Pattern 설정 =====
+  outbox:
+    # Outbox Pattern 활성화 여부 (기본값: false)
+    # true: DB 트랜잭션과 이벤트 발행의 원자성 보장
+    enabled: true
+
+    # Outbox 이벤트 발행기 활성화 여부 (기본값: true)
+    # true: 애플리케이션 내에서 주기적으로 PENDING 이벤트를 Kafka로 발행
+    # false: DB 저장만 수행 (CDC 사용 시)
+    publisher-enabled: true
+
+    # 테이블 스키마 초기화 모드 (embedded/always/never)
+    # embedded: 임베디드 DB에서만 자동 생성
+    # always: 항상 자동 생성 (테이블이 없을 때만)
+    # never: 수동 관리 (Flyway/Liquibase 권장)
+    initialize-schema: embedded
+
+    # 폴링 주기 (ms)
+    poll-interval-ms: 1000
+
+    # 배치 크기 (한 번에 처리할 이벤트 수)
+    batch-size: 100
+
+    # 최대 재시도 횟수
+    max-retries: 3
+
+    # Kafka 전송 타임아웃 (초)
+    send-timeout-seconds: 10
+
+    # ===== 자동 정리 설정 =====
+    # PUBLISHED 이벤트 자동 정리 활성화
+    cleanup-enabled: true
+
+    # 보관 기간 (일)
+    retention-days: 7
+
+    # 정리 작업 실행 주기 (cron)
+    cleanup-cron: "0 0 2 * * *"  # 매일 새벽 2시
+
+    # ===== 확장성 개선 설정 (NEW!) =====
+    # 동적 배치 크기 조정 활성화 (기본값: true)
+    # pending 이벤트 수에 따라 배치 크기를 자동 조정하여 처리량 증가
+    # - pending > 1000: batchSize * 2 (최대 500)
+    # - pending > 500: batchSize * 1.5 (최대 300)
+    # - pending < 10: min(batchSize, 10)
+    dynamic-batching-enabled: true
+
+    # Circuit Breaker 활성화 (기본값: true)
+    # Kafka 장애 감지 시 자동으로 요청 차단하여 시스템 보호
+    # - 연속 5회 실패 시 Circuit OPEN
+    # - 1분 후 Half-Open 상태로 전환하여 복구 시도
+    circuit-breaker-enabled: true
+
+  kafka:
+    # Outbox에서는 프로덕션 모드 권장
+    is-production: true

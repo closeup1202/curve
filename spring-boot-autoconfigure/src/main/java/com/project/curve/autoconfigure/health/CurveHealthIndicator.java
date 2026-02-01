@@ -5,20 +5,20 @@ import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.kafka.core.KafkaTemplate;
 
 /**
- * Curve 이벤트 발행 시스템의 Health Indicator.
+ * Health indicator for the Curve event publishing system.
  * <p>
- * Kafka Producer의 상태를 확인하여 이벤트 발행 시스템이 정상 작동 중인지 점검합니다.
+ * Checks the status of the Kafka Producer to verify if the event publishing system is operating normally.
  *
- * <h3>Health 상태 기준</h3>
+ * <h3>Health Status Criteria</h3>
  * <ul>
- *   <li>UP: Kafka Producer가 정상적으로 초기화되고 메트릭 수집 가능</li>
- *   <li>DOWN: Kafka Producer가 null이거나 초기화 실패</li>
+ *   <li>UP: Kafka Producer is properly initialized and metrics are collectible</li>
+ *   <li>DOWN: Kafka Producer is null or initialization failed</li>
  * </ul>
  *
- * <h3>Health 세부 정보</h3>
+ * <h3>Health Details</h3>
  * <ul>
- *   <li>kafkaProducerInitialized: Kafka Producer 초기화 여부</li>
- *   <li>producerMetrics: Producer 메트릭 수 (connection 상태 간접 확인)</li>
+ *   <li>kafkaProducerInitialized: Whether Kafka Producer is initialized</li>
+ *   <li>producerMetrics: Number of Producer metrics (indirect verification of connection status)</li>
  * </ul>
  *
  * @see HealthIndicator
@@ -38,7 +38,7 @@ public record CurveHealthIndicator(
                         .build();
             }
 
-            // Producer 메트릭을 통해 연결 상태 간접 확인
+            // Indirectly verify connection status through Producer metrics
             int metricsCount = kafkaTemplate.metrics().size();
 
             return Health.up()

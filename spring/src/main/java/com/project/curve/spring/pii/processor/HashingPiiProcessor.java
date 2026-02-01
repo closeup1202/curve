@@ -7,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
- * HASH 전략 프로세서.
- * SHA-256 해시를 수행하며, 복호화가 불가능하다.
+ * HASH strategy processor.
+ * Performs SHA-256 hashing, which is irreversible.
  */
 @Component
 @RequiredArgsConstructor

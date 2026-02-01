@@ -8,8 +8,8 @@ import com.project.curve.spring.pii.processor.PiiProcessorRegistry;
 import com.project.curve.spring.pii.strategy.PiiStrategy;
 
 /**
- * PII 필드를 처리하는 커스텀 PropertyWriter.
- * @PiiField 어노테이션이 붙은 필드의 값을 처리하여 직렬화한다.
+ * Custom PropertyWriter for processing PII fields.
+ * Processes and serializes values of fields annotated with @PiiField.
  */
 public class PiiPropertyWriter extends BeanPropertyWriter {
 
@@ -26,7 +26,7 @@ public class PiiPropertyWriter extends BeanPropertyWriter {
 
     @Override
     public void serializeAsField(Object bean, JsonGenerator gen, SerializerProvider prov) throws Exception {
-        // EXCLUDE 전략이면 필드를 완전히 제외
+        // Completely exclude field if EXCLUDE strategy
         if (piiField.strategy() == PiiStrategy.EXCLUDE) {
             return;
         }
@@ -44,13 +44,13 @@ public class PiiPropertyWriter extends BeanPropertyWriter {
             return;
         }
 
-        // 문자열 값만 PII 처리
+        // Process PII only for string values
         if (value instanceof String stringValue) {
             String processedValue = processorRegistry.process(stringValue, piiField);
             gen.writeFieldName(_name);
             gen.writeString(processedValue);
         } else {
-            // 문자열이 아닌 경우 원본 그대로 직렬화
+            // Serialize non-string values as-is
             delegate.serializeAsField(bean, gen, prov);
         }
     }

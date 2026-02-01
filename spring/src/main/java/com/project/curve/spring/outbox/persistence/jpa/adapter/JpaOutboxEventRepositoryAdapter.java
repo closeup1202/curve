@@ -16,9 +16,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * OutboxEventRepository의 JPA 구현체 (Hexagonal Architecture의 Adapter).
+ * JPA implementation of OutboxEventRepository (Hexagonal Architecture Adapter).
  * <p>
- * Core 도메인 모델과 JPA 엔티티 간의 변환을 담당합니다.
+ * Handles conversion between core domain models and JPA entities.
  *
  * @see OutboxEventRepository
  * @see OutboxEventJpaRepository
@@ -63,21 +63,21 @@ public class JpaOutboxEventRepositoryAdapter implements OutboxEventRepository {
     @Override
     public List<OutboxEvent> findPendingForProcessing(int limit) {
         PageRequest pageRequest = PageRequest.of(0, limit);
-        // 현재 시각 이전에 재시도 예정인 이벤트만 조회 (nextRetryAt <= now)
-        // JPA Repository 메서드 시그니처 변경 필요 (findPendingForProcessing -> findByStatusForUpdateSkipLocked)
-        // 하지만 JpaRepositoryAdapter는 이미 변경된 메서드를 호출하고 있음.
-        // OutboxEventJpaRepository의 메서드 시그니처가 변경되었는지 확인 필요.
-        // 이전 단계에서 OutboxEventJpaRepository에 findByStatusForUpdateSkipLocked를 추가했음.
-        
-        // 주의: OutboxEventJpaRepository 인터페이스 정의와 일치해야 함.
-        // 이전 코드에서는 findByStatusForUpdateSkipLocked(status, pageable) 이었음.
-        // 하지만 JpaOutboxEventRepositoryAdapter에서는 findByStatusForUpdateSkipLocked(status, now, pageable)을 호출하고 있음.
-        // OutboxEventJpaRepository를 다시 확인하고 맞춰야 함.
-        
-        // 일단 여기서는 기존 코드(이전 단계에서 작성한 코드)를 그대로 사용.
-        // 이전 단계에서 OutboxEventJpaRepository에 findByStatusForUpdateSkipLocked(status, pageable)만 정의했음.
-        // 따라서 여기서는 now 파라미터를 제거해야 함.
-        
+        // Query only events scheduled for retry before current time (nextRetryAt <= now)
+        // JPA Repository method signature change needed (findPendingForProcessing -> findByStatusForUpdateSkipLocked)
+        // But JpaRepositoryAdapter is already calling the changed method.
+        // Need to verify if OutboxEventJpaRepository method signature has been changed.
+        // In previous step, findByStatusForUpdateSkipLocked was added to OutboxEventJpaRepository.
+
+        // Note: Must match OutboxEventJpaRepository interface definition.
+        // In previous code, it was findByStatusForUpdateSkipLocked(status, pageable).
+        // But JpaOutboxEventRepositoryAdapter is calling findByStatusForUpdateSkipLocked(status, now, pageable).
+        // Need to check and align with OutboxEventJpaRepository.
+
+        // For now, use the existing code (code written in previous step) as-is.
+        // In previous step, only findByStatusForUpdateSkipLocked(status, pageable) was defined in OutboxEventJpaRepository.
+        // Therefore, the now parameter should be removed here.
+
         return jpaRepository.findByStatusForUpdateSkipLocked(OutboxStatus.PENDING, pageRequest)
                 .stream()
                 .map(OutboxEventJpaEntity::toDomain)

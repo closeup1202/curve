@@ -22,18 +22,18 @@ public class EmailMasker implements PiiMasker {
 
         return switch (level) {
             case WEAK -> {
-                // 로컬 앞 3자 표시: "john.doe@gmail.com" → "joh****@gmail.com"
+                // Show first 3 chars of local: "john.doe@gmail.com" → "joh****@gmail.com"
                 String maskedLocal = maskPart(local, 3);
                 yield maskedLocal + AT + domain;
             }
             case NORMAL -> {
-                // 로컬 앞 2자 + 도메인 앞 2자 표시: "john.doe@gmail.com" → "jo****@gm***.com"
+                // Show first 2 chars of local + first 2 chars of domain: "john.doe@gmail.com" → "jo****@gm***.com"
                 String maskedLocal = maskPart(local, 2);
                 String maskedDomain = maskDomain(domain);
                 yield maskedLocal + AT + maskedDomain;
             }
             case STRONG -> {
-                // 로컬 전체 + 도메인 전체 마스킹: "john.doe@gmail.com" → "********@*****.com"
+                // Mask entire local + entire domain: "john.doe@gmail.com" → "********@*****.com"
                 String maskedLocal = "*".repeat(local.length());
                 String maskedDomain = maskDomainStrong(domain);
                 yield maskedLocal + AT + maskedDomain;

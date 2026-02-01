@@ -14,19 +14,19 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Curve 이벤트 발행 시스템의 메트릭을 노출하는 커스텀 Actuator 엔드포인트.
+ * Custom Actuator endpoint that exposes metrics for the Curve event publishing system.
  * <p>
- * {@code /actuator/curve-metrics} 경로로 접근할 수 있습니다.
+ * Accessible via the {@code /actuator/curve-metrics} path.
  *
- * <h3>제공 메트릭</h3>
+ * <h3>Provided Metrics</h3>
  * <ul>
- *   <li>curve.events.published: 발행된 이벤트 수 (성공/실패)</li>
- *   <li>curve.events.publish.duration: 이벤트 발행 처리 시간</li>
- *   <li>curve.events.dlq.count: DLQ로 전송된 이벤트 수</li>
- *   <li>curve.events.retry.count: 재시도 횟수</li>
- *   <li>curve.kafka.producer.errors: Kafka Producer 에러 수</li>
- *   <li>curve.pii.processing: PII 처리 횟수</li>
- *   <li>curve.id.generation.count: ID 생성 횟수</li>
+ *   <li>curve.events.published: Number of published events (success/failure)</li>
+ *   <li>curve.events.publish.duration: Event publishing processing time</li>
+ *   <li>curve.events.dlq.count: Number of events sent to DLQ</li>
+ *   <li>curve.events.retry.count: Number of retries</li>
+ *   <li>curve.kafka.producer.errors: Number of Kafka Producer errors</li>
+ *   <li>curve.pii.processing: Number of PII processing operations</li>
+ *   <li>curve.id.generation.count: Number of ID generations</li>
  * </ul>
  *
  * @see org.springframework.boot.actuate.endpoint.annotation.Endpoint
@@ -39,30 +39,30 @@ public class CurveMetricsEndpoint {
     private final MeterRegistry meterRegistry;
 
     /**
-     * Curve 관련 메트릭을 모두 조회합니다.
+     * Retrieves all Curve-related metrics.
      *
-     * @return Curve 메트릭 정보 맵
+     * @return Map of Curve metrics information
      */
     @ReadOperation
     public Map<String, Object> curveMetrics() {
         Map<String, Object> metrics = new LinkedHashMap<>();
 
-        // 이벤트 발행 메트릭
+        // Event publishing metrics
         metrics.put("events", getEventMetrics());
 
-        // DLQ 메트릭
+        // DLQ metrics
         metrics.put("dlq", getDlqMetrics());
 
-        // Kafka 메트릭
+        // Kafka metrics
         metrics.put("kafka", getKafkaMetrics());
 
-        // PII 메트릭
+        // PII metrics
         metrics.put("pii", getPiiMetrics());
 
-        // ID 생성 메트릭
+        // ID generation metrics
         metrics.put("idGeneration", getIdGenerationMetrics());
 
-        // 전체 통계
+        // Overall statistics
         metrics.put("summary", getSummaryMetrics());
 
         return metrics;
@@ -71,7 +71,7 @@ public class CurveMetricsEndpoint {
     private Map<String, Object> getEventMetrics() {
         Map<String, Object> eventMetrics = new LinkedHashMap<>();
 
-        // 발행된 이벤트 카운트
+        // Published event count
         List<Map<String, Object>> published = meterRegistry.find("curve.events.published")
                 .counters()
                 .stream()
@@ -79,7 +79,7 @@ public class CurveMetricsEndpoint {
                 .collect(Collectors.toList());
         eventMetrics.put("published", published);
 
-        // 발행 처리 시간
+        // Publishing processing time
         List<Map<String, Object>> duration = meterRegistry.find("curve.events.publish.duration")
                 .timers()
                 .stream()
@@ -87,7 +87,7 @@ public class CurveMetricsEndpoint {
                 .collect(Collectors.toList());
         eventMetrics.put("publishDuration", duration);
 
-        // 재시도 횟수
+        // Retry count
         List<Map<String, Object>> retries = meterRegistry.find("curve.events.retry.count")
                 .counters()
                 .stream()
@@ -108,7 +108,7 @@ public class CurveMetricsEndpoint {
                 .collect(Collectors.toList());
         dlqMetrics.put("count", dlqCount);
 
-        // 총 DLQ 이벤트 수
+        // Total DLQ event count
         double totalDlqEvents = dlqCount.stream()
                 .mapToDouble(m -> (Double) m.get("value"))
                 .sum();
@@ -127,7 +127,7 @@ public class CurveMetricsEndpoint {
                 .collect(Collectors.toList());
         kafkaMetrics.put("errors", errors);
 
-        // 총 에러 수
+        // Total error count
         double totalErrors = errors.stream()
                 .mapToDouble(m -> (Double) m.get("value"))
                 .sum();
@@ -172,7 +172,7 @@ public class CurveMetricsEndpoint {
     private Map<String, Object> getSummaryMetrics() {
         Map<String, Object> summary = new LinkedHashMap<>();
 
-        // 총 발행된 이벤트 수 (성공 + 실패)
+        // Total published event count (success + failure)
         double totalPublished = meterRegistry.find("curve.events.published")
                 .counters()
                 .stream()
@@ -180,7 +180,7 @@ public class CurveMetricsEndpoint {
                 .sum();
         summary.put("totalEventsPublished", totalPublished);
 
-        // 성공한 이벤트 수
+        // Successful event count
         double successfulEvents = meterRegistry.find("curve.events.published")
                 .tag("success", "true")
                 .counters()
@@ -189,7 +189,7 @@ public class CurveMetricsEndpoint {
                 .sum();
         summary.put("successfulEvents", successfulEvents);
 
-        // 실패한 이벤트 수
+        // Failed event count
         double failedEvents = meterRegistry.find("curve.events.published")
                 .tag("success", "false")
                 .counters()
@@ -198,11 +198,11 @@ public class CurveMetricsEndpoint {
                 .sum();
         summary.put("failedEvents", failedEvents);
 
-        // 성공률
+        // Success rate
         double successRate = totalPublished > 0 ? (successfulEvents / totalPublished) * 100 : 0;
         summary.put("successRate", String.format("%.2f%%", successRate));
 
-        // 총 DLQ 이벤트 수
+        // Total DLQ event count
         double totalDlq = meterRegistry.find("curve.events.dlq.count")
                 .counters()
                 .stream()
@@ -210,7 +210,7 @@ public class CurveMetricsEndpoint {
                 .sum();
         summary.put("totalDlqEvents", totalDlq);
 
-        // 총 Kafka 에러 수
+        // Total Kafka error count
         double totalKafkaErrors = meterRegistry.find("curve.kafka.producer.errors")
                 .counters()
                 .stream()

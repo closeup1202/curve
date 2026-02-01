@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Bean 직렬화 시 @PiiField 어노테이션이 있는 필드를 감지하여
- * PiiPropertyWriter로 대체하는 Modifier.
+ * Modifier that detects fields with @PiiField annotation during bean serialization
+ * and replaces them with PiiPropertyWriter.
  */
 @RequiredArgsConstructor
 public class PiiBeanSerializerModifier extends BeanSerializerModifier {
@@ -43,7 +43,7 @@ public class PiiBeanSerializerModifier extends BeanSerializerModifier {
     }
 
     private PiiField findPiiFieldAnnotation(Class<?> clazz, String fieldName) {
-        // 현재 클래스와 상위 클래스에서 필드 탐색
+        // Search field in current class and parent classes
         Class<?> currentClass = clazz;
         while (currentClass != null && currentClass != Object.class) {
             try {
@@ -53,12 +53,12 @@ public class PiiBeanSerializerModifier extends BeanSerializerModifier {
                     return annotation;
                 }
             } catch (NoSuchFieldException e) {
-                // 현재 클래스에 없으면 상위 클래스 탐색
+                // Search parent class if not found in current class
             }
             currentClass = currentClass.getSuperclass();
         }
 
-        // Record 컴포넌트에서도 탐색
+        // Also search in record components
         assert clazz != null;
         if (clazz.isRecord()) {
             try {
@@ -68,7 +68,7 @@ public class PiiBeanSerializerModifier extends BeanSerializerModifier {
                     }
                 }
             } catch (Exception e) {
-                // 무시
+                // Ignore
             }
         }
 

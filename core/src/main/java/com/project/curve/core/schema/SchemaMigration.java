@@ -1,11 +1,11 @@
 package com.project.curve.core.schema;
 
 /**
- * 스키마 버전 간 마이그레이션을 지원하는 인터페이스.
+ * Interface for supporting migration between schema versions.
  * <p>
- * 이벤트 페이로드가 버전 업그레이드될 때 데이터를 변환하는 로직을 제공합니다.
+ * Provides logic to transform data when event payloads are upgraded to a new version.
  * <p>
- * <b>예제:</b>
+ * <b>Example:</b>
  * <pre>{@code
  * public class OrderCreatedPayloadV1ToV2Migration implements SchemaMigration<OrderCreatedPayloadV1, OrderCreatedPayloadV2> {
  *     @Override
@@ -16,7 +16,7 @@ package com.project.curve.core.schema;
  *             source.productName(),
  *             source.quantity(),
  *             source.totalAmount(),
- *             "PENDING"  // 새로운 필드 기본값
+ *             "PENDING"  // Default value for new field
  *         );
  *     }
  *
@@ -32,39 +32,39 @@ package com.project.curve.core.schema;
  * }
  * }</pre>
  *
- * @param <FROM> 소스 페이로드 타입 (구버전)
- * @param <TO>   타겟 페이로드 타입 (신버전)
+ * @param <FROM> source payload type (old version)
+ * @param <TO>   target payload type (new version)
  */
 public interface SchemaMigration<FROM, TO> {
 
     /**
-     * 구버전 페이로드를 신버전으로 변환합니다.
+     * Transforms an old version payload to a new version.
      *
-     * @param source 구버전 페이로드
-     * @return 신버전 페이로드
+     * @param source the old version payload
+     * @return the new version payload
      */
     TO migrate(FROM source);
 
     /**
-     * 마이그레이션 시작 버전을 반환합니다.
+     * Returns the migration source version.
      *
-     * @return 시작 버전
+     * @return the source version
      */
     SchemaVersion fromVersion();
 
     /**
-     * 마이그레이션 대상 버전을 반환합니다.
+     * Returns the migration target version.
      *
-     * @return 대상 버전
+     * @return the target version
      */
     SchemaVersion toVersion();
 
     /**
-     * 마이그레이션이 적용 가능한지 확인합니다.
+     * Checks if the migration is applicable.
      *
-     * @param from 소스 버전
-     * @param to   타겟 버전
-     * @return 적용 가능하면 true
+     * @param from the source version
+     * @param to   the target version
+     * @return true if applicable
      */
     default boolean isApplicable(SchemaVersion from, SchemaVersion to) {
         return fromVersion().equals(from) && toVersion().equals(to);

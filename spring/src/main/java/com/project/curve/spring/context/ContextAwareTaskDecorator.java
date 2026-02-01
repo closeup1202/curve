@@ -8,12 +8,12 @@ import org.springframework.web.context.request.RequestContextHolder;
 import java.util.Map;
 
 /**
- * 비동기 작업 실행 시 부모 스레드의 컨텍스트를 자식 스레드로 전파하는 TaskDecorator.
+ * TaskDecorator that propagates parent thread context to child threads during asynchronous task execution.
  * <p>
- * - RequestContextHolder: HTTP 요청 관련 정보(Request, Session 등) 전파
- * - MDC (Mapped Diagnostic Context): 로깅 추적 ID 등 전파
+ * - RequestContextHolder: Propagates HTTP request-related information (Request, Session, etc.)
+ * - MDC (Mapped Diagnostic Context): Propagates logging trace IDs, etc.
  * <p>
- * @EnableAsync와 함께 사용하여 @Async 메서드 호출 시 컨텍스트 유실을 방지합니다.
+ * Used with @EnableAsync to prevent context loss when calling @Async methods.
  */
 public class ContextAwareTaskDecorator implements TaskDecorator {
 

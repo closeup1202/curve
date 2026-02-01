@@ -6,24 +6,24 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
- * 클라이언트 IP 주소 추출 유틸리티.
+ * Client IP address extraction utility.
  * <p>
- * Spring Boot의 ForwardedHeaderFilter를 사용하여 프록시 환경에서도
- * 올바른 클라이언트 IP를 추출합니다.
+ * Uses Spring Boot's ForwardedHeaderFilter to extract the correct client IP
+ * even in proxy environments.
  * <p>
- * <b>클라이언트 IP 처리 방식:</b>
+ * <b>Client IP Handling:</b>
  * <ul>
- *   <li>Spring Boot의 ForwardedHeaderFilter가 활성화된 경우,
- *       request.getRemoteAddr()가 X-Forwarded-For 헤더를 자동으로 처리</li>
- *   <li>보안을 위해 헤더를 직접 읽지 않고, Spring이 검증한 remoteAddr만 사용</li>
- *   <li>요청 컨텍스트가 없거나 오류 발생 시 기본 IP(127.0.0.1) 반환</li>
+ *   <li>When Spring Boot's ForwardedHeaderFilter is enabled,
+ *       request.getRemoteAddr() automatically handles X-Forwarded-For headers</li>
+ *   <li>For security, only uses Spring-validated remoteAddr instead of reading headers directly</li>
+ *   <li>Returns default IP (127.0.0.1) when request context is unavailable or error occurs</li>
  * </ul>
  * <p>
- * <b>보안 설정 (권장):</b>
+ * <b>Security Configuration (Recommended):</b>
  * <pre>
  * # application.yml
  * server:
- *   forward-headers-strategy: framework  # Spring Boot의 ForwardedHeaderFilter 활성화
+ *   forward-headers-strategy: framework  # Enables Spring Boot's ForwardedHeaderFilter
  *   tomcat:
  *     remoteip:
  *       internal-proxies: 10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3}
@@ -69,12 +69,12 @@ public final class ClientIpExtractor {
     }
 
     /**
-     * 지정된 HttpServletRequest에서 클라이언트 IP 주소를 추출합니다.
+     * Extracts the client IP address from the specified HttpServletRequest.
      * <p>
-     * 테스트나 특수한 경우에 직접 request 객체를 제공할 때 사용합니다.
+     * Use this when directly providing a request object in tests or special cases.
      *
-     * @param request HTTP 요청
-     * @return 클라이언트 IP 주소 (추출 실패 시 "127.0.0.1")
+     * @param request HTTP request
+     * @return Client IP address (returns "127.0.0.1" on extraction failure)
      */
     public static String getClientIp(HttpServletRequest request) {
         if (request == null) {

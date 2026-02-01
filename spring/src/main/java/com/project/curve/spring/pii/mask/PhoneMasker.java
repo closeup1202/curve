@@ -12,16 +12,16 @@ public class PhoneMasker implements PiiMasker {
         if (value == null || value.isEmpty()) return value;
         if (level == null) level = MaskingLevel.NORMAL;
 
-        // 숫자만 추출
+        // Extract digits only
         String digits = value.replaceAll("[^0-9]", "");
         if (digits.length() < 4) return "*".repeat(value.length());
 
         return switch (level) {
-            case WEAK -> // 뒤 4자리만 마스킹: "010-1234-5678" → "010-1234-****"
+            case WEAK -> // Mask last 4 digits only: "010-1234-5678" → "010-1234-****"
                     maskDigits(value, digits);
-            case NORMAL -> // 중간 4자리 마스킹: "010-1234-5678" → "010-****-5678"
+            case NORMAL -> // Mask middle 4 digits: "010-1234-5678" → "010-****-5678"
                     value.replaceAll("(\\d{3})-?(\\d{3,4})-?(\\d{4})", "$1-****-$3");
-            case STRONG -> // 뒤 8자리 마스킹: "010-1234-5678" → "010-****-****"
+            case STRONG -> // Mask last 8 digits: "010-1234-5678" → "010-****-****"
                     value.replaceAll("(\\d{3})-?(\\d{3,4})-?(\\d{4})", "$1-****-****");
         };
     }

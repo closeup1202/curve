@@ -9,7 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 주문 취소 이벤트 페이로드
+ * Order cancelled event payload
  */
 @Data
 @Builder
@@ -19,17 +19,17 @@ import lombok.NoArgsConstructor;
 public class OrderCancelledPayload implements DomainEventPayload {
 
     /**
-     * 주문 ID
+     * Order ID
      */
     private String orderId;
 
     /**
-     * 고객 ID
+     * Customer ID
      */
     private String customerId;
 
     /**
-     * 취소 사유
+     * Cancellation reason
      */
     private String reason;
 

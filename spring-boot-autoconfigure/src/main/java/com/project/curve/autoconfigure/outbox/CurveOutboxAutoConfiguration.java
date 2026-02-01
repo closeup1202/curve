@@ -28,18 +28,18 @@ import javax.sql.DataSource;
 /**
  * Transactional Outbox Pattern Auto-Configuration.
  * <p>
- * curve.outbox.enabled=true일 때만 활성화됩니다.
+ * Activated only when curve.outbox.enabled=true.
  *
- * <h3>활성화 조건</h3>
+ * <h3>Activation Conditions</h3>
  * <ul>
  *   <li>curve.outbox.enabled=true</li>
- *   <li>KafkaTemplate 빈이 존재</li>
+ *   <li>KafkaTemplate bean exists</li>
  * </ul>
  *
- * <h3>등록되는 빈</h3>
+ * <h3>Registered Beans</h3>
  * <ul>
- *   <li>OutboxEventRepository (JPA 또는 JDBC 구현체)</li>
- *   <li>OutboxEventPublisher - 주기적 발행 스케줄러 (curve.outbox.publisher-enabled=true일 때)</li>
+ *   <li>OutboxEventRepository (JPA or JDBC implementation)</li>
+ *   <li>OutboxEventPublisher - Periodic publishing scheduler (when curve.outbox.publisher-enabled=true)</li>
  * </ul>
  */
 @Slf4j
@@ -73,14 +73,17 @@ public class CurveOutboxAutoConfiguration {
         String topic = properties.getKafka().getTopic();
 
         log.info("Registering OutboxEventPublisher: " +
-                        "pollIntervalMs={}, batchSize={}, maxRetries={}, sendTimeoutSeconds={}, topic={}, cleanupEnabled={}, retentionDays={}",
+                        "pollIntervalMs={}, batchSize={}, maxRetries={}, sendTimeoutSeconds={}, topic={}, " +
+                        "cleanupEnabled={}, retentionDays={}, dynamicBatching={}, circuitBreaker={}",
                 outboxConfig.getPollIntervalMs(),
                 outboxConfig.getBatchSize(),
                 outboxConfig.getMaxRetries(),
                 outboxConfig.getSendTimeoutSeconds(),
                 topic,
                 outboxConfig.isCleanupEnabled(),
-                outboxConfig.getRetentionDays()
+                outboxConfig.getRetentionDays(),
+                outboxConfig.isDynamicBatchingEnabled(),
+                outboxConfig.isCircuitBreakerEnabled()
         );
 
         return new OutboxEventPublisher(
@@ -91,23 +94,25 @@ public class CurveOutboxAutoConfiguration {
                 outboxConfig.getMaxRetries(),
                 outboxConfig.getSendTimeoutSeconds(),
                 outboxConfig.isCleanupEnabled(),
-                outboxConfig.getRetentionDays()
+                outboxConfig.getRetentionDays(),
+                outboxConfig.isDynamicBatchingEnabled(),
+                outboxConfig.isCircuitBreakerEnabled()
         );
     }
 
     /**
-     * JPA가 클래스패스에 있을 때 활성화되는 설정.
+     * Configuration activated when JPA is on the classpath.
      */
     @Configuration
     @ConditionalOnClass(name = "org.springframework.data.jpa.repository.JpaRepository")
     @AutoConfigurationPackage(basePackageClasses = OutboxEventJpaEntity.class)
     @Import(OutboxJpaRepositoryConfig.class)
     static class JpaOutboxConfiguration {
-        // OutboxJpaRepositoryConfig에서 OutboxEventRepository 빈을 등록함
+        // OutboxEventRepository bean is registered in OutboxJpaRepositoryConfig
     }
 
     /**
-     * JPA가 없을 때 활성화되는 JDBC 설정.
+     * JDBC configuration activated when JPA is not available.
      */
     @Bean
     @ConditionalOnMissingClass("org.springframework.data.jpa.repository.JpaRepository")

@@ -4,24 +4,24 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 이벤트 스키마 버전을 관리하는 레지스트리.
+ * Registry for managing event schema versions.
  * <p>
- * 스키마 버전 등록, 조회, 마이그레이션 경로 탐색을 지원합니다.
+ * Supports schema version registration, retrieval, and migration path discovery.
  * <p>
- * <b>사용 예제:</b>
+ * <b>Usage Example:</b>
  * <pre>{@code
- * // 스키마 등록
+ * // Register schemas
  * SchemaRegistry registry = new SchemaRegistry();
  * registry.register(new SchemaVersion("OrderCreated", 1, OrderCreatedPayloadV1.class));
  * registry.register(new SchemaVersion("OrderCreated", 2, OrderCreatedPayloadV2.class));
  *
- * // 마이그레이션 등록
+ * // Register migration
  * registry.registerMigration(new OrderCreatedPayloadV1ToV2Migration());
  *
- * // 호환성 확인
+ * // Check compatibility
  * boolean compatible = registry.isCompatible("OrderCreated", 1, 2);
  *
- * // 최신 버전 조회
+ * // Retrieve latest version
  * SchemaVersion latest = registry.getLatestVersion("OrderCreated");
  * }</pre>
  */
@@ -31,10 +31,10 @@ public class SchemaRegistry {
     private final Map<String, SchemaMigration<?, ?>> migrations = new ConcurrentHashMap<>();
 
     /**
-     * 스키마 버전을 등록합니다.
+     * Registers a schema version.
      *
-     * @param schemaVersion 등록할 스키마 버전
-     * @throws IllegalArgumentException 이미 동일한 버전이 등록된 경우
+     * @param schemaVersion the schema version to register
+     * @throws IllegalArgumentException if the same version is already registered
      */
     public void register(SchemaVersion schemaVersion) {
         if (schemaVersion == null) {
@@ -54,12 +54,12 @@ public class SchemaRegistry {
     }
 
     /**
-     * 마이그레이션을 등록합니다.
+     * Registers a migration.
      *
-     * @param migration 등록할 마이그레이션
-     * @param <FROM>    소스 타입
-     * @param <TO>      타겟 타입
-     * @throws IllegalArgumentException 마이그레이션의 시작/대상 버전이 등록되지 않은 경우
+     * @param migration the migration to register
+     * @param <FROM>    source type
+     * @param <TO>      target type
+     * @throws IllegalArgumentException if the migration's source or target version is not registered
      */
     public <FROM, TO> void registerMigration(SchemaMigration<FROM, TO> migration) {
         if (migration == null) {
@@ -69,7 +69,7 @@ public class SchemaRegistry {
         SchemaVersion from = migration.fromVersion();
         SchemaVersion to = migration.toVersion();
 
-        // 버전 존재 여부 확인
+        // Check if versions exist
         if (!isVersionRegistered(from.name(), from.version())) {
             throw new IllegalArgumentException(
                 "Source schema version not registered: " + from.getKey()
@@ -86,11 +86,11 @@ public class SchemaRegistry {
     }
 
     /**
-     * 특정 스키마의 특정 버전을 조회합니다.
+     * Retrieves a specific version of a schema.
      *
-     * @param schemaName 스키마 이름
-     * @param version    버전
-     * @return 스키마 버전 (존재하지 않으면 Optional.empty())
+     * @param schemaName the schema name
+     * @param version    the version
+     * @return the schema version (Optional.empty() if not found)
      */
     public Optional<SchemaVersion> getVersion(String schemaName, int version) {
         return Optional.ofNullable(schemas.get(schemaName))
@@ -98,10 +98,10 @@ public class SchemaRegistry {
     }
 
     /**
-     * 특정 스키마의 최신 버전을 조회합니다.
+     * Retrieves the latest version of a schema.
      *
-     * @param schemaName 스키마 이름
-     * @return 최신 버전 (존재하지 않으면 Optional.empty())
+     * @param schemaName the schema name
+     * @return the latest version (Optional.empty() if not found)
      */
     public Optional<SchemaVersion> getLatestVersion(String schemaName) {
         return Optional.ofNullable(schemas.get(schemaName))
@@ -110,10 +110,10 @@ public class SchemaRegistry {
     }
 
     /**
-     * 특정 스키마의 모든 등록된 버전을 조회합니다.
+     * Retrieves all registered versions of a schema.
      *
-     * @param schemaName 스키마 이름
-     * @return 등록된 모든 버전 (버전 오름차순 정렬)
+     * @param schemaName the schema name
+     * @return all registered versions (sorted in ascending order by version)
      */
     public List<SchemaVersion> getAllVersions(String schemaName) {
         return Optional.ofNullable(schemas.get(schemaName))
@@ -124,11 +124,11 @@ public class SchemaRegistry {
     }
 
     /**
-     * 두 버전 간 마이그레이션을 조회합니다.
+     * Retrieves the migration between two versions.
      *
-     * @param from 소스 버전
-     * @param to   타겟 버전
-     * @return 마이그레이션 (존재하지 않으면 Optional.empty())
+     * @param from the source version
+     * @param to   the target version
+     * @return the migration (Optional.empty() if not found)
      */
     public Optional<SchemaMigration<?, ?>> getMigration(SchemaVersion from, SchemaVersion to) {
         String key = getMigrationKey(from, to);
@@ -136,18 +136,18 @@ public class SchemaRegistry {
     }
 
     /**
-     * 두 버전이 호환 가능한지 확인합니다.
+     * Checks if two versions are compatible.
      * <p>
-     * 호환 가능한 조건:
+     * Compatibility conditions:
      * <ul>
-     *   <li>같은 스키마 이름</li>
-     *   <li>직접 또는 경유 마이그레이션 경로가 존재</li>
+     *   <li>Same schema name</li>
+     *   <li>Direct or indirect migration path exists</li>
      * </ul>
      *
-     * @param schemaName  스키마 이름
-     * @param fromVersion 소스 버전
-     * @param toVersion   타겟 버전
-     * @return 호환 가능하면 true
+     * @param schemaName  the schema name
+     * @param fromVersion the source version
+     * @param toVersion   the target version
+     * @return true if compatible
      */
     public boolean isCompatible(String schemaName, int fromVersion, int toVersion) {
         Optional<SchemaVersion> from = getVersion(schemaName, fromVersion);
@@ -161,25 +161,25 @@ public class SchemaRegistry {
             return true;
         }
 
-        // 마이그레이션 경로 존재 확인
+        // Check if migration path exists
         return findMigrationPath(from.get(), to.get()).isPresent();
     }
 
     /**
-     * 두 버전 간 마이그레이션 경로를 탐색합니다.
+     * Finds the migration path between two versions.
      * <p>
-     * BFS(너비 우선 탐색)를 사용하여 최단 경로를 찾습니다.
+     * Uses BFS (Breadth-First Search) to find the shortest path.
      *
-     * @param from 시작 버전
-     * @param to   대상 버전
-     * @return 마이그레이션 경로 (없으면 Optional.empty())
+     * @param from the starting version
+     * @param to   the target version
+     * @return the migration path (Optional.empty() if none exists)
      */
     public Optional<List<SchemaMigration<?, ?>>> findMigrationPath(SchemaVersion from, SchemaVersion to) {
         if (from.equals(to)) {
             return Optional.of(Collections.emptyList());
         }
 
-        // BFS로 최단 경로 탐색
+        // Find shortest path using BFS
         Queue<PathNode> queue = new LinkedList<>();
         Set<String> visited = new HashSet<>();
 
@@ -189,7 +189,7 @@ public class SchemaRegistry {
         while (!queue.isEmpty()) {
             PathNode current = queue.poll();
 
-            // 현재 버전에서 갈 수 있는 모든 다음 버전 탐색
+            // Explore all next versions reachable from the current version
             for (int nextVersion = current.version.version() + 1;
                  nextVersion <= to.version();
                  nextVersion++) {
@@ -217,34 +217,34 @@ public class SchemaRegistry {
     }
 
     /**
-     * 특정 버전이 등록되어 있는지 확인합니다.
+     * Checks if a specific version is registered.
      *
-     * @param schemaName 스키마 이름
-     * @param version    버전
-     * @return 등록되어 있으면 true
+     * @param schemaName the schema name
+     * @param version    the version
+     * @return true if registered
      */
     public boolean isVersionRegistered(String schemaName, int version) {
         return getVersion(schemaName, version).isPresent();
     }
 
     /**
-     * 등록된 모든 스키마 이름을 조회합니다.
+     * Retrieves all registered schema names.
      *
-     * @return 스키마 이름 집합
+     * @return set of schema names
      */
     public Set<String> getAllSchemaNames() {
         return new HashSet<>(schemas.keySet());
     }
 
     /**
-     * 마이그레이션 키를 생성합니다.
+     * Generates a migration key.
      */
     private String getMigrationKey(SchemaVersion from, SchemaVersion to) {
         return from.getKey() + "->" + to.getKey();
     }
 
     /**
-     * BFS 탐색을 위한 노드 클래스.
+     * Node class for BFS traversal.
      */
     private static class PathNode {
         final SchemaVersion version;

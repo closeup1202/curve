@@ -17,7 +17,7 @@ public abstract class AbstractEventPublisher implements EventProducer {
     private final EventContextProvider eventContextProvider;
     private final EventValidator eventValidator;
 
-    // 하위 호환성을 위한 생성자 (EventValidator가 없는 경우 기본값 사용)
+    // Constructor for backward compatibility (uses default if EventValidator is not provided)
     public AbstractEventPublisher(EventEnvelopeFactory envelopeFactory, EventContextProvider eventContextProvider) {
         this(envelopeFactory, eventContextProvider, new DefaultEventValidator());
     }

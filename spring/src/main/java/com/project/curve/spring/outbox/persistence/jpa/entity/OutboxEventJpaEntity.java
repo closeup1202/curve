@@ -10,16 +10,16 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 /**
- * Outbox 이벤트 JPA 엔티티.
+ * Outbox event JPA entity.
  * <p>
- * Spring Data JPA를 사용한 영속성 구현입니다.
+ * Persistence implementation using Spring Data JPA.
  *
- * <h3>인덱스 전략</h3>
+ * <h3>Index Strategy</h3>
  * <ul>
- *   <li>status: PENDING 이벤트 조회 최적화</li>
- *   <li>(aggregateType, aggregateId): Aggregate 기준 조회 최적화</li>
- *   <li>occurredAt: 시간순 정렬 최적화</li>
- *   <li>nextRetryAt: 재시도 대상 조회 최적화</li>
+ *   <li>status: Optimizes PENDING event queries</li>
+ *   <li>(aggregateType, aggregateId): Optimizes aggregate-based queries</li>
+ *   <li>occurredAt: Optimizes chronological sorting</li>
+ *   <li>nextRetryAt: Optimizes retry target queries</li>
  * </ul>
  *
  * @see OutboxEvent
@@ -105,9 +105,9 @@ public class OutboxEventJpaEntity {
     }
 
     /**
-     * Core 도메인 모델로 변환.
+     * Converts to core domain model.
      *
-     * @return OutboxEvent 도메인 모델
+     * @return OutboxEvent domain model
      */
     public OutboxEvent toDomain() {
         return OutboxEvent.restore(
@@ -126,10 +126,10 @@ public class OutboxEventJpaEntity {
     }
 
     /**
-     * 도메인 모델로부터 엔티티 생성.
+     * Creates entity from domain model.
      *
-     * @param domain OutboxEvent 도메인 모델
-     * @return JPA 엔티티
+     * @param domain OutboxEvent domain model
+     * @return JPA entity
      */
     public static OutboxEventJpaEntity fromDomain(OutboxEvent domain) {
         OutboxEventJpaEntity entity = new OutboxEventJpaEntity(
@@ -152,9 +152,9 @@ public class OutboxEventJpaEntity {
     }
 
     /**
-     * 도메인 모델의 상태를 엔티티에 반영.
+     * Updates entity with domain model state.
      *
-     * @param domain OutboxEvent 도메인 모델
+     * @param domain OutboxEvent domain model
      */
     public void updateFromDomain(OutboxEvent domain) {
         this.status = domain.getStatus();

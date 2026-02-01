@@ -17,7 +17,7 @@ public class MdcTraceContextProvider implements TraceContextProvider {
         return new EventTrace(
                 traceId != null ? traceId : "unknown",
                 spanId != null ? spanId : "unknown",
-                null // parentSpanId는 필요 시 추가 추출
+                null // parentSpanId can be extracted additionally if needed
         );
     }
 }

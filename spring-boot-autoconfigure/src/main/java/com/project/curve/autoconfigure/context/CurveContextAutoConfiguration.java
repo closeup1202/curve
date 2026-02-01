@@ -35,7 +35,7 @@ public class CurveContextAutoConfiguration {
     }
 
     /**
-     * Spring Security가 있는 경우 사용되는 Actor Context Provider
+     * Actor Context Provider used when Spring Security is available
      */
     @Bean
     @ConditionalOnClass(name = "org.springframework.security.core.context.SecurityContextHolder")
@@ -45,7 +45,7 @@ public class CurveContextAutoConfiguration {
     }
 
     /**
-     * Spring Security가 없는 경우 사용되는 기본 Actor Context Provider
+     * Default Actor Context Provider used when Spring Security is not available
      */
     @Bean
     @ConditionalOnMissingClass("org.springframework.security.core.context.SecurityContextHolder")

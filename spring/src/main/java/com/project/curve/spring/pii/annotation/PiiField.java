@@ -10,8 +10,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * PII(개인식별정보) 필드를 표시하고 처리 전략을 지정하는 어노테이션.
- * Jackson 직렬화 시점에 자동으로 마스킹/암호화/해싱 처리됨.
+ * Annotation to mark PII (Personally Identifiable Information) fields and specify processing strategy.
+ * Automatically masked/encrypted/hashed during Jackson serialization.
  *
  * <pre>{@code
  * public record UserPayload(
@@ -34,27 +34,27 @@ import java.lang.annotation.Target;
 public @interface PiiField {
 
     /**
-     * PII 데이터 유형 (마스킹 패턴 결정에 사용)
+     * PII data type (used to determine masking pattern)
      */
     PiiType type() default PiiType.CUSTOM;
 
     /**
-     * PII 처리 전략
-     * - MASK: 일부 문자를 *로 대체
-     * - ENCRYPT: AES 암호화 (복호화 가능)
-     * - HASH: SHA-256 해시 (복호화 불가)
-     * - EXCLUDE: 직렬화에서 제외
+     * PII processing strategy
+     * - MASK: Replace some characters with *
+     * - ENCRYPT: AES encryption (reversible)
+     * - HASH: SHA-256 hash (irreversible)
+     * - EXCLUDE: Exclude from serialization
      */
     PiiStrategy strategy() default PiiStrategy.MASK;
 
     /**
-     * 마스킹 강도 (strategy=MASK일 때 사용)
+     * Masking strength (used when strategy=MASK)
      */
     MaskingLevel level() default MaskingLevel.NORMAL;
 
     /**
-     * 암호화 키 별칭 (strategy=ENCRYPT일 때 사용)
-     * 비어있으면 기본 키 사용
+     * Encryption key alias (used when strategy=ENCRYPT)
+     * Uses default key if empty
      */
     String encryptKey() default "";
 }

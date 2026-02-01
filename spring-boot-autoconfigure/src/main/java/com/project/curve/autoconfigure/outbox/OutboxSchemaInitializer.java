@@ -12,15 +12,15 @@ import java.sql.ResultSet;
 import java.util.Set;
 
 /**
- * Outbox 테이블 자동 생성 초기화기.
+ * Outbox table auto-creation initializer.
  * <p>
- * {@link InitializeSchema} 모드에 따라 curve_outbox_events 테이블을 자동 생성합니다.
+ * Automatically creates the curve_outbox_events table based on the {@link InitializeSchema} mode.
  *
- * <h3>지원 데이터베이스</h3>
+ * <h3>Supported Databases</h3>
  * <ul>
  *   <li>MySQL / MariaDB</li>
  *   <li>PostgreSQL</li>
- *   <li>H2 / HSQLDB / Derby (임베디드)</li>
+ *   <li>H2 / HSQLDB / Derby (embedded)</li>
  * </ul>
  *
  * @see InitializeSchema
@@ -214,10 +214,10 @@ public class OutboxSchemaInitializer implements InitializingBean {
         try {
             String ddl;
             if (dbName.contains("mysql") || dbName.contains("mariadb") || dbName.contains("oracle")) {
-                // MySQL, MariaDB, Oracle: CREATE INDEX IF NOT EXISTS 미지원
+                // MySQL, MariaDB, Oracle: CREATE INDEX IF NOT EXISTS not supported
                 ddl = String.format("CREATE INDEX %s ON %s (%s)", indexName, TABLE_NAME, columns);
             } else {
-                // PostgreSQL, H2, SQLite: IF NOT EXISTS 지원
+                // PostgreSQL, H2, SQLite: IF NOT EXISTS supported
                 ddl = String.format("CREATE INDEX IF NOT EXISTS %s ON %s (%s)", indexName, TABLE_NAME, columns);
             }
             jdbcTemplate.execute(ddl);

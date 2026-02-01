@@ -4,14 +4,14 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.project.curve.spring.pii.processor.PiiProcessorRegistry;
 
 /**
- * PII 처리를 위한 Jackson 모듈.
- * ObjectMapper에 등록하면 @PiiField 어노테이션이 자동으로 처리된다.
+ * Jackson module for PII processing.
+ * When registered with ObjectMapper, @PiiField annotations are automatically processed.
  *
  * <pre>{@code
  * ObjectMapper mapper = new ObjectMapper();
  * mapper.registerModule(new PiiModule(processorRegistry));
  *
- * // 직렬화 시 자동 마스킹
+ * // Automatic masking during serialization
  * String json = mapper.writeValueAsString(userPayload);
  * // {"email":"j***@gm***.com","phone":"010-****-5678",...}
  * }</pre>

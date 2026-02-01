@@ -5,20 +5,20 @@ import com.project.curve.core.envelope.EventActor;
 import com.project.curve.spring.util.ClientIpExtractor;
 
 /**
- * 기본 Actor Context Provider
+ * Default Actor Context Provider.
  *
- * <p>Spring Security가 없는 환경에서 사용되는 기본 Provider입니다.
- * 모든 요청을 SYSTEM 사용자로 처리하며, 클라이언트 IP 정보를 수집합니다.</p>
+ * <p>Default provider used in environments without Spring Security.
+ * Treats all requests as SYSTEM user and collects client IP information.</p>
  *
- * <h3>클라이언트 IP 처리 방식</h3>
- * <p>Spring Boot의 ForwardedHeaderFilter를 사용하면 request.getRemoteAddr()가
- * 자동으로 X-Forwarded-For 헤더를 처리하여 올바른 클라이언트 IP를 반환합니다.</p>
+ * <h3>Client IP Handling</h3>
+ * <p>When using Spring Boot's ForwardedHeaderFilter, request.getRemoteAddr()
+ * automatically processes the X-Forwarded-For header to return the correct client IP.</p>
  *
- * <h3>보안 설정 (권장)</h3>
+ * <h3>Security Configuration (Recommended)</h3>
  * <pre>
  * # application.yml
  * server:
- *   forward-headers-strategy: framework  # Spring Boot의 ForwardedHeaderFilter 활성화
+ *   forward-headers-strategy: framework  # Enable Spring Boot's ForwardedHeaderFilter
  *   tomcat:
  *     remoteip:
  *       internal-proxies: 10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3}

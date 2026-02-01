@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * 주문 도메인 모델
+ * Order domain model
  */
 @Data
 @Builder
@@ -18,42 +18,42 @@ import java.time.Instant;
 public class Order {
 
     /**
-     * 주문 ID
+     * Order ID
      */
     private String orderId;
 
     /**
-     * 고객 정보
+     * Customer information
      */
     private Customer customer;
 
     /**
-     * 상품명
+     * Product name
      */
     private String productName;
 
     /**
-     * 수량
+     * Quantity
      */
     private int quantity;
 
     /**
-     * 총 금액
+     * Total amount
      */
     private BigDecimal totalAmount;
 
     /**
-     * 주문 상태
+     * Order status
      */
     private OrderStatus status;
 
     /**
-     * 주문 생성 시간
+     * Order creation time
      */
     private Instant createdAt;
 
     /**
-     * 주문 업데이트 시간
+     * Order update time
      */
     private Instant updatedAt;
 }

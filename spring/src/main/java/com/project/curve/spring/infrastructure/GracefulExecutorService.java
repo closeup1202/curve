@@ -9,16 +9,16 @@ import java.util.List;
 import java.util.concurrent.*;
 
 /**
- * ExecutorService의 우아한 종료를 지원하는 래퍼 클래스.
+ * Wrapper class that supports graceful shutdown of ExecutorService.
  * <p>
- * 애플리케이션 종료 시 실행 중인 작업이 완료될 때까지 대기하며,
- * 타임아웃 초과 시 강제 종료합니다.
+ * Waits for running tasks to complete during application shutdown,
+ * and forces shutdown if timeout is exceeded.
  * <p>
- * <b>우아한 종료 절차:</b>
+ * <b>Graceful Shutdown Procedure:</b>
  * <ol>
- *   <li>새로운 작업 수락 중지 (shutdown())</li>
- *   <li>실행 중인 작업 완료 대기 (awaitTermination())</li>
- *   <li>타임아웃 초과 시 실행 중인 작업 중단 (shutdownNow())</li>
+ *   <li>Stop accepting new tasks (shutdown())</li>
+ *   <li>Wait for running tasks to complete (awaitTermination())</li>
+ *   <li>Interrupt running tasks if timeout exceeded (shutdownNow())</li>
  * </ol>
  */
 @Slf4j
@@ -32,10 +32,10 @@ public class GracefulExecutorService implements ExecutorService {
     private volatile boolean isShutdown = false;
 
     /**
-     * GracefulExecutorService를 생성합니다.
+     * Creates a GracefulExecutorService.
      *
-     * @param delegate                  실제 ExecutorService
-     * @param terminationTimeoutSeconds 종료 대기 시간 (초)
+     * @param delegate                  Actual ExecutorService
+     * @param terminationTimeoutSeconds Termination wait time (seconds)
      */
     public GracefulExecutorService(ExecutorService delegate, long terminationTimeoutSeconds) {
         if (delegate == null) {
@@ -49,9 +49,9 @@ public class GracefulExecutorService implements ExecutorService {
     }
 
     /**
-     * 기본 타임아웃(30초)으로 GracefulExecutorService를 생성합니다.
+     * Creates a GracefulExecutorService with default timeout (30 seconds).
      *
-     * @param delegate 실제 ExecutorService
+     * @param delegate Actual ExecutorService
      */
     public GracefulExecutorService(ExecutorService delegate) {
         this(delegate, 30);
@@ -68,22 +68,22 @@ public class GracefulExecutorService implements ExecutorService {
         isShutdown = true;
         log.info("Initiating graceful shutdown of ExecutorService (timeout: {}s)", terminationTimeoutSeconds);
 
-        // 1. 새로운 작업 수락 중지
+        // 1. Stop accepting new tasks
         delegate.shutdown();
 
         try {
-            // 2. 실행 중인 작업 완료 대기
+            // 2. Wait for running tasks to complete
             if (!delegate.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
                 log.warn("ExecutorService did not terminate within {}s, forcing shutdown", terminationTimeoutSeconds);
 
-                // 3. 타임아웃 초과 - 강제 종료
+                // 3. Timeout exceeded - force shutdown
                 List<Runnable> remainingTasks = delegate.shutdownNow();
 
                 if (!remainingTasks.isEmpty()) {
                     log.warn("Forced shutdown cancelled {} pending tasks", remainingTasks.size());
                 }
 
-                // 4. 강제 종료 후 짧은 대기
+                // 4. Brief wait after forced shutdown
                 if (!delegate.awaitTermination(5, TimeUnit.SECONDS)) {
                     log.error("ExecutorService did not terminate even after shutdownNow()");
                 }
@@ -93,11 +93,11 @@ public class GracefulExecutorService implements ExecutorService {
         } catch (InterruptedException e) {
             log.error("Interrupted while waiting for ExecutorService shutdown", e);
 
-            // 인터럽트 발생 - 즉시 강제 종료
+            // Interrupt occurred - immediate forced shutdown
             List<Runnable> remainingTasks = delegate.shutdownNow();
             log.warn("Shutdown interrupted, cancelled {} pending tasks", remainingTasks.size());
 
-            // 인터럽트 상태 복원
+            // Restore interrupt status
             Thread.currentThread().interrupt();
         }
     }

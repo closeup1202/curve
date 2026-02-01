@@ -1,10 +1,10 @@
 package com.project.curve.spring.metrics;
 
 /**
- * Curve 이벤트 발행 메트릭 수집기 인터페이스.
+ * Interface for Curve event publishing metrics collector.
  * <p>
- * Micrometer가 클래스패스에 있으면 {@link MicrometerCurveMetricsCollector}가 사용되고,
- * 없으면 {@link NoOpCurveMetricsCollector}가 사용됩니다.
+ * Uses {@link MicrometerCurveMetricsCollector} if Micrometer is in the classpath,
+ * otherwise uses {@link NoOpCurveMetricsCollector}.
  */
 public interface CurveMetricsCollector {
 

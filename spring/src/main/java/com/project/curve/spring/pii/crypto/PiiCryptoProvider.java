@@ -1,34 +1,34 @@
 package com.project.curve.spring.pii.crypto;
 
 /**
- * PII 암호화/해싱 제공자 인터페이스.
+ * PII encryption/hashing provider interface.
  */
 public interface PiiCryptoProvider {
 
     /**
-     * 값을 암호화한다.
+     * Encrypts the value.
      *
-     * @param value 원본 값
-     * @param keyAlias 키 별칭 (null이면 기본 키 사용)
-     * @return 암호화된 값 (Base64 인코딩)
+     * @param value Original value
+     * @param keyAlias Key alias (uses default key if null)
+     * @return Encrypted value (Base64 encoded)
      */
     String encrypt(String value, String keyAlias);
 
     /**
-     * 암호화된 값을 복호화한다.
+     * Decrypts the encrypted value.
      *
-     * @param encryptedValue 암호화된 값 (Base64 인코딩)
-     * @param keyAlias 키 별칭 (null이면 기본 키 사용)
-     * @return 복호화된 원본 값
+     * @param encryptedValue Encrypted value (Base64 encoded)
+     * @param keyAlias Key alias (uses default key if null)
+     * @return Decrypted original value
      */
     String decrypt(String encryptedValue, String keyAlias);
 
     /**
-     * 값을 해시한다 (SHA-256).
-     * 솔트가 설정되어 있으면 솔트를 적용한다.
+     * Hashes the value (SHA-256).
+     * Applies salt if configured.
      *
-     * @param value 원본 값
-     * @return 해시된 값 (Base64 인코딩)
+     * @param value Original value
+     * @return Hashed value (Base64 encoded)
      */
     String hash(String value);
 }

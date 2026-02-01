@@ -8,9 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Micrometer 기반 메트릭 수집기 구현체.
+ * Micrometer-based metrics collector implementation.
  * <p>
- * Micrometer가 클래스패스에 있을 때 자동 등록됩니다.
+ * Automatically registered when Micrometer is present in the classpath.
  */
 @Slf4j
 public record MicrometerCurveMetricsCollector(MeterRegistry meterRegistry) implements CurveMetricsCollector {

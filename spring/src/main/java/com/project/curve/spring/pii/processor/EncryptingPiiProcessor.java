@@ -7,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
- * ENCRYPT 전략 프로세서.
- * AES 암호화를 수행하며, 복호화가 가능하다.
+ * ENCRYPT strategy processor.
+ * Performs AES encryption, which is reversible.
  */
 @Component
 @RequiredArgsConstructor
