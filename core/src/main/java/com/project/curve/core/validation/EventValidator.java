@@ -4,22 +4,22 @@ import com.project.curve.core.envelope.EventEnvelope;
 import com.project.curve.core.exception.InvalidEventException;
 
 /**
- * Interface for event validation.
+ * 이벤트 검증을 위한 인터페이스.
  * <p>
- * Implementations validate the structural validity and business rules of events.
+ * 구현체는 이벤트의 구조적 유효성과 비즈니스 규칙을 검증합니다.
  */
 public interface EventValidator {
 
     /**
-     * Validates an event.
+     * 이벤트를 검증합니다.
      *
-     * @param event the event to validate
-     * @throws InvalidEventException if the event is invalid
+     * @param event 검증할 이벤트
+     * @throws InvalidEventException 이벤트가 유효하지 않은 경우
      */
     void validate(EventEnvelope<?> event);
 
     /**
-     * Static method for performing default validation logic (for backward compatibility and default implementation).
+     * 기본 검증 로직을 수행하는 정적 메서드 (하위 호환성 및 기본 구현용).
      */
     static void validateDefault(EventEnvelope<?> event) {
         if (event == null) {

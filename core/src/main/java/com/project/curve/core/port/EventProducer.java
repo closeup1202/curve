@@ -4,14 +4,13 @@ import com.project.curve.core.payload.DomainEventPayload;
 import com.project.curve.core.type.EventSeverity;
 
 /**
- * Primary port for publishing domain events.
+ * 도메인 이벤트 발행을 위한 주요 포트(Port).
  * <p>
- * This interface defines the contract for publishing domain events in the Curve library.
- * It follows the Hexagonal Architecture pattern, serving as a port that can be implemented
- * by various adapters (Kafka, RabbitMQ, etc.).
+ * 이 인터페이스는 Curve 라이브러리에서 도메인 이벤트를 발행하기 위한 계약을 정의합니다.
+ * 헥사고날 아키텍처 패턴을 따르며, 다양한 어댑터(Kafka, RabbitMQ 등)에 의해 구현될 수 있는 포트 역할을 합니다.
  * </p>
  *
- * <h3>Usage Example:</h3>
+ * <h3>사용 예시:</h3>
  * <pre>{@code
  * @Service
  * public class OrderService {
@@ -32,33 +31,32 @@ import com.project.curve.core.type.EventSeverity;
 public interface EventProducer {
 
     /**
-     * Publishes a domain event with default severity level (INFO).
+     * 기본 중요도(INFO)로 도메인 이벤트를 발행합니다.
      * <p>
-     * This method wraps the payload in an {@link com.project.curve.core.envelope.EventEnvelope}
-     * with contextual metadata (actor, trace, source, etc.) and publishes it to the configured
-     * message broker.
+     * 이 메서드는 페이로드를 컨텍스트 메타데이터(actor, trace, source 등)와 함께
+     * {@link com.project.curve.core.envelope.EventEnvelope}로 감싸서 설정된 메시지 브로커로 발행합니다.
      * </p>
      *
-     * @param <T> the type of the event payload
-     * @param payload the domain event payload to publish
-     * @throws com.project.curve.core.exception.InvalidEventException if the payload is invalid
-     * @throws com.project.curve.core.exception.EventSerializationException if serialization fails
+     * @param <T> 이벤트 페이로드 타입
+     * @param payload 발행할 도메인 이벤트 페이로드
+     * @throws com.project.curve.core.exception.InvalidEventException 페이로드가 유효하지 않은 경우
+     * @throws com.project.curve.core.exception.EventSerializationException 직렬화 실패 시
      */
     <T extends DomainEventPayload> void publish(T payload);
 
     /**
-     * Publishes a domain event with a specified severity level.
+     * 지정된 중요도 레벨로 도메인 이벤트를 발행합니다.
      * <p>
-     * Use this method when you need to explicitly set the event severity:
+     * 이벤트 중요도를 명시적으로 설정해야 할 때 이 메서드를 사용하세요:
      * </p>
      * <ul>
-     *   <li>{@code INFO} - Normal business events (default)</li>
-     *   <li>{@code WARN} - Warning events that require attention</li>
-     *   <li>{@code ERROR} - Error events indicating failures</li>
-     *   <li>{@code CRITICAL} - Critical events requiring immediate action</li>
+     *   <li>{@code INFO} - 일반적인 비즈니스 이벤트 (기본값)</li>
+     *   <li>{@code WARN} - 주의가 필요한 경고 이벤트</li>
+     *   <li>{@code ERROR} - 실패를 나타내는 오류 이벤트</li>
+     *   <li>{@code CRITICAL} - 즉각적인 조치가 필요한 치명적 이벤트</li>
      * </ul>
      *
-     * <h3>Example:</h3>
+     * <h3>예시:</h3>
      * <pre>{@code
      * eventProducer.publish(
      *     new PaymentFailedPayload(order),
@@ -66,11 +64,11 @@ public interface EventProducer {
      * );
      * }</pre>
      *
-     * @param <T> the type of the event payload
-     * @param payload the domain event payload to publish
-     * @param severity the severity level of the event
-     * @throws com.project.curve.core.exception.InvalidEventException if the payload is invalid
-     * @throws com.project.curve.core.exception.EventSerializationException if serialization fails
+     * @param <T> 이벤트 페이로드 타입
+     * @param payload 발행할 도메인 이벤트 페이로드
+     * @param severity 이벤트의 중요도 레벨
+     * @throws com.project.curve.core.exception.InvalidEventException 페이로드가 유효하지 않은 경우
+     * @throws com.project.curve.core.exception.EventSerializationException 직렬화 실패 시
      */
     <T extends DomainEventPayload> void publish(T payload, EventSeverity severity);
 }

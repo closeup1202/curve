@@ -11,16 +11,16 @@ import org.springframework.stereotype.Component;
 
 
 /**
- * JSON event serialization implementation using Jackson ObjectMapper.
+ * Jackson ObjectMapper를 사용한 JSON 이벤트 직렬화 구현체.
  * <p>
- * Modules registered with {@link ObjectMapper} (such as PiiModule) are automatically applied,
- * transparently handling PII masking, date format conversion, etc.
+ * {@link ObjectMapper}에 등록된 모듈(예: PiiModule)이 자동으로 적용되어,
+ * PII 마스킹, 날짜 포맷 변환 등을 투명하게 처리합니다.
  *
- * <h3>Key Features</h3>
+ * <h3>주요 특징</h3>
  * <ul>
- *   <li>ObjectMapper configuration-based serialization (PII, date format, etc.)</li>
- *   <li>JsonProcessingException → EventSerializationException conversion</li>
- *   <li>Thread-safe (ObjectMapper is thread-safe)</li>
+ *   <li>ObjectMapper 설정 기반 직렬화 (PII, 날짜 포맷 등)</li>
+ *   <li>JsonProcessingException → EventSerializationException 변환</li>
+ *   <li>스레드 안전 (ObjectMapper는 스레드 안전함)</li>
  * </ul>
  *
  * @see com.project.curve.spring.pii.jackson.PiiModule

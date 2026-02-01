@@ -40,28 +40,28 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Kafka-based event publisher.
+ * Kafka 기반 이벤트 발행자.
  * <p>
- * Serializes and publishes events to Kafka topics.
+ * 이벤트를 직렬화하여 Kafka 토픽으로 발행합니다.
  *
- * <h2>Key Features</h2>
+ * <h2>주요 기능</h2>
  * <ul>
- *   <li>Retry support via RetryTemplate</li>
- *   <li>Sends to DLQ (Dead Letter Queue) on transmission failure to prevent event loss</li>
- *   <li>Local file backup as last resort if DLQ transmission also fails</li>
- *   <li>Supports both synchronous and asynchronous transmission modes</li>
+ *   <li>RetryTemplate을 통한 재시도 지원</li>
+ *   <li>전송 실패 시 DLQ(Dead Letter Queue)로 전송하여 이벤트 유실 방지</li>
+ *   <li>DLQ 전송도 실패할 경우 최후의 수단으로 로컬 파일 백업</li>
+ *   <li>동기 및 비동기 전송 모드 지원</li>
  * </ul>
  *
- * <h2>PII (Personally Identifiable Information) Handling</h2>
+ * <h2>PII (개인식별정보) 처리</h2>
  * <p>
- * During event serialization, if {@link com.project.curve.spring.pii.jackson.PiiModule} is registered
- * with ObjectMapper, fields annotated with {@code @PiiField} are automatically masked/encrypted.
+ * 이벤트 직렬화 시 {@link com.project.curve.spring.pii.jackson.PiiModule}이 ObjectMapper에 등록되어 있다면,
+ * {@code @PiiField}가 붙은 필드는 자동으로 마스킹/암호화됩니다.
  * <p>
- * <b>Security Notes:</b>
+ * <b>보안 참고사항:</b>
  * <ul>
- *   <li>PII masking is applied only when {@code curve.pii.enabled=true} (default).</li>
- *   <li>Data stored in DLQ and local backup files are also in masked state.</li>
- *   <li>Local backup files are created with 600 permissions (rw-------) on POSIX systems.</li>
+ *   <li>PII 마스킹은 {@code curve.pii.enabled=true} (기본값)일 때만 적용됩니다.</li>
+ *   <li>DLQ 및 로컬 백업 파일에 저장되는 데이터도 마스킹된 상태로 저장됩니다.</li>
+ *   <li>로컬 백업 파일은 POSIX 시스템에서 600 권한(rw-------)으로 생성됩니다.</li>
  * </ul>
  *
  * @see com.project.curve.spring.pii.annotation.PiiField
@@ -204,16 +204,16 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     }
 
     /**
-     * Asynchronous transmission - CompletableFuture based
-     * Handles transmission success/failure via callbacks without blocking the main thread
+     * 비동기 전송 - CompletableFuture 기반
+     * 메인 스레드 차단 없이 콜백을 통해 전송 성공/실패 처리
      */
     private void sendAsync(String eventId, String eventType, Object value, long startTime) {
-        // Capture MDC context from current thread
+        // 현재 스레드의 MDC 컨텍스트 캡처
         Map<String, String> contextMap = MDC.getCopyOfContextMap();
 
         kafkaTemplate.send(topic, eventId, value)
                 .whenComplete((result, ex) -> {
-                    // Restore MDC context in callback thread
+                    // 콜백 스레드에서 MDC 컨텍스트 복원
                     if (contextMap != null) {
                         MDC.setContextMap(contextMap);
                     }
@@ -228,7 +228,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                             handleSendSuccess(eventId, result);
                         }
                     } finally {
-                        // Clean up MDC context
+                        // MDC 컨텍스트 정리
                         if (contextMap != null) {
                             MDC.clear();
                         }
@@ -236,7 +236,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                 })
                 .orTimeout(asyncTimeoutMs, TimeUnit.MILLISECONDS)
                 .exceptionally(ex -> {
-                    // Restore MDC context when handling timeout exception
+                    // 타임아웃 예외 처리 시 MDC 컨텍스트 복원
                     if (contextMap != null) {
                         MDC.setContextMap(contextMap);
                     }
@@ -283,14 +283,14 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     }
 
     /**
-     * DLQ transmission dispatch - Decides async/sync transmission based on ExecutorService existence
+     * DLQ 전송 디스패치 - ExecutorService 존재 여부에 따라 비동기/동기 전송 결정
      */
     private void dispatchToDlq(String eventId, Object originalValue, Throwable originalException) {
         if (dlqExecutor != null) {
-            // Capture MDC context from current thread
+            // 현재 스레드의 MDC 컨텍스트 캡처
             Map<String, String> contextMap = MDC.getCopyOfContextMap();
 
-            // Asynchronous transmission - Use separate ExecutorService to prevent callback thread blocking
+            // 비동기 전송 - 별도 ExecutorService를 사용하여 콜백 스레드 차단 방지
             dlqExecutor.submit(() -> {
                 if (contextMap != null) {
                     MDC.setContextMap(contextMap);
@@ -304,13 +304,13 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                 }
             });
         } else {
-            // Synchronous transmission - Send immediately to prevent event loss
+            // 동기 전송 - 이벤트 유실 방지를 위해 즉시 전송
             executeDlqSend(eventId, originalValue, originalException);
         }
     }
 
     /**
-     * Execute DLQ transmission - Actual Kafka DLQ transmission logic
+     * DLQ 전송 실행 - 실제 Kafka DLQ 전송 로직
      */
     private void executeDlqSend(String eventId, Object originalValue, Throwable originalException) {
         String mode = dlqExecutor != null ? "async" : "sync";
@@ -334,7 +334,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     }
 
     /**
-     * Create DLQ payload - Serialize FailedEventRecord to JSON
+     * DLQ 페이로드 생성 - FailedEventRecord를 JSON으로 직렬화
      */
     private String createDlqPayload(String eventId, Object originalValue, Throwable originalException)
             throws JsonProcessingException {
@@ -343,8 +343,8 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         if (originalValue instanceof String) {
             payloadString = (String) originalValue;
         } else {
-            // Avro objects etc. need toString() or separate serialization
-            // Here we safely use toString() or attempt JSON conversion
+            // Avro 객체 등은 toString() 또는 별도 직렬화 필요
+            // 여기서는 안전하게 toString() 사용하거나 JSON 변환 시도
             try {
                 payloadString = objectMapper.writeValueAsString(originalValue);
             } catch (Exception e) {
@@ -364,32 +364,32 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     }
 
     /**
-     * Backup to local file when DLQ transmission also fails.
+     * DLQ 전송 실패 시 로컬 파일로 백업.
      * <p>
-     * This is the last resort safety net to prevent event loss.
+     * 이벤트 유실을 막기 위한 최후의 안전장치입니다.
      *
-     * <h3>Security Enhancements</h3>
+     * <h3>보안 강화</h3>
      * <ul>
-     *   <li>POSIX file system: Created with 600 permissions (rw-------)</li>
-     *   <li>Windows: Uses ACL to make file accessible only to current user</li>
-     *   <li>Production environment: Throws IllegalStateException if security setup fails</li>
-     *   <li>Stored data is in masked state if PiiModule is applied</li>
-     *   <li>Payload content is not logged</li>
+     *   <li>POSIX 파일 시스템: 600 권한(rw-------)으로 생성</li>
+     *   <li>Windows: ACL을 사용하여 현재 사용자만 접근 가능하도록 설정</li>
+     *   <li>운영 환경: 보안 설정 실패 시 예외 발생</li>
+     *   <li>저장되는 데이터는 PiiModule이 적용된 경우 마스킹된 상태</li>
+     *   <li>페이로드 내용은 로그에 남기지 않음</li>
      * </ul>
      *
-     * <h3>Recovery Method</h3>
+     * <h3>복구 방법</h3>
      * <p>
-     * Backup files are in JSON format and can be manually resent when Kafka is recovered.
+     * 백업 파일은 JSON 형식이므로 Kafka 복구 시 수동으로 재전송 가능합니다.
      * <pre>
-     * # Check backup files
+     * # 백업 파일 확인
      * ls -la ./dlq-backup/
      *
-     * # Resend (example)
+     * # 재전송 (예시)
      * cat ./dlq-backup/{eventId}.json | kafka-console-producer --topic event.audit.v1
      * </pre>
      *
-     * @param eventId       Event ID
-     * @param originalValue Serialized event payload (with PII masking applied)
+     * @param eventId       이벤트 ID
+     * @param originalValue 직렬화된 이벤트 페이로드 (PII 마스킹 적용됨)
      */
     private void backupToLocalFile(String eventId, Object originalValue) {
         try {
@@ -400,10 +400,10 @@ public class KafkaEventProducer extends AbstractEventPublisher {
 
             String content = serializeContent(originalValue);
 
-            // Write file
+            // 파일 쓰기
             Files.writeString(backupFile, content, StandardOpenOption.CREATE);
 
-            // Apply security permissions
+            // 보안 권한 적용
             boolean securityApplied = applyFilePermissions(backupFile);
 
             if (!securityApplied) {
@@ -419,7 +419,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     }
 
     /**
-     * Serialize file content
+     * 파일 내용 직렬화
      */
     private String serializeContent(Object originalValue) {
         if (originalValue instanceof String) {
@@ -435,18 +435,18 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     }
 
     /**
-     * Platform-specific file permission setup.
+     * 플랫폼별 파일 권한 설정.
      * <p>
-     * On POSIX systems, sets 600 permissions (rw-------).
-     * On Windows, uses ACL to make file accessible only to current user.
+     * POSIX 시스템에서는 600 권한(rw-------) 설정.
+     * Windows에서는 ACL을 사용하여 현재 사용자만 접근 가능하도록 설정.
      *
-     * @param file File to set permissions on
-     * @return Whether security setup succeeded
+     * @param file 권한을 설정할 파일
+     * @return 보안 설정 성공 여부
      */
     private boolean applyFilePermissions(Path file) {
         Set<String> supportedViews = FileSystems.getDefault().supportedFileAttributeViews();
 
-        // POSIX systems (Linux, macOS)
+        // POSIX 시스템 (Linux, macOS)
         if (supportedViews.contains("posix")) {
             return applyPosixPermissions(file);
         }
@@ -454,7 +454,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         else if (supportedViews.contains("acl")) {
             return applyWindowsAclPermissions(file);
         }
-        // Other systems
+        // 기타 시스템
         else {
             log.warn("File system does not support POSIX or ACL. File permissions cannot be restricted: {}", file);
             return false;
@@ -462,7 +462,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     }
 
     /**
-     * Set POSIX file permissions (Linux, macOS).
+     * POSIX 파일 권한 설정 (Linux, macOS).
      */
     private boolean applyPosixPermissions(Path file) {
         try {
@@ -477,24 +477,24 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     }
 
     /**
-     * Set Windows ACL permissions.
+     * Windows ACL 권한 설정.
      * <p>
-     * Sets ACL to allow only current user to read/write.
-     * Denies access to all other users/groups.
+     * 현재 사용자에게만 읽기/쓰기 권한 부여.
+     * 다른 모든 사용자/그룹의 접근 차단.
      */
     private boolean applyWindowsAclPermissions(Path file) {
         try {
-            // Get ACL view
+            // ACL 뷰 가져오기
             AclFileAttributeView aclView = Files.getFileAttributeView(file, AclFileAttributeView.class);
             if (aclView == null) {
                 log.error("Failed to get ACL view for file: {}", file);
                 return false;
             }
 
-            // Current user principal
+            // 현재 사용자 주체(Principal)
             UserPrincipal owner = Files.getOwner(file);
 
-            // Grant read/write permissions only to current user
+            // 현재 사용자에게만 읽기/쓰기 권한 부여
             AclEntry entry = AclEntry.newBuilder()
                     .setType(AclEntryType.ALLOW)
                     .setPrincipal(owner)
@@ -511,7 +511,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                     )
                     .build();
 
-            // Remove existing ACL and set only new ACL (only owner can access)
+            // 기존 ACL 제거하고 새 ACL만 설정 (소유자만 접근 가능)
             aclView.setAcl(Collections.singletonList(entry));
             log.debug("Applied Windows ACL permissions (owner-only) to file: {}", file);
             return true;
@@ -523,10 +523,10 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     }
 
     /**
-     * Handle security setup failure.
+     * 보안 설정 실패 처리.
      * <p>
-     * In production environments, security is critical so exception is thrown.
-     * In development environments, only warning is logged.
+     * 운영 환경에서는 보안이 중요하므로 예외 발생.
+     * 개발 환경에서는 경고 로그만 출력.
      */
     private void handleSecurityFailure(String eventId, Path backupFile) {
         String errorMessage = String.format(

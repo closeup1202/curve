@@ -1,9 +1,9 @@
 package com.project.curve.spring.exception;
 
 /**
- * Exception thrown when event publishing fails through @PublishEvent annotation.
+ * @PublishEvent 어노테이션을 통한 이벤트 발행 실패 시 발생하는 예외.
  * <p>
- * Only thrown when failOnError=true is configured.
+ * failOnError=true로 설정된 경우에만 발생합니다.
  */
 public class EventPublishException extends RuntimeException {
 

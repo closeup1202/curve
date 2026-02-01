@@ -26,20 +26,20 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import javax.sql.DataSource;
 
 /**
- * Transactional Outbox Pattern Auto-Configuration.
+ * Transactional Outbox Pattern 자동 설정.
  * <p>
- * Activated only when curve.outbox.enabled=true.
+ * curve.outbox.enabled=true일 때만 활성화됩니다.
  *
- * <h3>Activation Conditions</h3>
+ * <h3>활성화 조건</h3>
  * <ul>
  *   <li>curve.outbox.enabled=true</li>
- *   <li>KafkaTemplate bean exists</li>
+ *   <li>KafkaTemplate 빈 존재</li>
  * </ul>
  *
- * <h3>Registered Beans</h3>
+ * <h3>등록되는 빈</h3>
  * <ul>
- *   <li>OutboxEventRepository (JPA or JDBC implementation)</li>
- *   <li>OutboxEventPublisher - Periodic publishing scheduler (when curve.outbox.publisher-enabled=true)</li>
+ *   <li>OutboxEventRepository (JPA 또는 JDBC 구현체)</li>
+ *   <li>OutboxEventPublisher - 주기적 발행 스케줄러 (curve.outbox.publisher-enabled=true일 때)</li>
  * </ul>
  */
 @Slf4j
@@ -101,18 +101,18 @@ public class CurveOutboxAutoConfiguration {
     }
 
     /**
-     * Configuration activated when JPA is on the classpath.
+     * JPA가 클래스패스에 있을 때 활성화되는 설정.
      */
     @Configuration
     @ConditionalOnClass(name = "org.springframework.data.jpa.repository.JpaRepository")
     @AutoConfigurationPackage(basePackageClasses = OutboxEventJpaEntity.class)
     @Import(OutboxJpaRepositoryConfig.class)
     static class JpaOutboxConfiguration {
-        // OutboxEventRepository bean is registered in OutboxJpaRepositoryConfig
+        // OutboxEventRepository 빈은 OutboxJpaRepositoryConfig에서 등록됨
     }
 
     /**
-     * JDBC configuration activated when JPA is not available.
+     * JPA를 사용할 수 없을 때 활성화되는 JDBC 설정.
      */
     @Bean
     @ConditionalOnMissingClass("org.springframework.data.jpa.repository.JpaRepository")

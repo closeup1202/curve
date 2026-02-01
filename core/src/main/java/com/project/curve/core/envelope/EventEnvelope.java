@@ -8,40 +8,40 @@ import lombok.NonNull;
 import java.time.Instant;
 
 /**
- * Standardized envelope for domain events.
+ * 도메인 이벤트를 위한 표준 엔벨로프(Envelope).
  * <p>
- * EventEnvelope wraps business event payloads with rich contextual metadata,
- * enabling comprehensive event tracking, auditing, and processing in distributed systems.
- * All events in the Curve library follow this standardized structure.
+ * EventEnvelope는 비즈니스 이벤트 페이로드를 풍부한 컨텍스트 메타데이터로 감싸서,
+ * 분산 시스템에서의 포괄적인 이벤트 추적, 감사(Auditing), 처리를 가능하게 합니다.
+ * Curve 라이브러리의 모든 이벤트는 이 표준 구조를 따릅니다.
  * </p>
  *
- * <h3>Event Structure:</h3>
+ * <h3>이벤트 구조:</h3>
  * <pre>
  * EventEnvelope
- * ├── eventId          Unique event identifier (Snowflake ID)
- * ├── eventType        Event type/name
- * ├── severity         Event severity (INFO, WARN, ERROR, CRITICAL)
- * ├── metadata         Contextual metadata
- * │   ├── source       Event source (service, environment, version)
- * │   ├── actor        Who triggered the event (user, role, IP)
- * │   ├── trace        Distributed trace (traceId, spanId, correlationId)
- * │   ├── schema       Event schema information
- * │   └── tags         Custom metadata tags
- * ├── payload          Business event data
- * ├── occurredAt       When the event occurred
- * └── publishedAt      When the event was published
+ * ├── eventId          고유 이벤트 식별자 (Snowflake ID)
+ * ├── eventType        이벤트 타입/이름
+ * ├── severity         이벤트 중요도 (INFO, WARN, ERROR, CRITICAL)
+ * ├── metadata         컨텍스트 메타데이터
+ * │   ├── source       이벤트 발생처 (서비스, 환경, 버전)
+ * │   ├── actor        이벤트 유발자 (사용자, 역할, IP)
+ * │   ├── trace        분산 추적 정보 (traceId, spanId, correlationId)
+ * │   ├── schema       이벤트 스키마 정보
+ * │   └── tags         사용자 정의 메타데이터 태그
+ * ├── payload          비즈니스 이벤트 데이터
+ * ├── occurredAt       이벤트 발생 시각
+ * └── publishedAt      이벤트 발행 시각
  * </pre>
  *
- * <h3>Key Features:</h3>
+ * <h3>주요 특징:</h3>
  * <ul>
- *   <li><b>Immutable</b> - Java Record ensures immutability</li>
- *   <li><b>Type-safe</b> - Generic payload type parameter</li>
- *   <li><b>Rich metadata</b> - Comprehensive contextual information</li>
- *   <li><b>Traceability</b> - Support for distributed tracing and event chains</li>
- *   <li><b>Null-safe</b> - All fields are non-null</li>
+ *   <li><b>불변성(Immutable)</b> - Java Record를 사용하여 불변성 보장</li>
+ *   <li><b>타입 안전성(Type-safe)</b> - 제네릭 페이로드 타입 파라미터 사용</li>
+ *   <li><b>풍부한 메타데이터</b> - 포괄적인 컨텍스트 정보 제공</li>
+ *   <li><b>추적성(Traceability)</b> - 분산 추적 및 이벤트 체인 지원</li>
+ *   <li><b>Null 안전성(Null-safe)</b> - 모든 필드는 null이 아님을 보장</li>
  * </ul>
  *
- * <h3>Example:</h3>
+ * <h3>사용 예시:</h3>
  * <pre>{@code
  * EventEnvelope<OrderCreatedPayload> envelope = EventEnvelope.of(
  *     EventId.of("1234567890"),
@@ -54,14 +54,14 @@ import java.time.Instant;
  * );
  * }</pre>
  *
- * @param <T> the type of the event payload, must extend {@link DomainEventPayload}
- * @param eventId unique event identifier
- * @param eventType the type/name of the event
- * @param severity the severity level of the event
- * @param metadata contextual metadata (source, actor, trace, etc.)
- * @param payload the business event data
- * @param occurredAt timestamp when the event occurred
- * @param publishedAt timestamp when the event was published
+ * @param <T> 이벤트 페이로드 타입 ({@link DomainEventPayload} 상속 필수)
+ * @param eventId 고유 이벤트 식별자
+ * @param eventType 이벤트의 타입/이름
+ * @param severity 이벤트의 중요도 레벨
+ * @param metadata 컨텍스트 메타데이터 (source, actor, trace 등)
+ * @param payload 비즈니스 이벤트 데이터
+ * @param occurredAt 이벤트가 발생한 시각
+ * @param publishedAt 이벤트가 발행된 시각
  * @see EventMetadata
  * @see DomainEventPayload
  * @see EventSeverity

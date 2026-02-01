@@ -35,17 +35,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class CurveKafkaAutoConfiguration {
 
     /**
-     * Dedicated ExecutorService for DLQ sending (with graceful shutdown support)
+     * DLQ 전송을 위한 전용 ExecutorService (우아한 종료 지원)
      * <p>
-     * <b>Key Features:</b>
+     * <b>주요 기능:</b>
      * <ul>
-     *   <li>Prevents thread blocking when sending DLQ synchronously from async Kafka send callbacks</li>
-     *   <li>Uses fixed-size thread pool (default: 2 threads)</li>
-     *   <li>Waits for running tasks to complete during application shutdown (30-second timeout)</li>
-     *   <li>Force shutdown and logging when timeout is exceeded</li>
+     *   <li>비동기 Kafka 전송 콜백에서 동기적으로 DLQ 전송 시 스레드 차단 방지</li>
+     *   <li>고정 크기 스레드 풀 사용 (기본값: 2개 스레드)</li>
+     *   <li>애플리케이션 종료 시 실행 중인 작업 완료 대기 (30초 타임아웃)</li>
+     *   <li>타임아웃 초과 시 강제 종료 및 로깅</li>
      * </ul>
      * <p>
-     * Uses {@link GracefulExecutorService} to ensure graceful shutdown.
+     * {@link GracefulExecutorService}를 사용하여 우아한 종료를 보장합니다.
      */
     @Bean(name = "curveDlqExecutor", destroyMethod = "shutdown")
     @ConditionalOnMissingBean(name = "curveDlqExecutor")
@@ -59,7 +59,7 @@ public class CurveKafkaAutoConfiguration {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r, "curve-dlq-" + threadNumber.getAndIncrement());
-                // Set as non-daemon thread to allow waiting for shutdown
+                // 종료 대기를 위해 데몬 스레드가 아닌 일반 스레드로 설정
                 thread.setDaemon(false);
                 return thread;
             }

@@ -16,9 +16,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * JPA implementation of OutboxEventRepository (Hexagonal Architecture Adapter).
+ * OutboxEventRepository의 JPA 구현체 (헥사고날 아키텍처 어댑터).
  * <p>
- * Handles conversion between core domain models and JPA entities.
+ * 핵심 도메인 모델과 JPA 엔티티 간의 변환을 담당합니다.
  *
  * @see OutboxEventRepository
  * @see OutboxEventJpaRepository
@@ -63,7 +63,7 @@ public class JpaOutboxEventRepositoryAdapter implements OutboxEventRepository {
     @Override
     public List<OutboxEvent> findPendingForProcessing(int limit) {
         PageRequest pageRequest = PageRequest.of(0, limit);
-        // Query only events scheduled for retry before current time (nextRetryAt <= now)
+        // 현재 시간 이전에 재시도 예정인 이벤트만 조회 (nextRetryAt <= now)
         return jpaRepository.findByStatusAndNextRetryAtLessThanEqualForUpdateSkipLocked(
                         OutboxStatus.PENDING,
                         Instant.now(),

@@ -19,10 +19,10 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * JDBC implementation of OutboxEventRepository.
+ * OutboxEventRepository의 JDBC 구현체.
  * <p>
- * Implements the Outbox pattern using JdbcTemplate without JPA.
- * Handles SQL dialects to support various databases (MySQL, PostgreSQL, Oracle, H2, etc.).
+ * JPA 없이 JdbcTemplate을 사용하여 Outbox 패턴을 구현합니다.
+ * 다양한 데이터베이스(MySQL, PostgreSQL, Oracle, H2 등)를 지원하기 위해 SQL 방언을 처리합니다.
  */
 @Slf4j
 public class JdbcOutboxEventRepository implements OutboxEventRepository {
@@ -87,7 +87,7 @@ public class JdbcOutboxEventRepository implements OutboxEventRepository {
     @Override
     @Transactional
     public void save(OutboxEvent event) {
-        // 1. Try UPDATE first
+        // 1. UPDATE 먼저 시도
         int updated = jdbcTemplate.update("""
                         UPDATE curve_outbox_events SET
                             status = ?, retry_count = ?, published_at = ?, error_message = ?, next_retry_at = ?, updated_at = ?
@@ -102,7 +102,7 @@ public class JdbcOutboxEventRepository implements OutboxEventRepository {
                 event.getEventId()
         );
 
-        // 2. Try INSERT if UPDATE failed
+        // 2. UPDATE 실패 시 INSERT 시도
         if (updated == 0) {
             try {
                 jdbcTemplate.update("""
@@ -172,14 +172,14 @@ public class JdbcOutboxEventRepository implements OutboxEventRepository {
         String baseSql = "SELECT * FROM curve_outbox_events WHERE status = ? AND next_retry_at <= ? ORDER BY occurred_at ASC";
         String sql = buildLimitQuery(baseSql, limit);
 
-        // Add SKIP LOCKED
+        // SKIP LOCKED 추가
         if (dbType == DbType.MYSQL || dbType == DbType.POSTGRESQL || dbType == DbType.ORACLE) {
             sql += " FOR UPDATE SKIP LOCKED";
         } else if (dbType == DbType.SQL_SERVER) {
-            // SQL Server uses hint syntax (WITH (READPAST, UPDLOCK))
-            // But the structure is complex as hints need to be in the SELECT clause.
-            // For simplicity, skip here or needs future enhancement.
-            // Proceed without SKIP LOCKED for now (potential concurrency issues)
+            // SQL Server는 힌트 구문(WITH (READPAST, UPDLOCK))을 사용
+            // 힌트가 SELECT 절에 있어야 하므로 구조가 복잡함.
+            // 여기서는 간단하게 생략하거나 추후 개선 필요.
+            // 일단 SKIP LOCKED 없이 진행 (동시성 문제 가능성 있음)
         }
 
         try {
@@ -210,7 +210,7 @@ public class JdbcOutboxEventRepository implements OutboxEventRepository {
     @Override
     @Transactional
     public int deleteByStatusAndOccurredAtBefore(OutboxStatus status, Instant before, int limit) {
-        // Use query ID then delete approach (safest)
+        // ID 조회 후 삭제 방식 사용 (가장 안전함)
         String selectSql = buildLimitQuery("SELECT event_id FROM curve_outbox_events WHERE status = ? AND occurred_at < ?", limit);
         
         List<String> ids = jdbcTemplate.query(
@@ -253,10 +253,10 @@ public class JdbcOutboxEventRepository implements OutboxEventRepository {
         if (dbType == DbType.ORACLE) {
             return sql + " FETCH FIRST " + limit + " ROWS ONLY";
         } else if (dbType == DbType.SQL_SERVER) {
-            // SQL Server uses SELECT TOP N ... format, requires string manipulation
+            // SQL Server는 SELECT TOP N ... 형식을 사용하므로 문자열 조작 필요
             return sql.replaceFirst("SELECT", "SELECT TOP " + limit);
         } else {
-            // MySQL, PostgreSQL, H2, Others
+            // MySQL, PostgreSQL, H2, 기타
             return sql + " LIMIT " + limit;
         }
     }

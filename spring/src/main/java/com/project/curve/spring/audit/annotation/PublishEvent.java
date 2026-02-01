@@ -8,14 +8,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for automatic event publishing on method execution.
+ * 메서드 실행 시 자동 이벤트 발행을 위한 어노테이션.
  * <p>
- * This annotation enables declarative event publishing using Spring AOP. Simply add this
- * annotation to any Spring-managed bean method, and an event will be automatically published
- * when the method executes.
+ * Spring AOP를 사용하여 선언적으로 이벤트를 발행할 수 있습니다.
+ * Spring 빈 메서드에 이 어노테이션을 추가하면 메서드 실행 시 자동으로 이벤트가 발행됩니다.
  * </p>
  *
- * <h3>Basic Usage:</h3>
+ * <h3>기본 사용법:</h3>
  * <pre>{@code
  * @Service
  * public class OrderService {
@@ -27,7 +26,7 @@ import java.lang.annotation.Target;
  * }
  * }</pre>
  *
- * <h3>With SpEL for Payload Extraction:</h3>
+ * <h3>SpEL을 사용한 페이로드 추출:</h3>
  * <pre>{@code
  * @PublishEvent(
  *     eventType = "USER_UPDATED",
@@ -38,7 +37,7 @@ import java.lang.annotation.Target;
  * }
  * }</pre>
  *
- * <h3>With Transactional Outbox:</h3>
+ * <h3>Transactional Outbox 사용:</h3>
  * <pre>{@code
  * @PublishEvent(
  *     eventType = "ORDER_CREATED",
@@ -52,14 +51,14 @@ import java.lang.annotation.Target;
  * }
  * }</pre>
  *
- * <h3>Key Features:</h3>
+ * <h3>주요 기능:</h3>
  * <ul>
- *   <li>Automatic event envelope creation with rich metadata</li>
- *   <li>SpEL support for flexible payload extraction</li>
- *   <li>Multiple execution phases (BEFORE, AFTER_RETURNING, AFTER)</li>
- *   <li>Transactional Outbox Pattern support for data consistency</li>
- *   <li>PII field masking/encryption support</li>
- *   <li>Configurable error handling</li>
+ *   <li>풍부한 메타데이터를 포함한 이벤트 엔벨로프 자동 생성</li>
+ *   <li>SpEL 지원을 통한 유연한 페이로드 추출</li>
+ *   <li>다양한 실행 시점 지원 (BEFORE, AFTER_RETURNING, AFTER)</li>
+ *   <li>데이터 일관성을 위한 Transactional Outbox Pattern 지원</li>
+ *   <li>PII 필드 마스킹/암호화 지원</li>
+ *   <li>설정 가능한 에러 처리</li>
  * </ul>
  *
  * @see com.project.curve.core.port.EventProducer
@@ -71,122 +70,122 @@ import java.lang.annotation.Target;
 public @interface PublishEvent {
 
     /**
-     * The event type name.
+     * 이벤트 타입 이름.
      * <p>
-     * Default: Generated based on the method name (ClassName.methodName)
+     * 기본값: 메서드 이름을 기반으로 생성 (ClassName.methodName)
      *
-     * @return the event type
+     * @return 이벤트 타입
      */
     String eventType() default "";
 
     /**
-     * The event severity level.
+     * 이벤트 중요도 레벨.
      *
-     * @return the event severity (default: INFO)
+     * @return 이벤트 중요도 (기본값: INFO)
      */
     EventSeverity severity() default EventSeverity.INFO;
 
     /**
-     * The parameter index to use as the event payload.
+     * 이벤트 페이로드로 사용할 파라미터 인덱스.
      * <ul>
-     *   <li>-1: Use return value (default)</li>
-     *   <li>0 or greater: Use the parameter at this index</li>
+     *   <li>-1: 반환값 사용 (기본값)</li>
+     *   <li>0 이상: 해당 인덱스의 파라미터 사용</li>
      * </ul>
      * <p>
-     * This value is ignored if the {@link #payload()} attribute is set.
+     * {@link #payload()} 속성이 설정된 경우 이 값은 무시됩니다.
      *
-     * @return the payload parameter index
+     * @return 페이로드 파라미터 인덱스
      */
     int payloadIndex() default -1;
 
     /**
-     * SpEL expression for extracting the event payload.
+     * 이벤트 페이로드 추출을 위한 SpEL 표현식.
      * <p>
-     * When set, this takes precedence over {@link #payloadIndex()}.
+     * 설정 시 {@link #payloadIndex()}보다 우선순위를 가집니다.
      *
-     * <h3>Available Variables</h3>
+     * <h3>사용 가능한 변수</h3>
      * <ul>
-     *   <li>#result - Method return value (for AFTER_RETURNING phase)</li>
-     *   <li>#args - Method parameter array</li>
-     *   <li>#p0, #p1, ... - Individual parameters</li>
-     *   <li>Parameter names - Available if compiled with -parameters option</li>
+     *   <li>#result - 메서드 반환값 (AFTER_RETURNING 시점용)</li>
+     *   <li>#args - 메서드 파라미터 배열</li>
+     *   <li>#p0, #p1, ... - 개별 파라미터</li>
+     *   <li>파라미터 이름 - -parameters 옵션으로 컴파일 시 사용 가능</li>
      * </ul>
      *
-     * <h3>Examples</h3>
+     * <h3>예시</h3>
      * <pre>
-     * // Extract specific fields from request object
+     * // 요청 객체에서 특정 필드 추출
      * payload = "#args[0].toEventDto()"
      *
-     * // Combine return value and parameters
+     * // 반환값과 파라미터 조합
      * payload = "new com.example.Event(#result.id, #args[0].name)"
      * </pre>
      *
-     * @return the SpEL expression
+     * @return SpEL 표현식
      */
     String payload() default "";
 
     /**
-     * The phase when the event should be published.
+     * 이벤트 발행 시점.
      *
-     * @return the event publishing phase (default: AFTER_RETURNING)
+     * @return 이벤트 발행 시점 (기본값: AFTER_RETURNING)
      */
     Phase phase() default Phase.AFTER_RETURNING;
 
     /**
-     * Whether to propagate exceptions when event publishing fails.
+     * 이벤트 발행 실패 시 예외 전파 여부.
      * <ul>
-     *   <li>true: Throw exception on event publishing failure, causing business logic to fail</li>
-     *   <li>false: Log error but continue business logic execution (default)</li>
+     *   <li>true: 이벤트 발행 실패 시 예외를 던져 비즈니스 로직 실패 처리</li>
+     *   <li>false: 에러 로그만 남기고 비즈니스 로직 계속 실행 (기본값)</li>
      * </ul>
      *
-     * @return whether to fail on error
+     * @return 에러 시 실패 처리 여부
      */
     boolean failOnError() default false;
 
     /**
-     * Whether to use the Transactional Outbox Pattern.
+     * Transactional Outbox Pattern 사용 여부.
      * <p>
-     * When enabled, events are saved to the database within the same transaction
-     * as the business logic, ensuring atomicity and consistency.
+     * 활성화 시 비즈니스 로직과 동일한 트랜잭션 내에서 이벤트를 DB에 저장하여
+     * 원자성과 일관성을 보장합니다.
      *
-     * @return whether to use outbox pattern
+     * @return Outbox 패턴 사용 여부
      */
     boolean outbox() default false;
 
     /**
-     * The aggregate type for the outbox pattern.
+     * Outbox 패턴용 애그리거트 타입.
      * <p>
-     * Required when {@code outbox=true}.
+     * {@code outbox=true}일 때 필수입니다.
      *
-     * @return the aggregate type
+     * @return 애그리거트 타입
      */
     String aggregateType() default "";
 
     /**
-     * SpEL expression for extracting the aggregate ID.
+     * 애그리거트 ID 추출을 위한 SpEL 표현식.
      * <p>
-     * Required when {@code outbox=true}.
+     * {@code outbox=true}일 때 필수입니다.
      *
-     * @return the SpEL expression for aggregate ID
+     * @return 애그리거트 ID용 SpEL 표현식
      */
     String aggregateId() default "";
 
     /**
-     * Enumeration of event publishing phases.
+     * 이벤트 발행 시점 열거형.
      */
     enum Phase {
         /**
-         * Publish event before method execution.
+         * 메서드 실행 전 이벤트 발행.
          */
         BEFORE,
 
         /**
-         * Publish event after method returns successfully.
+         * 메서드가 성공적으로 반환된 후 이벤트 발행.
          */
         AFTER_RETURNING,
 
         /**
-         * Publish event after method execution (regardless of success or failure).
+         * 메서드 실행 후 (성공/실패 여부 무관) 이벤트 발행.
          */
         AFTER
     }

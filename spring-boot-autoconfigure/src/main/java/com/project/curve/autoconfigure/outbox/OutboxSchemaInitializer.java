@@ -12,15 +12,15 @@ import java.sql.ResultSet;
 import java.util.Set;
 
 /**
- * Outbox table auto-creation initializer.
+ * Outbox 테이블 자동 생성 초기화 클래스.
  * <p>
- * Automatically creates the curve_outbox_events table based on the {@link InitializeSchema} mode.
+ * {@link InitializeSchema} 모드에 따라 curve_outbox_events 테이블을 자동으로 생성합니다.
  *
- * <h3>Supported Databases</h3>
+ * <h3>지원하는 데이터베이스</h3>
  * <ul>
  *   <li>MySQL / MariaDB</li>
  *   <li>PostgreSQL</li>
- *   <li>H2 / HSQLDB / Derby (embedded)</li>
+ *   <li>H2 / HSQLDB / Derby (임베디드)</li>
  * </ul>
  *
  * @see InitializeSchema

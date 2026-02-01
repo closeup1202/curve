@@ -1,24 +1,24 @@
 package com.project.curve.autoconfigure.outbox;
 
 /**
- * Outbox table schema initialization mode.
+ * Outbox 테이블 스키마 초기화 모드.
  * <p>
- * Follows the same pattern as Spring Batch's {@code spring.batch.jdbc.initialize-schema}.
+ * Spring Batch의 {@code spring.batch.jdbc.initialize-schema}와 동일한 패턴을 따릅니다.
  */
 public enum InitializeSchema {
 
     /**
-     * Automatically create only for embedded databases (H2, HSQLDB, Derby).
+     * 임베디드 데이터베이스(H2, HSQLDB, Derby)에 대해서만 자동으로 생성합니다.
      */
     EMBEDDED,
 
     /**
-     * Always automatically create (CREATE only when table does not exist).
+     * 항상 자동으로 생성합니다 (테이블이 존재하지 않을 때만 CREATE).
      */
     ALWAYS,
 
     /**
-     * Do not automatically create. Managed directly by the service using Flyway/Liquibase, etc.
+     * 자동으로 생성하지 않습니다. 서비스에서 Flyway/Liquibase 등을 사용하여 직접 관리합니다.
      */
     NEVER
 }

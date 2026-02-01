@@ -1,17 +1,17 @@
 package com.project.curve.kafka.dlq;
 
 /**
- * Failed event record stored in DLQ (Dead Letter Queue)
+ * DLQ(Dead Letter Queue)에 저장되는 실패 이벤트 레코드.
  * <p>
- * Stored in DLQ with metadata and original payload of events that failed Kafka transmission
- * Enables failure cause tracking and reprocessing
+ * Kafka 전송에 실패한 이벤트의 원본 페이로드와 메타데이터를 함께 저장하여,
+ * 추후 실패 원인을 분석하거나 재처리할 수 있도록 합니다.
  *
- * @param eventId Original event ID
- * @param originalTopic Original topic name
- * @param originalPayload Original event payload (JSON)
- * @param exceptionType Type of exception that occurred
- * @param exceptionMessage Exception message
- * @param failedAt Timestamp when failure occurred (epoch millis)
+ * @param eventId          원본 이벤트 ID
+ * @param originalTopic    원본 토픽 이름
+ * @param originalPayload  원본 이벤트 페이로드 (JSON 문자열)
+ * @param exceptionType    발생한 예외 타입 (클래스명)
+ * @param exceptionMessage 예외 메시지
+ * @param failedAt         실패 발생 시각 (Epoch Millis)
  */
 public record FailedEventRecord(
         String eventId,

@@ -6,9 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for defining schema information on event payload classes.
+ * 이벤트 페이로드 클래스에 스키마 정보를 정의하기 위한 어노테이션.
  *
- * <p>Example:</p>
+ * <p>사용 예시:</p>
  * <pre>
  * {@code
  * @PayloadSchema(name = "UserCreated", version = 2)
@@ -17,25 +17,25 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  *
- * <p>If the annotation is not present, the class name is used as the schema name with version 1.</p>
+ * <p>이 어노테이션이 없으면 클래스 이름을 스키마 이름으로 사용하고 버전은 1로 설정됩니다.</p>
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PayloadSchema {
 
     /**
-     * Schema name. Uses the class name if empty.
+     * 스키마 이름. 비어있으면 클래스 이름을 사용합니다.
      */
     String name() default "";
 
     /**
-     * Schema version. Default is 1.
+     * 스키마 버전. 기본값은 1입니다.
      */
     int version() default 1;
 
     /**
-     * Schema ID to use when integrating with external Schema Registry.
-     * Treated as null if empty.
+     * 외부 Schema Registry 연동 시 사용할 스키마 ID.
+     * 비어있으면 null로 처리됩니다.
      */
     String schemaId() default "";
 }

@@ -19,6 +19,12 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 
+/**
+ * @PublishEvent 어노테이션을 처리하는 AOP Aspect.
+ * <p>
+ * 메서드 실행 전후에 이벤트를 자동으로 발행합니다.
+ * SpEL을 사용하여 페이로드를 동적으로 추출할 수 있습니다.
+ */
 @Slf4j
 @Aspect
 @Component
