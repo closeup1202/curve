@@ -44,16 +44,19 @@ public interface OutboxEventJpaRepository extends JpaRepository<OutboxEventJpaEn
      * <p>
      * Prevents duplicate processing of the same event in a multi-instance environment.
      * Skips rows already locked by other instances and returns only unlocked rows.
+     * Also checks nextRetryAt to ensure backoff strategy is respected.
      *
      * @param status   Status to query
+     * @param now      Current timestamp
      * @param pageable Paging (limit setting)
      * @return List of events with acquired locks
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints({@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2")})
-    @Query("SELECT e FROM OutboxEventJpaEntity e WHERE e.status = :status ORDER BY e.occurredAt ASC")
-    List<OutboxEventJpaEntity> findByStatusForUpdateSkipLocked(
+    @Query("SELECT e FROM OutboxEventJpaEntity e WHERE e.status = :status AND e.nextRetryAt <= :now ORDER BY e.occurredAt ASC")
+    List<OutboxEventJpaEntity> findByStatusAndNextRetryAtLessThanEqualForUpdateSkipLocked(
             @Param("status") OutboxStatus status,
+            @Param("now") Instant now,
             Pageable pageable
     );
 

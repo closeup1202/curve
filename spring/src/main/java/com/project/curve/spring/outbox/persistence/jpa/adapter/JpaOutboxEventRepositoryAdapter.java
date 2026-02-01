@@ -64,21 +64,11 @@ public class JpaOutboxEventRepositoryAdapter implements OutboxEventRepository {
     public List<OutboxEvent> findPendingForProcessing(int limit) {
         PageRequest pageRequest = PageRequest.of(0, limit);
         // Query only events scheduled for retry before current time (nextRetryAt <= now)
-        // JPA Repository method signature change needed (findPendingForProcessing -> findByStatusForUpdateSkipLocked)
-        // But JpaRepositoryAdapter is already calling the changed method.
-        // Need to verify if OutboxEventJpaRepository method signature has been changed.
-        // In previous step, findByStatusForUpdateSkipLocked was added to OutboxEventJpaRepository.
-
-        // Note: Must match OutboxEventJpaRepository interface definition.
-        // In previous code, it was findByStatusForUpdateSkipLocked(status, pageable).
-        // But JpaOutboxEventRepositoryAdapter is calling findByStatusForUpdateSkipLocked(status, now, pageable).
-        // Need to check and align with OutboxEventJpaRepository.
-
-        // For now, use the existing code (code written in previous step) as-is.
-        // In previous step, only findByStatusForUpdateSkipLocked(status, pageable) was defined in OutboxEventJpaRepository.
-        // Therefore, the now parameter should be removed here.
-
-        return jpaRepository.findByStatusForUpdateSkipLocked(OutboxStatus.PENDING, pageRequest)
+        return jpaRepository.findByStatusAndNextRetryAtLessThanEqualForUpdateSkipLocked(
+                        OutboxStatus.PENDING,
+                        Instant.now(),
+                        pageRequest
+                )
                 .stream()
                 .map(OutboxEventJpaEntity::toDomain)
                 .collect(Collectors.toList());
