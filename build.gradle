@@ -5,8 +5,7 @@ plugins {
     id 'jacoco'
 }
 
-group = 'com.project'
-version = '0.0.1-SNAPSHOT'
+// group, version, and description are managed in gradle.properties
 description = 'curve'
 
 java {
