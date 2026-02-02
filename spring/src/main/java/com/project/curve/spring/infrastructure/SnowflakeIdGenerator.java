@@ -12,7 +12,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Slf4j
-public final class SnowflakeIdGenerator implements IdGenerator {
+public class SnowflakeIdGenerator implements IdGenerator {
 
     private static final long EPOCH = 1704067200000L; // 2024-01-01 00:00:00 UTC
     private static final long WORKER_ID_BITS = 10L;
@@ -196,7 +196,7 @@ public final class SnowflakeIdGenerator implements IdGenerator {
         return timestamp;
     }
 
-    private long currentTimeMillis() {
+    protected long currentTimeMillis() {
         return System.currentTimeMillis();
     }
 }
