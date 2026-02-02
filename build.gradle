@@ -1,8 +1,9 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.9'
-    id 'io.spring.dependency-management' version '1.1.7'
     id 'jacoco'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' version '3.5.9' apply false
+    id 'me.champeau.jmh' version '0.7.2' apply false
 }
 
 // group, version, and description are managed in gradle.properties
@@ -14,23 +15,18 @@ java {
     }
 }
 
-bootJar {
-    enabled = false
-}
-
-jar {
-    enabled = true
-}
-
 allprojects {
     repositories {
         mavenCentral()
-        maven { url "https://packages.confluent.io/maven/" }
+        maven {
+            url = uri("https://packages.confluent.io/maven/")
+        }
     }
+}
 
-    apply plugin: 'java'
+subprojects {
+
     apply plugin: 'java-library'
-    apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'jacoco'
 
@@ -39,17 +35,24 @@ allprojects {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.9"
+        }
+    }
+
     dependencies {
+        // Lombok
         compileOnly 'org.projectlombok:lombok'
         annotationProcessor 'org.projectlombok:lombok'
 
         testCompileOnly 'org.projectlombok:lombok'
-        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
         testAnnotationProcessor 'org.projectlombok:lombok'
 
-        testImplementation 'org.springframework.boot:spring-boot-starter-test'
-        testImplementation 'org.mockito:mockito-core'
+        // Test
+        testImplementation 'org.junit.jupiter:junit-jupiter'
         testImplementation 'org.assertj:assertj-core'
+        testImplementation 'org.mockito:mockito-core'
     }
 
     test {
@@ -72,12 +75,12 @@ allprojects {
         afterEvaluate {
             classDirectories.setFrom(files(classDirectories.files.collect {
                 fileTree(dir: it, exclude: [
-                    '**/config/**',
-                    '**/configuration/**',
-                    '**/autoconfigure/**',
-                    '**/*Application.*',
-                    '**/*Config.*',
-                    '**/*Properties.*'
+                        '**/config/**',
+                        '**/configuration/**',
+                        '**/autoconfigure/**',
+                        '**/*Application.*',
+                        '**/*Config.*',
+                        '**/*Properties.*'
                 ])
             }))
         }
@@ -95,73 +98,74 @@ allprojects {
                     minimum = 0.70
                 }
                 excludes = [
-                    '*.config.*',
-                    '*.configuration.*',
-                    '*.autoconfigure.*',
-                    '*Application',
-                    '*Config',
-                    '*Properties',
-                    // Kafka
-                    '*KafkaEventProducer',
-                    // Spring Serializers (통합 테스트로 검증)
-                    '*EventSerializer',
-                    // Spring Context Providers (Spring 통합 필요)
-                    '*ContextProvider',
-                    '*.context.*ContextDecorator',
-                    '*ContextAwareTaskDecorator',
-                    // Spring Outbox (데이터베이스 통합 필요)
-                    '*OutboxEventPublisher*',
-                    '*OutboxEventSaver',
-                    '*OutboxEventJpaEntity',
-                    '*OutboxEventRepository*',
-                    '*JdbcOutboxEventRepository*',
-                    '*JpaOutboxEventRepositoryAdapter',
-                    // Spring PII Jackson (Jackson 통합 필요)
-                    '*PiiModule',
-                    '*PiiPropertyWriter',
-                    '*PiiBeanSerializerModifier',
-                    '*PiiProcessor*',
-                    // Spring Publisher (추상 클래스)
-                    '*AbstractEventPublisher',
-                    // Test utilities
-                    '*MockEventProducer',
-                    // Validators (SPEL 통합 필요)
-                    '*SpelExpressionValidator',
-                    // Default types
-                    '*DefaultEventType',
-                    // Metrics (Micrometer 통합 필요)
-                    '*MicrometerCurveMetricsCollector'
+                        '*.config.*',
+                        '*.configuration.*',
+                        '*.autoconfigure.*',
+                        '*Application',
+                        '*Config',
+                        '*Properties',
+                        // Kafka
+                        '*KafkaEventProducer',
+                        // Spring Serializers (통합 테스트로 검증)
+                        '*EventSerializer',
+                        // Spring Context Providers (Spring 통합 필요)
+                        '*ContextProvider',
+                        '*.context.*ContextDecorator',
+                        '*ContextAwareTaskDecorator',
+                        // Spring Outbox (데이터베이스 통합 필요)
+                        '*OutboxEventPublisher*',
+                        '*OutboxEventSaver',
+                        '*OutboxEventJpaEntity',
+                        '*OutboxEventRepository*',
+                        '*JdbcOutboxEventRepository*',
+                        '*JpaOutboxEventRepositoryAdapter',
+                        // Spring PII Jackson (Jackson 통합 필요)
+                        '*PiiModule',
+                        '*PiiPropertyWriter',
+                        '*PiiBeanSerializerModifier',
+                        '*PiiProcessor*',
+                        // Spring Publisher (추상 클래스)
+                        '*AbstractEventPublisher',
+                        // Test utilities
+                        '*MockEventProducer',
+                        // Validators (SPEL 통합 필요)
+                        '*SpelExpressionValidator',
+                        // Default types
+                        '*DefaultEventType',
+                        // Metrics (Micrometer 통합 필요)
+                        '*MicrometerCurveMetricsCollector'
                 ]
             }
         }
     }
 
-    javadoc {
-        options.encoding = 'UTF-8'
-        options.charSet = 'UTF-8'
-        options.docEncoding = 'UTF-8'
-        options.addStringOption('Xdoclint:none', '-quiet')
+    tasks.withType(Javadoc).configureEach {
+        def opts = options as StandardJavadocDocletOptions
+
+        opts.encoding = 'UTF-8'
+        opts.charSet = 'UTF-8'
+        opts.docEncoding = 'UTF-8'
+
+        opts.addStringOption('Xdoclint:none', '-quiet')
+
         if (JavaVersion.current().isJava9Compatible()) {
-            options.addBooleanOption('html5', true)
+            opts.addBooleanOption('html5', true)
         }
 
-        afterEvaluate {
-            if (project != rootProject && project.name != 'sample') {
-                options.links(
-                    'https://docs.oracle.com/en/java/javase/17/docs/api/',
-                    'https://docs.spring.io/spring-framework/docs/current/javadoc-api/',
-                    'https://docs.spring.io/spring-boot/docs/current/api/'
-                )
-            }
-        }
+        opts.links(
+                'https://docs.oracle.com/en/java/javase/17/docs/api/',
+                'https://docs.spring.io/spring-framework/docs/current/javadoc-api/',
+                'https://docs.spring.io/spring-boot/docs/current/api/'
+        )
     }
 
-    task javadocJar(type: Jar, dependsOn: javadoc) {
+    tasks.register('javadocJar', Jar) {
+        dependsOn javadoc
         archiveClassifier.set('javadoc')
         from javadoc.destinationDir
     }
 
-    task sourcesJar(type: Jar) {
+    tasks.register('sourcesJar', Jar) {
         archiveClassifier.set('sources')
         from sourceSets.main.allSource
     }
@@ -169,16 +173,5 @@ allprojects {
     artifacts {
         archives javadocJar
         archives sourcesJar
-    }
-}
-
-// 모든 서브프로젝트는 라이브러리이므로 bootJar 비활성화
-subprojects {
-    bootJar {
-        enabled = false
-    }
-
-    jar {
-        enabled = true
     }
 }

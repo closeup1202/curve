@@ -1,4 +1,6 @@
-description = 'Curve Library Sample Application Order Service'
+plugins {
+    id 'org.springframework.boot'
+}
 
 dependencies {
     implementation project(':spring-boot-autoconfigure')

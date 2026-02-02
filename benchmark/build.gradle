@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+    id 'me.champeau.jmh'
+}
+
+dependencies {
+    implementation project(':core')
+    implementation project(':spring')
+
+    implementation 'org.openjdk.jmh:jmh-core:1.37'
+    annotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
+
+    jmh 'org.openjdk.jmh:jmh-core:1.37'
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
+}
+
+jmh {
+    warmupIterations = 3
+    iterations = 5
+    fork = 2
+}
