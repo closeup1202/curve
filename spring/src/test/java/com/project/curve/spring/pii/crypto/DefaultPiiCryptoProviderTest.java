@@ -98,7 +98,7 @@ class DefaultPiiCryptoProviderTest {
         // When & Then
         assertThatThrownBy(() -> cryptoProvider.decrypt(invalidCiphertext, null))
                 .isInstanceOf(PiiCryptoException.class)
-                .hasMessageContaining("복호화 실패");
+                .hasMessageContaining("Decryption failed");
     }
 
     @Test
@@ -177,7 +177,7 @@ class DefaultPiiCryptoProviderTest {
         // When & Then: Attempt to decrypt with a different key
         assertThatThrownBy(() -> cryptoProvider.decrypt(encryptedWithDefaultKey, "custom-key"))
                 .isInstanceOf(PiiCryptoException.class)
-                .hasMessageContaining("복호화 실패");
+                .hasMessageContaining("Decryption failed");
     }
 
     @Test
@@ -269,7 +269,7 @@ class DefaultPiiCryptoProviderTest {
         // When & Then
         assertThatThrownBy(() -> providerWithoutKey.encrypt(plainText, null))
                 .isInstanceOf(PiiCryptoException.class)
-                .hasMessageContaining("PII 암호화가 비활성화되어 있습니다")
+                .hasMessageContaining("PII encryption is disabled")
                 .hasMessageContaining("curve.pii.crypto.default-key");
     }
 
@@ -283,7 +283,7 @@ class DefaultPiiCryptoProviderTest {
         // When & Then
         assertThatThrownBy(() -> providerWithoutKey.decrypt(encrypted, null))
                 .isInstanceOf(PiiCryptoException.class)
-                .hasMessageContaining("PII 암호화가 비활성화되어 있습니다");
+                .hasMessageContaining("PII encryption is disabled");
     }
 
     @Test
@@ -310,7 +310,7 @@ class DefaultPiiCryptoProviderTest {
         // When & Then
         assertThatThrownBy(() -> new DefaultPiiCryptoProvider(invalidBase64Key, salt))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("잘못된 Base64 형식");
+                .hasMessageContaining("Invalid Base64 format");
     }
 
     @Test
@@ -319,7 +319,7 @@ class DefaultPiiCryptoProviderTest {
         // When & Then
         assertThatThrownBy(() -> cryptoProvider.registerKey("alias", ""))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("null이거나 비어있을 수 없습니다");
+                .hasMessageContaining("cannot be null or blank");
     }
 
     @Test
@@ -328,6 +328,6 @@ class DefaultPiiCryptoProviderTest {
         // When & Then
         assertThatThrownBy(() -> cryptoProvider.registerKey("alias", null))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("null이거나 비어있을 수 없습니다");
+                .hasMessageContaining("cannot be null or blank");
     }
 }

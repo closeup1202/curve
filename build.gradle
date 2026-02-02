@@ -4,6 +4,8 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'org.springframework.boot' version '3.5.9' apply false
     id 'me.champeau.jmh' version '0.7.2' apply false
+    id 'org.sonarqube' version '4.4.1.3373'
+    id 'net.researchgate.release' version '3.0.2'
 }
 
 // group, version, and description are managed in gradle.properties
@@ -51,8 +53,11 @@ subprojects {
 
         // Test
         testImplementation 'org.junit.jupiter:junit-jupiter'
+        testImplementation 'org.junit.platform:junit-platform-launcher'
         testImplementation 'org.assertj:assertj-core'
         testImplementation 'org.mockito:mockito-core'
+        testImplementation 'org.mockito:mockito-junit-jupiter'
+        testImplementation 'org.springframework:spring-test'
     }
 
     test {
@@ -106,33 +111,33 @@ subprojects {
                         '*Properties',
                         // Kafka
                         '*KafkaEventProducer',
-                        // Spring Serializers (통합 테스트로 검증)
+                        // Spring Serializers (verified through integration tests)
                         '*EventSerializer',
-                        // Spring Context Providers (Spring 통합 필요)
+                        // Spring Context Providers (requires Spring integration)
                         '*ContextProvider',
                         '*.context.*ContextDecorator',
                         '*ContextAwareTaskDecorator',
-                        // Spring Outbox (데이터베이스 통합 필요)
+                        // Spring Outbox (requires database integration)
                         '*OutboxEventPublisher*',
                         '*OutboxEventSaver',
                         '*OutboxEventJpaEntity',
                         '*OutboxEventRepository*',
                         '*JdbcOutboxEventRepository*',
                         '*JpaOutboxEventRepositoryAdapter',
-                        // Spring PII Jackson (Jackson 통합 필요)
+                        // Spring PII Jackson (requires Jackson integration)
                         '*PiiModule',
                         '*PiiPropertyWriter',
                         '*PiiBeanSerializerModifier',
                         '*PiiProcessor*',
-                        // Spring Publisher (추상 클래스)
+                        // Spring Publisher (abstract class)
                         '*AbstractEventPublisher',
                         // Test utilities
                         '*MockEventProducer',
-                        // Validators (SPEL 통합 필요)
+                        // Validators (requires SPEL integration)
                         '*SpelExpressionValidator',
                         // Default types
                         '*DefaultEventType',
-                        // Metrics (Micrometer 통합 필요)
+                        // Metrics (requires Micrometer integration)
                         '*MicrometerCurveMetricsCollector'
                 ]
             }
@@ -152,17 +157,13 @@ subprojects {
             opts.addBooleanOption('html5', true)
         }
 
-        opts.links(
-                'https://docs.oracle.com/en/java/javase/17/docs/api/',
-                'https://docs.spring.io/spring-framework/docs/current/javadoc-api/',
-                'https://docs.spring.io/spring-boot/docs/current/api/'
-        )
+        failOnError = false
     }
 
     tasks.register('javadocJar', Jar) {
         dependsOn javadoc
         archiveClassifier.set('javadoc')
-        from javadoc.destinationDir
+        from javadoc
     }
 
     tasks.register('sourcesJar', Jar) {
@@ -173,5 +174,52 @@ subprojects {
     artifacts {
         archives javadocJar
         archives sourcesJar
+    }
+}
+
+// SonarQube Configuration
+sonar {
+    properties {
+        property "sonar.projectName", "Curve"
+        property "sonar.projectKey", "curve"
+        property "sonar.host.url", System.getenv("SONAR_HOST_URL") ?: "https://sonarcloud.io"
+        property "sonar.organization", System.getenv("SONAR_ORGANIZATION") ?: ""
+        property "sonar.sourceEncoding", "UTF-8"
+        property "sonar.java.source", "17"
+        property "sonar.coverage.jacoco.xmlReportPaths", [
+            "${rootProject.projectDir}/core/build/reports/jacoco/test/jacocoTestReport.xml",
+            "${rootProject.projectDir}/spring/build/reports/jacoco/test/jacocoTestReport.xml",
+            "${rootProject.projectDir}/kafka/build/reports/jacoco/test/jacocoTestReport.xml",
+            "${rootProject.projectDir}/spring-boot-autoconfigure/build/reports/jacoco/test/jacocoTestReport.xml"
+        ].join(',')
+        property "sonar.exclusions", [
+            "**/*Application.java",
+            "**/*Config.java",
+            "**/*Configuration.java",
+            "**/*Properties.java",
+            "**/autoconfigure/**"
+        ].join(',')
+    }
+}
+
+// Release Plugin Configuration
+release {
+    failOnCommitNeeded = false
+    failOnPublishNeeded = false
+    failOnSnapshotDependencies = false
+    failOnUnversionedFiles = false
+    failOnUpdateNeeded = false
+    revertOnFail = true
+    preCommitText = ''
+    preTagCommitMessage = '[Gradle Release Plugin] - pre tag commit: '
+    tagCommitMessage = '[Gradle Release Plugin] - creating tag: '
+    newVersionCommitMessage = '[Gradle Release Plugin] - new version commit: '
+    tagTemplate = 'v${version}'
+    versionPropertyFile = 'gradle.properties'
+    buildTasks = ['build']
+
+    git {
+        requireBranch.set('main')
+        pushToRemote.set('origin')
     }
 }

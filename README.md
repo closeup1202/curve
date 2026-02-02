@@ -8,7 +8,9 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.9-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Kafka](https://img.shields.io/badge/Apache%20Kafka-3.0+-red.svg)](https://kafka.apache.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+[![CI](https://github.com/YOUR_USERNAME/curve/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/curve/actions)
+[![codecov](https://codecov.io/gh/YOUR_USERNAME/curve/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/curve)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=curve&metric=alert_status)](https://sonarcloud.io/dashboard?id=curve)
 
 [English](README.md) | [한국어](README.ko.md)
 
