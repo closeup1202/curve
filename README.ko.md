@@ -163,7 +163,7 @@ Kafka가 24시간 장애여도 이벤트 손실 제로
 **Gradle (build.gradle)**
 ```gradle
 dependencies {
-    implementation 'io.github.closeup1202:curve:0.0.1'
+    implementation 'io.github.closeup1202:curve:0.0.2'
 }
 ```
 
@@ -172,7 +172,7 @@ dependencies {
 <dependency>
     <groupId>io.github.closeup1202</groupId>
     <artifactId>curve</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 
@@ -477,6 +477,25 @@ curve:
   serde:
     type: JSON # JSON, AVRO, PROTOBUF
 ```
+
+### Avro 직렬화 (선택)
+
+Avro 직렬화(`serde.type: AVRO`)를 사용하려면 다음 의존성을 추가하세요:
+
+**build.gradle:**
+```groovy
+repositories {
+    mavenCentral()
+    maven { url 'https://packages.confluent.io/maven/' }
+}
+
+dependencies {
+    implementation 'org.apache.avro:avro:1.11.4'
+    implementation 'io.confluent:kafka-avro-serializer:7.5.0'
+}
+```
+
+> **참고**: JSON 직렬화는 추가 의존성 없이 바로 사용 가능합니다.
 
 ### 환경별 프로파일
 

@@ -163,7 +163,7 @@ Framework-independent core for maximum flexibility.
 **Gradle (build.gradle)**
 ```gradle
 dependencies {
-    implementation 'io.github.closeup1202:curve:0.0.1'
+    implementation 'io.github.closeup1202:curve:0.0.2'
 }
 ```
 
@@ -172,7 +172,7 @@ dependencies {
 <dependency>
     <groupId>io.github.closeup1202</groupId>
     <artifactId>curve</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 
@@ -477,6 +477,25 @@ curve:
   serde:
     type: JSON # JSON, AVRO, PROTOBUF
 ```
+
+### Avro Serialization (Optional)
+
+If you want to use Avro serialization (`serde.type: AVRO`), add these dependencies:
+
+**build.gradle:**
+```groovy
+repositories {
+    mavenCentral()
+    maven { url 'https://packages.confluent.io/maven/' }
+}
+
+dependencies {
+    implementation 'org.apache.avro:avro:1.11.4'
+    implementation 'io.confluent:kafka-avro-serializer:7.5.0'
+}
+```
+
+> **Note**: JSON serialization works out of the box without additional dependencies.
 
 ### Environment-Specific Profiles
 

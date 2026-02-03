@@ -7,15 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Operations guide documentation (`docs/OPERATIONS.en.md`)
-- User Service sample with PII protection examples
-- Payment Service sample with error handling and Outbox pattern
-- Version management with `gradle.properties`
+---
+
+## [0.0.2] - 2025-02-03
+
+### Changed
+- Avro dependencies (`avro`, `kafka-avro-serializer`) are now optional
+  - JSON serialization works out of the box without additional repositories
+  - Users who need Avro must explicitly add Confluent repository and dependencies
+
+### Fixed
+- Fixed GPG signing configuration for Maven Central publishing
+- Fixed Sonatype Central Portal URL compatibility
 
 ---
 
-## [0.0.1] - 2024-XX-XX
+## [0.0.1] - 2025-02-03
 
 ### Added
 
@@ -81,7 +88,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Description |
 |---------|------|-------------|
-| 0.0.1 | TBD | Initial release |
+| 0.0.2 | 2025-02-03 | Make Avro dependencies optional |
+| 0.0.1 | 2025-02-03 | Initial release |
 
 ---
 
@@ -109,5 +117,6 @@ When contributing, please update this changelog:
 
 ---
 
-[Unreleased]: https://github.com/closeup1202/curve/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/closeup1202/curve/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/closeup1202/curve/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/closeup1202/curve/releases/tag/v0.0.1
