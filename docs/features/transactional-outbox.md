@@ -422,6 +422,6 @@ ORDER BY date DESC;
 
     Advanced configuration options
 
-    [:octicons-arrow-right-24: Configuration](../CONFIGURATION.en.md)
+    [:octicons-arrow-right-24: Configuration](../CONFIGURATION.md)
 
 </div>

@@ -126,7 +126,7 @@ curve:
 
 #### Version 0.0.1 (Initial)
 
-All configurations introduced. See [CONFIGURATION.md](CONFIGURATION.en.md).
+All configurations introduced. See [CONFIGURATION.md](CONFIGURATION.md).
 
 #### Version 0.1.x (Planned)
 

@@ -246,6 +246,6 @@ curl http://localhost:8080/actuator/curve-metrics
 
     Production-ready settings
 
-    [:octicons-arrow-right-24: Configuration](../CONFIGURATION.en.md)
+    [:octicons-arrow-right-24: Configuration](../CONFIGURATION.md)
 
 </div>

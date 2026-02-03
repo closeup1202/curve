@@ -160,7 +160,7 @@ You've successfully published your first event with Curve!
 
     Production-ready settings and optimization
 
-    [:octicons-arrow-right-24: Configuration](../CONFIGURATION.en.md)
+    [:octicons-arrow-right-24: Configuration](../CONFIGURATION.md)
 
 -   :material-code-braces:{ .lg .middle } **API Reference**
 

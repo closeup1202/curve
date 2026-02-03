@@ -215,7 +215,7 @@ Expected response:
 Once installed, proceed to:
 
 1. [Quick Start Guide](quick-start.md) - Create your first event
-2. [Configuration](../CONFIGURATION.en.md) - Set up production settings
+2. [Configuration](../CONFIGURATION.md) - Set up production settings
 3. [First Event Tutorial](first-event.md) - Detailed walkthrough
 
 ---

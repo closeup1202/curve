@@ -534,7 +534,7 @@ Recommended panels for Curve monitoring dashboard:
 
 ## Additional Resources
 
-- [Configuration Guide](CONFIGURATION.en.md) - Detailed configuration options
+- [Configuration Guide](CONFIGURATION.md) - Detailed configuration options
 - [DLQ Recovery Script](../scripts/dlq-recovery.sh) - Automated recovery tool
 - [Sample Application](../sample/) - Working examples
 - [README](../README.md) - Project overview and quick start

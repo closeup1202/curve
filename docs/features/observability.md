@@ -397,7 +397,7 @@ groups:
 
     Production deployment best practices
 
-    [:octicons-arrow-right-24: Operations](../OPERATIONS.en.md)
+    [:octicons-arrow-right-24: Operations](../OPERATIONS.md)
 
 -   :material-help-circle:{ .lg .middle } **Troubleshooting**
 

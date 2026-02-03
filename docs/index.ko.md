@@ -12,7 +12,7 @@
 [![codecov](https://codecov.io/gh/closeup1202/curve/branch/main/graph/badge.svg)](https://codecov.io/gh/closeup1202/curve)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=curve&metric=alert_status)](https://sonarcloud.io/dashboard?id=curve)
 
-[English](index.en.md) | [한국어](index.ko.md)
+[English](index.md) | [한국어](index.ko.md)
 
 </div>
 
