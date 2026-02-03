@@ -109,5 +109,5 @@ When contributing, please update this changelog:
 
 ---
 
-[Unreleased]: https://github.com/your-username/curve/compare/v0.0.1...HEAD
-[0.0.1]: https://github.com/your-username/curve/releases/tag/v0.0.1
+[Unreleased]: https://github.com/closeup1202/curve/compare/v0.0.1...HEAD
+[0.0.1]: https://github.com/closeup1202/curve/releases/tag/v0.0.1

@@ -212,7 +212,7 @@ public class JdbcOutboxEventRepository implements OutboxEventRepository {
     public int deleteByStatusAndOccurredAtBefore(OutboxStatus status, Instant before, int limit) {
         // Use query ID then delete approach (safest)
         String selectSql = buildLimitQuery("SELECT event_id FROM curve_outbox_events WHERE status = ? AND occurred_at < ?", limit);
-        
+
         List<String> ids = jdbcTemplate.query(
                 selectSql,
                 (rs, rowNum) -> rs.getString("event_id"),

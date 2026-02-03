@@ -8,8 +8,8 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.9-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Kafka](https://img.shields.io/badge/Apache%20Kafka-3.0+-red.svg)](https://kafka.apache.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![CI](https://github.com/YOUR_USERNAME/curve/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/curve/actions)
-[![codecov](https://codecov.io/gh/YOUR_USERNAME/curve/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/curve)
+[![CI](https://github.com/closeup1202/curve/actions/workflows/ci.yml/badge.svg)](https://github.com/closeup1202/curve/actions)
+[![codecov](https://codecov.io/gh/closeup1202/curve/branch/main/graph/badge.svg)](https://codecov.io/gh/closeup1202/curve)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=curve&metric=alert_status)](https://sonarcloud.io/dashboard?id=curve)
 
 [English](README.md) | [한국어](README.ko.md)
@@ -97,6 +97,7 @@ public class UserService {
 @Service
 public class UserService {
 
+    @PublishEvent(eventType = "USER_CREATED")
     public User createUser(UserRequest request) {
         return userRepository.save(
             new User(request)
@@ -162,14 +163,14 @@ Kafka가 24시간 장애여도 이벤트 손실 제로
 **Gradle (build.gradle)**
 ```gradle
 dependencies {
-    implementation 'com.project:curve-spring-boot-starter:0.0.1-SNAPSHOT'
+    implementation 'io.github.closeup1202:curve-spring-boot-starter:0.0.1-SNAPSHOT'
 }
 ```
 
 **Maven (pom.xml)**
 ```xml
 <dependency>
-    <groupId>com.project</groupId>
+    <groupId>io.github.closeup1202</groupId>
     <artifactId>curve-spring-boot-starter</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 </dependency>
@@ -193,8 +194,8 @@ curve:
 ### 3. 사용
 
 ```java
-import com.project.curve.spring.audit.annotation.PublishEvent;
-import com.project.curve.core.type.EventSeverity;
+import io.github.closeup1202.curve.spring.audit.annotation.PublishEvent;
+import io.github.closeup1202.curve.core.type.EventSeverity;
 
 @Service
 public class OrderService {
@@ -596,9 +597,16 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 ## 📚 문서
 
-- [설정 가이드](docs/CONFIGURATION.md) - 상세 설정 옵션
-- [예시 설정](application.example.yml) - 설정 예시
-- [샘플 애플리케이션](sample/) - 완전한 작동 예시
+| 문서 | 설명 |
+|------|------|
+| [설정 가이드](docs/CONFIGURATION.ko.md) | 상세 설정 옵션 |
+| [운영 가이드](docs/OPERATIONS.ko.md) | 프로덕션 운영 및 모범 사례 |
+| [문제 해결](docs/TROUBLESHOOTING.md) | 일반적인 문제 및 해결 방법 |
+| [모니터링 가이드](docs/MONITORING.md) | 메트릭, 대시보드, 알림 설정 |
+| [마이그레이션 가이드](docs/MIGRATION.md) | 버전 업그레이드 지침 |
+| [변경 이력](CHANGELOG.md) | 버전 히스토리 및 변경 사항 |
+| [예시 설정](application.example.yml) | 설정 예시 |
+| [샘플 애플리케이션](sample/) | 완전한 작동 예시
 
 ---
 
@@ -626,7 +634,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 ## 📬 연락처
 
-- **이슈**: [GitHub Issues](https://github.com/your-username/curve/issues)
+- **이슈**: [GitHub Issues](https://github.com/closeup1202/curve/issues)
 - **이메일**: closeup1202@gmail.com
 
 ---

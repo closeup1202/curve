@@ -8,8 +8,8 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.9-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Kafka](https://img.shields.io/badge/Apache%20Kafka-3.0+-red.svg)](https://kafka.apache.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![CI](https://github.com/YOUR_USERNAME/curve/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/curve/actions)
-[![codecov](https://codecov.io/gh/YOUR_USERNAME/curve/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/curve)
+[![CI](https://github.com/closeup1202/curve/actions/workflows/ci.yml/badge.svg)](https://github.com/closeup1202/curve/actions)
+[![codecov](https://codecov.io/gh/closeup1202/curve/branch/main/graph/badge.svg)](https://codecov.io/gh/closeup1202/curve)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=curve&metric=alert_status)](https://sonarcloud.io/dashboard?id=curve)
 
 [English](README.md) | [한국어](README.ko.md)
@@ -97,6 +97,7 @@ public class UserService {
 @Service
 public class UserService {
 
+    @PublishEvent(eventType = "USER_CREATED")
     public User createUser(UserRequest request) {
         return userRepository.save(
             new User(request)
@@ -162,14 +163,14 @@ Framework-independent core for maximum flexibility.
 **Gradle (build.gradle)**
 ```gradle
 dependencies {
-    implementation 'com.project:curve-spring-boot-starter:0.0.1-SNAPSHOT'
+    implementation 'io.github.closeup1202:curve-spring-boot-starter:0.0.1-SNAPSHOT'
 }
 ```
 
 **Maven (pom.xml)**
 ```xml
 <dependency>
-    <groupId>com.project</groupId>
+    <groupId>io.github.closeup1202</groupId>
     <artifactId>curve-spring-boot-starter</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 </dependency>
@@ -193,8 +194,8 @@ curve:
 ### 3. Use
 
 ```java
-import com.project.curve.spring.audit.annotation.PublishEvent;
-import com.project.curve.core.type.EventSeverity;
+import io.github.closeup1202.curve.spring.audit.annotation.PublishEvent;
+import io.github.closeup1202.curve.core.type.EventSeverity;
 
 @Service
 public class OrderService {
@@ -596,9 +597,16 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 ## 📚 Documentation
 
-- [Configuration Guide](docs/CONFIGURATION.md) - Detailed configuration options
-- [Example Configuration](application.example.yml) - Configuration examples
-- [Sample Application](sample/) - Full working example
+| Document | Description |
+|----------|-------------|
+| [Configuration Guide](docs/CONFIGURATION.en.md) | Detailed configuration options |
+| [Operations Guide](docs/OPERATIONS.en.md) | Production operations and best practices |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues and solutions |
+| [Monitoring Guide](docs/MONITORING.md) | Metrics, dashboards, and alerting |
+| [Migration Guide](docs/MIGRATION.md) | Version upgrade instructions |
+| [Changelog](CHANGELOG.md) | Version history and changes |
+| [Example Configuration](application.example.yml) | Configuration examples |
+| [Sample Application](sample/) | Full working example
 
 ---
 
@@ -626,7 +634,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📬 Contact
 
-- **Issues**: [GitHub Issues](https://github.com/your-username/curve/issues)
+- **Issues**: [GitHub Issues](https://github.com/closeup1202/curve/issues)
 - **Email**: closeup1202@gmail.com
 
 ---

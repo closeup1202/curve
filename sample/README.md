@@ -1,35 +1,35 @@
 # Curve Sample Application - Order Service
 
-Curve 이벤트 발행 라이브러리를 실제로 활용하는 주문 서비스 예제입니다.
+A sample order service demonstrating the Curve event publishing library in action.
 
-## 주요 기능
+## Key Features
 
-### 1. **자동 이벤트 발행**
-- `@PublishEvent` 어노테이션만 추가하면 메서드 실행 시 자동으로 Kafka에 이벤트 발행
-- 별도의 이벤트 발행 코드 작성 불필요
+### 1. **Automatic Event Publishing**
+- Just add `@PublishEvent` annotation to automatically publish events to Kafka on method execution
+- No need to write separate event publishing code
 
-### 2. **PII 데이터 자동 보호**
-- 고객 정보(이름, 이메일, 전화번호, 주소)가 자동으로 마스킹/암호화
-- Kafka에 전송되는 이벤트에는 보호된 데이터만 포함
+### 2. **Automatic PII Data Protection**
+- Customer information (name, email, phone, address) is automatically masked/encrypted
+- Only protected data is included in events sent to Kafka
 
-### 3. **이벤트 타입**
-- **ORDER_CREATED**: 주문 생성 이벤트
-- **ORDER_CANCELLED**: 주문 취소 이벤트
-- **ORDER_STATUS_CHANGED**: 주문 상태 변경 이벤트
+### 3. **Event Types**
+- **ORDER_CREATED**: Order creation event
+- **ORDER_CANCELLED**: Order cancellation event
+- **ORDER_STATUS_CHANGED**: Order status change event
 
-## 프로젝트 구조
+## Project Structure
 
 ```
 sample/
 ├── domain/
-│   ├── Order.java              # 주문 도메인 모델
-│   ├── Customer.java           # 고객 정보 (PII 포함)
-│   └── OrderStatus.java        # 주문 상태 Enum
+│   ├── Order.java              # Order domain model
+│   ├── Customer.java           # Customer information (includes PII)
+│   └── OrderStatus.java        # Order status Enum
 ├── event/
-│   ├── OrderCreatedPayload.java    # 주문 생성 이벤트
-│   └── OrderCancelledPayload.java  # 주문 취소 이벤트
+│   ├── OrderCreatedPayload.java    # Order created event
+│   └── OrderCancelledPayload.java  # Order cancelled event
 ├── service/
-│   └── OrderService.java       # 비즈니스 로직 (@PublishEvent 적용)
+│   └── OrderService.java       # Business logic (@PublishEvent applied)
 ├── controller/
 │   └── OrderController.java    # REST API
 └── dto/
@@ -38,58 +38,58 @@ sample/
     └── OrderResponse.java
 ```
 
-## 실행 방법
+## How to Run
 
-### 1. Kafka 시작
+### 1. Start Kafka
 
-루트 디렉토리에서:
+From the root directory:
 ```bash
 docker-compose up -d
 ```
 
-### 2. 애플리케이션 실행
+### 2. Run the Application
 
 ```bash
 cd sample
 ../gradlew bootRun
 ```
 
-또는
+Or:
 
 ```bash
 ./gradlew :sample:bootRun
 ```
 
-### 3. Kafka UI 접속
+### 3. Access Kafka UI
 
-http://localhost:8080 접속하여 이벤트 확인
+Go to http://localhost:8080 to view events
 
-## API 사용 예제
+## API Usage Examples
 
-### 1. 주문 생성
+### 1. Create Order
 
-**요청**:
+**Request**:
 ```bash
 curl -X POST http://localhost:8081/api/orders \
   -H "Content-Type: application/json" \
   -d '{
     "customerId": "customer-001",
-    "customerName": "홍길동",
-    "email": "hong@example.com",
+    "customerName": "John Doe",
+    "email": "john@example.com",
     "phone": "010-1234-5678",
-    "address": "서울시 강남구 테헤란로 123",
+    "address": "123 Main St, Seoul",
     "productName": "MacBook Pro 16",
     "quantity": 1,
     "totalAmount": 3500000
   }'
 ```
 
-**응답**:
+**Response**:
 ```json
 {
   "orderId": "550e8400-e29b-41d4-a716-446655440000",
   "customerId": "customer-001",
-  "customerName": "홍길동",
+  "customerName": "John Doe",
   "productName": "MacBook Pro 16",
   "quantity": 1,
   "totalAmount": 3500000,
@@ -99,7 +99,7 @@ curl -X POST http://localhost:8081/api/orders \
 }
 ```
 
-**Kafka에 발행되는 이벤트**:
+**Event Published to Kafka**:
 ```json
 {
   "eventId": {
@@ -136,10 +136,10 @@ curl -X POST http://localhost:8081/api/orders \
     "orderId": "550e8400-e29b-41d4-a716-446655440000",
     "customer": {
       "customerId": "customer-001",
-      "name": "홍**",
-      "email": "hong@***.com",
+      "name": "Joh**",
+      "email": "john@***.com",
       "phone": "010****5678",
-      "address": "서울시 강남구 테***"
+      "address": "123 Main St, S***"
     },
     "productName": "MacBook Pro 16",
     "quantity": 1,
@@ -151,56 +151,56 @@ curl -X POST http://localhost:8081/api/orders \
 }
 ```
 
-### 2. 주문 조회
+### 2. Get Order
 
 ```bash
 curl http://localhost:8081/api/orders/{orderId}
 ```
 
-### 3. 주문 취소
+### 3. Cancel Order
 
 ```bash
 curl -X POST http://localhost:8081/api/orders/{orderId}/cancel \
   -H "Content-Type: application/json" \
   -d '{
-    "reason": "고객 변심"
+    "reason": "Customer request"
   }'
 ```
 
-### 4. 주문 상태 업데이트
+### 4. Update Order Status
 
 ```bash
 curl -X PATCH "http://localhost:8081/api/orders/{orderId}/status?newStatus=SHIPPED"
 ```
 
-## PII 데이터 보호 확인
+## PII Data Protection Verification
 
-### Customer 객체의 PII 필드
+### PII Fields in Customer Object
 
 ```java
 @PiiField(type = PiiType.NAME, strategy = PiiStrategy.MASK)
-private String name;              // "홍길동" → "홍**"
+private String name;              // "John Doe" → "Joh**"
 
 @PiiField(type = PiiType.EMAIL, strategy = PiiStrategy.MASK)
-private String email;             // "hong@example.com" → "hong@***.com"
+private String email;             // "john@example.com" → "john@***.com"
 
 @PiiField(type = PiiType.PHONE, strategy = PiiStrategy.ENCRYPT)
 private String phone;             // "010-1234-5678" → "encrypted_value"
 
 @PiiField(strategy = PiiStrategy.MASK)
-private String address;           // "서울시 강남구 테헤란로 123" → "서울시 강남구 테***"
+private String address;           // "123 Main St, Seoul" → "123 Main St, S***"
 ```
 
-### Kafka 이벤트에서 확인
+### Verify in Kafka
 
-1. Kafka UI (http://localhost:8080) 접속
-2. Topics → `event.audit.v1` 선택
-3. Messages 탭에서 이벤트 확인
-4. `payload.customer` 필드에서 PII 데이터가 마스킹/암호화된 것을 확인
+1. Go to Kafka UI (http://localhost:8080)
+2. Select Topics → `event.audit.v1`
+3. Click Messages tab to view events
+4. Verify PII data is masked/encrypted in `payload.customer` field
 
-## 로그에서 이벤트 발행 확인
+## Verify Event Publishing in Logs
 
-애플리케이션 로그:
+Application logs:
 ```
 INFO : Creating order: customer=customer-001, product=MacBook Pro 16, quantity=1, amount=3500000
 DEBUG: Event published: eventType=ORDER_CREATED, severity=INFO
@@ -209,46 +209,46 @@ DEBUG: Sending event to Kafka: eventId=123456789012345678, topic=event.audit.v1,
 DEBUG: Event sent successfully: eventId=123456789012345678, topic=event.audit.v1, partition=0, offset=123
 ```
 
-## @PublishEvent 어노테이션 옵션
+## @PublishEvent Annotation Options
 
-### OrderService.java 예제
+### OrderService.java Example
 
 ```java
 @PublishEvent(
-    eventType = "ORDER_CREATED",           // 이벤트 타입 (필수)
-    severity = EventSeverity.INFO,         // 이벤트 심각도 (INFO, WARNING, ERROR, CRITICAL)
-    phase = PublishEvent.Phase.AFTER_RETURNING,  // 실행 시점
-    payloadIndex = -1,                     // -1: 반환값, 0~N: 파라미터 인덱스
-    failOnError = false                    // 이벤트 발행 실패 시 예외 발생 여부
+    eventType = "ORDER_CREATED",           // Event type (required)
+    severity = EventSeverity.INFO,         // Event severity (INFO, WARNING, ERROR, CRITICAL)
+    phase = PublishEvent.Phase.AFTER_RETURNING,  // Execution timing
+    payloadIndex = -1,                     // -1: return value, 0~N: parameter index
+    failOnError = false                    // Whether to throw exception on publish failure
 )
 public OrderCreatedPayload createOrder(...) {
-    // 비즈니스 로직
+    // Business logic
 }
 ```
 
-### Phase 옵션
+### Phase Options
 
-- **BEFORE**: 메서드 실행 전 이벤트 발행
-- **AFTER_RETURNING**: 메서드 정상 완료 후 이벤트 발행
-- **AFTER**: 메서드 완료 후 항상 이벤트 발행 (예외 발생해도)
+- **BEFORE**: Publish event before method execution
+- **AFTER_RETURNING**: Publish event after successful method completion
+- **AFTER**: Always publish event after method completion (even on exception)
 
-## DLQ (Dead Letter Queue) 테스트
+## DLQ (Dead Letter Queue) Testing
 
-### Kafka 중단 시나리오
+### Kafka Down Scenario
 
-1. Kafka 중단:
+1. Stop Kafka:
 ```bash
 docker-compose stop kafka
 ```
 
-2. API 호출:
+2. Call API:
 ```bash
 curl -X POST http://localhost:8080/api/orders \
   -H "Content-Type: application/json" \
   -d '{...}'
 ```
 
-3. 로그 확인:
+3. Check logs:
 ```
 ERROR: All retry attempts exhausted for event: eventId=123456789012345678
 WARN : Sending failed event to DLQ (async): eventId=123456789012345678, dlqTopic=event.audit.dlq.v1
@@ -256,51 +256,51 @@ ERROR: Failed to send event to DLQ (async): eventId=123456789012345678, dlqTopic
 ERROR: Event backed up to file with restricted permissions: eventId=123456789012345678, file=./dlq-backup/123456789012345678.json
 ```
 
-4. 백업 파일 확인:
+4. Check backup files:
 ```bash
 ls -la dlq-backup/
 # -rw------- 1 user group 2048 Jan 17 10:30 123456789012345678.json
 ```
 
-## 성능 모니터링
+## Performance Monitoring
 
-### Curve 메트릭 확인
+### Check Curve Metrics
 
 ```bash
-# 이벤트 발행 성공/실패 횟수
-# DLQ 전송 횟수
-# 평균 처리 시간
+# Event publish success/failure counts
+# DLQ send counts
+# Average processing time
 ```
 
-## 트러블슈팅
+## Troubleshooting
 
-### 1. Kafka 연결 실패
+### 1. Kafka Connection Failure
 
 ```
 ERROR: Failed to send event to Kafka
 ```
 
-**해결**:
-- Kafka가 실행 중인지 확인: `docker-compose ps`
-- bootstrap-servers 설정 확인: `localhost:9094`
+**Solution**:
+- Verify Kafka is running: `docker-compose ps`
+- Check bootstrap-servers setting: `localhost:9094`
 
-### 2. PII 암호화 실패
+### 2. PII Encryption Failure
 
-**증상:**
+**Symptoms:**
 ```
-ERROR: PII 암호화 키가 설정되지 않았습니다!
-ERROR: @PiiField(strategy = PiiStrategy.ENCRYPT) 사용 시 예외가 발생합니다.
+ERROR: PII encryption key is not configured!
+ERROR: Exception occurs when using @PiiField(strategy = PiiStrategy.ENCRYPT)
 ```
 
-**해결**:
+**Solution**:
 
-1. **암호화 키 생성**:
+1. **Generate encryption key**:
 ```bash
 openssl rand -base64 32
-# 출력 예: K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=
+# Output example: K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=
 ```
 
-2. **환경변수 설정**:
+2. **Set environment variables**:
 ```bash
 # Linux/macOS
 export PII_ENCRYPTION_KEY=K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=
@@ -311,7 +311,7 @@ $env:PII_ENCRYPTION_KEY="K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols="
 $env:PII_HASH_SALT="your-random-salt-value"
 ```
 
-3. **application.yml 설정**:
+3. **application.yml configuration**:
 ```yaml
 curve:
   pii:
@@ -320,39 +320,39 @@ curve:
       salt: ${PII_HASH_SALT}
 ```
 
-**⚠️ 주의**: 암호화 키를 application.yml에 직접 하드코딩하지 마세요!
+**Warning**: Do not hardcode encryption keys directly in application.yml!
 
-### 3. 이벤트가 발행되지 않음
+### 3. Events Not Being Published
 
-**확인 사항**:
-- `@PublishEvent` 어노테이션이 올바르게 적용되었는지 확인
-- AOP가 활성화되어 있는지 확인: `curve.aop.enabled=true`
-- 메서드가 public인지 확인 (AOP는 public 메서드만 지원)
+**Checklist**:
+- Verify `@PublishEvent` annotation is correctly applied
+- Verify AOP is enabled: `curve.aop.enabled=true`
+- Verify method is public (AOP only supports public methods)
 
-### 4. 설정 검증 실패
+### 4. Configuration Validation Failure
 
-**증상:**
+**Symptoms:**
 ```
 APPLICATION FAILED TO START
-Reason: workerId는 1023 이하여야 합니다
+Reason: workerId must be 1023 or less
 ```
 
-**해결**:
-- 설정값이 검증 규칙에 맞는지 확인
-- `curve.id-generator.worker-id`: 0 ~ 1023 범위
-- `curve.kafka.topic`: 빈 문자열 불가
-- `curve.retry.max-attempts`: 1 이상
-- 상세 검증 규칙은 [CONFIGURATION.md](../docs/CONFIGURATION.md#설정-검증) 참고
+**Solution**:
+- Verify configuration values meet validation rules
+- `curve.id-generator.worker-id`: Range 0 ~ 1023
+- `curve.kafka.topic`: Cannot be empty string
+- `curve.retry.max-attempts`: Must be 1 or greater
+- See [CONFIGURATION.md](../docs/CONFIGURATION.en.md#configuration-validation) for detailed validation rules
 
-## 다음 단계
+## Next Steps
 
-1. **Spring Security 통합**: 실제 사용자 인증 정보를 EventActor에 포함
-2. **분산 추적**: Sleuth/Zipkin 통합하여 traceId 자동 추출
-3. **커스텀 이벤트 타입**: 도메인별 이벤트 페이로드 확장
-4. **이벤트 소비자**: Kafka Consumer를 만들어 이벤트 처리
+1. **Spring Security Integration**: Include actual user authentication info in EventActor
+2. **Distributed Tracing**: Integrate Sleuth/Zipkin for automatic traceId extraction
+3. **Custom Event Types**: Extend domain-specific event payloads
+4. **Event Consumer**: Create Kafka Consumer to process events
 
-## 참고
+## References
 
-- [Curve 메인 README](../README.md)
-- [Curve 설정 가이드](../CONFIGURATION.md)
+- [Curve Main README](../README.md)
+- [Curve Configuration Guide](../docs/CONFIGURATION.en.md)
 - [Kafka UI](http://localhost:8080)

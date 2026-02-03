@@ -1,77 +1,77 @@
 # Curve Sample - Quick Start Guide
 
-## 1. Kafka 시작
+## 1. Start Kafka
 
-루트 디렉토리에서:
+From the root directory:
 ```bash
 docker-compose up -d
 ```
 
-**확인**:
+**Verify**:
 - Kafka UI: http://localhost:8080
 - Kafka broker: localhost:9094
 
-## 2. 환경변수 설정 (PII 암호화용)
+## 2. Set Environment Variables (for PII Encryption)
 
-PII 암호화 기능을 사용하려면 암호화 키를 설정해야 합니다.
+To use PII encryption features, you need to set the encryption key.
 
 ```bash
-# 키 생성
+# Generate key
 openssl rand -base64 32
 
-# 환경변수 설정 (Linux/macOS)
-export PII_ENCRYPTION_KEY=생성된키값
+# Set environment variables (Linux/macOS)
+export PII_ENCRYPTION_KEY=generated_key_value
 export PII_HASH_SALT=your-random-salt
 
 # Windows PowerShell
-$env:PII_ENCRYPTION_KEY="생성된키값"
+$env:PII_ENCRYPTION_KEY="generated_key_value"
 $env:PII_HASH_SALT="your-random-salt"
 ```
 
-## 3. 애플리케이션 실행
+## 3. Run the Application
 
 ```bash
 cd sample
 ../gradlew bootRun
 ```
 
-또는 루트에서:
+Or from root:
 ```bash
 ./gradlew :sample:bootRun
 ```
 
-**실행 확인**:
+**Verify startup**:
 ```
-2024-01-17 10:30:00 - Curve가 자동으로 활성화되었습니다!
+2024-01-17 10:30:00 - Curve has been automatically activated!
 2024-01-17 10:30:00 - DLQ ExecutorService created with 2 threads
 2024-01-17 10:30:00 - KafkaEventProducer initialized: topic=event.audit.v1, asyncMode=true, ...
 2024-01-17 10:30:00 - Tomcat started on port 8081
 ```
 
-## 4. API 테스트
+## 4. Test APIs
 
-### 주문 생성
+### Create Order
 ```bash
 curl -X POST http://localhost:8081/api/orders \
   -H "Content-Type: application/json" \
   -d '{
     "customerId": "cust-001",
-    "customerName": "홍길동",
-    "email": "hong@example.com",
+    "customerName": "John Doe",
+    "email": "john@example.com",
     "phone": "010-1234-5678",
-    "address": "서울시 강남구 테헤란로 123",
+    "address": "123 Main St, Seoul",
     "productName": "MacBook Pro",
     "quantity": 1,
     "totalAmount": 3500000
   }'
 ```
 
-**응답 예시**:
+**Response example**:
 ```json
 {
   "orderId": "a1b2c3d4-...",
   "customerId": "cust-001",
-  "customerName": "홍길동",
+  "customerName": "John Doe",
   "productName": "MacBook Pro",
   "quantity": 1,
   "totalAmount": 3500000,
@@ -81,28 +81,28 @@ curl -X POST http://localhost:8081/api/orders \
 }
 ```
 
-### 주문 조회
+### Get Order
 ```bash
-# 위 응답에서 받은 orderId 사용
+# Use the orderId from the response above
 curl http://localhost:8081/api/orders/a1b2c3d4-...
 ```
 
-### 주문 취소
+### Cancel Order
 ```bash
 curl -X POST http://localhost:8081/api/orders/a1b2c3d4-.../cancel \
   -H "Content-Type: application/json" \
-  -d '{"reason": "고객 변심"}'
+  -d '{"reason": "Customer request"}'
 ```
 
-## 5. Kafka 이벤트 확인
+## 5. Verify Kafka Events
 
-### Kafka UI에서 확인
-1. http://localhost:8080 접속
-2. `event.audit.v1` 토픽 선택
-3. **Messages** 탭 클릭
-4. 최신 메시지 확인
+### Check in Kafka UI
+1. Go to http://localhost:8080
+2. Select `event.audit.v1` topic
+3. Click **Messages** tab
+4. View the latest messages
 
-### 이벤트 구조
+### Event Structure
 ```json
 {
   "eventId": {"value": "123456789012345678"},
@@ -126,10 +126,10 @@ curl -X POST http://localhost:8081/api/orders/a1b2c3d4-.../cancel \
     "orderId": "a1b2c3d4-...",
     "customer": {
       "customerId": "cust-001",
-      "name": "홍**",                    ← 마스킹됨
-      "email": "hong@***.com",           ← 마스킹됨
-      "phone": "010****5678",            ← 암호화됨
-      "address": "서울시 강남구 테***"    ← 마스킹됨
+      "name": "Joh**",                    ← Masked
+      "email": "john@***.com",            ← Masked
+      "phone": "010****5678",             ← Encrypted
+      "address": "123 Main St, S***"      ← Masked
     },
     "productName": "MacBook Pro",
     "quantity": 1,
@@ -141,31 +141,31 @@ curl -X POST http://localhost:8081/api/orders/a1b2c3d4-.../cancel \
 }
 ```
 
-## 6. PII 보호 확인
+## 6. Verify PII Protection
 
-### 원본 데이터
+### Original Data
 ```json
 {
-  "name": "홍길동",
-  "email": "hong@example.com",
+  "name": "John Doe",
+  "email": "john@example.com",
   "phone": "010-1234-5678",
-  "address": "서울시 강남구 테헤란로 123"
+  "address": "123 Main St, Seoul"
 }
 ```
 
-### Kafka에 저장된 데이터
+### Data Stored in Kafka
 ```json
 {
-  "name": "홍**",                    ← PiiType.NAME, PiiStrategy.MASK
-  "email": "hong@***.com",           ← PiiType.EMAIL, PiiStrategy.MASK
-  "phone": "010****5678",            ← PiiType.PHONE, PiiStrategy.ENCRYPT
-  "address": "서울시 강남구 테***"    ← PiiStrategy.MASK
+  "name": "Joh**",                    ← PiiType.NAME, PiiStrategy.MASK
+  "email": "john@***.com",            ← PiiType.EMAIL, PiiStrategy.MASK
+  "phone": "010****5678",             ← PiiType.PHONE, PiiStrategy.ENCRYPT
+  "address": "123 Main St, S***"      ← PiiStrategy.MASK
 }
 ```
 
-## 7. 로그 확인
+## 7. Check Logs
 
-### 이벤트 발행 성공
+### Event Publishing Success
 ```
 INFO  : Creating order: customer=cust-001, product=MacBook Pro, quantity=1, amount=3500000
 DEBUG : Event published: eventType=ORDER_CREATED, severity=INFO
@@ -174,59 +174,59 @@ DEBUG : Sending event to Kafka: eventId=123456789012345678, topic=event.audit.v1
 DEBUG : Event sent successfully: eventId=123456789012345678, topic=event.audit.v1, partition=0, offset=123
 ```
 
-### 이벤트 발행 실패 (Kafka 중단 시)
+### Event Publishing Failure (when Kafka is down)
 ```
 ERROR : All retry attempts exhausted for event: eventId=123456789012345678
 WARN  : Sending failed event to DLQ (async): eventId=123456789012345678, dlqTopic=event.audit.dlq.v1
 INFO  : Event sent to DLQ successfully (async): eventId=123456789012345678, dlqTopic=event.audit.dlq.v1, partition=0, offset=5
 ```
 
-## 8. 코드 설명
+## 8. Code Explanation
 
-### @PublishEvent 어노테이션
+### @PublishEvent Annotation
 ```java
 @PublishEvent(
-    eventType = "ORDER_CREATED",           // Kafka 이벤트 타입
-    severity = EventSeverity.INFO,         // 이벤트 심각도
-    phase = PublishEvent.Phase.AFTER_RETURNING,  // 메서드 실행 시점
-    payloadIndex = -1,                     // -1: 반환값 사용
-    failOnError = false,                   // 이벤트 발행 실패해도 비즈니스 로직 계속
-    outbox = true,                         // Transactional Outbox 사용
-    aggregateType = "Order",               // Aggregate 타입
+    eventType = "ORDER_CREATED",           // Kafka event type
+    severity = EventSeverity.INFO,         // Event severity
+    phase = PublishEvent.Phase.AFTER_RETURNING,  // Method execution timing
+    payloadIndex = -1,                     // -1: use return value
+    failOnError = false,                   // Continue business logic even if event publish fails
+    outbox = true,                         // Use Transactional Outbox
+    aggregateType = "Order",               // Aggregate type
     aggregateId = "#result.orderId"        // Aggregate ID (SpEL)
 )
 public OrderCreatedPayload createOrder(...) {
-    // 비즈니스 로직만 작성
-    // 이벤트는 자동으로 Kafka에 발행됨
+    // Just write business logic
+    // Events are automatically published to Kafka
 }
 ```
 
-### PII 필드 보호
+### PII Field Protection
 ```java
 public class Customer {
     @PiiField(type = PiiType.NAME, strategy = PiiStrategy.MASK)
-    private String name;  // "홍길동" → "홍**"
+    private String name;  // "John Doe" → "Joh**"
 
     @PiiField(type = PiiType.EMAIL, strategy = PiiStrategy.MASK)
-    private String email;  // "hong@example.com" → "hong@***.com"
+    private String email;  // "john@example.com" → "john@***.com"
 
     @PiiField(type = PiiType.PHONE, strategy = PiiStrategy.ENCRYPT)
     private String phone;  // "010-1234-5678" → "encrypted_value"
 
     @PiiField(strategy = PiiStrategy.MASK)
-    private String address;  // "서울시 강남구 테헤란로 123" → "서울시 강남구 테***"
+    private String address;  // "123 Main St, Seoul" → "123 Main St, S***"
 }
 ```
 
-## 9. 다음 단계
+## 9. Next Steps
 
-### 커스터마이징
-- **비동기/동기 모드 변경**: `application.yml`에서 `curve.kafka.async-mode` 설정
-- **재시도 횟수 조정**: `curve.retry.max-attempts` 설정
-- **DLQ 스레드 수 조정**: `curve.kafka.dlq-executor-threads` 설정
-- **Outbox 설정**: `curve.outbox.enabled=true` 설정
+### Customization
+- **Change async/sync mode**: Set `curve.kafka.async-mode` in `application.yml`
+- **Adjust retry count**: Set `curve.retry.max-attempts`
+- **Adjust DLQ thread count**: Set `curve.kafka.dlq-executor-threads`
+- **Outbox settings**: Set `curve.outbox.enabled=true`
 
-### Spring Security 통합
+### Spring Security Integration
 ```yaml
 spring:
   security:
@@ -235,56 +235,56 @@ spring:
       password: admin
 ```
 
-이후 EventActor에 자동으로 `userId`, `role` 정보가 포함됩니다.
+After this, `userId` and `role` information will be automatically included in EventActor.
 
-### 분산 추적 (Sleuth)
+### Distributed Tracing (Sleuth)
 ```yaml
 spring:
   sleuth:
     enabled: true
 ```
 
-이후 EventTrace에 자동으로 `traceId`, `spanId` 정보가 포함됩니다.
+After this, `traceId` and `spanId` information will be automatically included in EventTrace.
 
-## 10. 문제 해결
+## 10. Troubleshooting
 
-### Kafka 연결 실패
+### Kafka Connection Failure
 ```
 ERROR: Failed to send event to Kafka
 ```
-**해결**: `docker-compose ps`로 Kafka 실행 확인
+**Solution**: Verify Kafka is running with `docker-compose ps`
 
-### 포트 충돌
+### Port Conflict
 ```
 ERROR: Port 8081 is already in use
 ```
-**해결**: `application.yml`에서 `server.port` 변경
+**Solution**: Change `server.port` in `application.yml`
 
-### 이벤트가 발행되지 않음
-**확인 사항**:
-- `curve.aop.enabled=true`인지 확인
-- 메서드가 `public`인지 확인
-- `@PublishEvent` 어노테이션이 올바르게 적용되었는지 확인
+### Events Not Being Published
+**Checklist**:
+- Verify `curve.aop.enabled=true`
+- Verify method is `public`
+- Verify `@PublishEvent` annotation is correctly applied
 
-### PII 암호화 키 미설정
+### PII Encryption Key Not Set
 ```
-ERROR: PII 암호화 키가 설정되지 않았습니다!
+ERROR: PII encryption key is not configured!
 ```
-**해결**: [2. 환경변수 설정](#2-환경변수-설정-pii-암호화용) 참고
+**Solution**: See [2. Set Environment Variables](#2-set-environment-variables-for-pii-encryption)
 
-### 설정 검증 실패
+### Configuration Validation Failure
 ```
 APPLICATION FAILED TO START
-Reason: workerId는 1023 이하여야 합니다
+Reason: workerId must be 1023 or less
 ```
-**해결**: 설정값이 검증 규칙에 맞는지 확인
+**Solution**: Verify configuration values meet validation rules
 - `curve.id-generator.worker-id`: 0 ~ 1023
-- `curve.kafka.topic`: 빈 문자열 불가
-- 상세 내용: [CONFIGURATION.md](../docs/CONFIGURATION.md#설정-검증)
+- `curve.kafka.topic`: Cannot be empty
+- Details: [CONFIGURATION.md](../docs/CONFIGURATION.en.md#configuration-validation)
 
-## 11. 더 알아보기
+## 11. Learn More
 
-- [전체 README](README.md)
-- [Curve 메인 문서](../README.md)
-- [Curve 설정 가이드](../docs/CONFIGURATION.md)
+- [Full README](README.md)
+- [Curve Main Documentation](../README.md)
+- [Curve Configuration Guide](../docs/CONFIGURATION.en.md)
 - [Kafka UI](http://localhost:8080)

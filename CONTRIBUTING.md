@@ -65,7 +65,7 @@ Please follow these steps to have your contribution considered by the maintainer
 
 1. Clone the repository
    ```bash
-   git clone https://github.com/your-username/curve.git
+   git clone https://github.com/closeup1202/curve.git
    ```
 
 2. Build the project
@@ -88,6 +88,6 @@ Please follow these steps to have your contribution considered by the maintainer
 
 ## Need Help?
 
-If you have any questions, please feel free to reach out to us via [GitHub Issues](https://github.com/your-username/curve/issues).
+If you have any questions, please feel free to reach out to us via [GitHub Issues](https://github.com/closeup1202/curve/issues).
 
 Thank you for contributing! 🚀

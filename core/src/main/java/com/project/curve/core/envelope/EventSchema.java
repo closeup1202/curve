@@ -1,9 +1,9 @@
 package com.project.curve.core.envelope;
 
 public record EventSchema(
-        String name,    // 예: "OrderCreatedEvent"
-        int version,    // 예: 1, 2, 3 (순차적 증가)
-        String schemaId // 선택사항: 외부 스키마 레지스트리 연동 시 ID
+        String name,
+        int version,
+        String schemaId
 ) {
     public EventSchema {
         if (name == null || name.isBlank()) {

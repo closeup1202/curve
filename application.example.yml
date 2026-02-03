@@ -1,103 +1,103 @@
-# Curve 이벤트 발행 라이브러리 설정 예시
+# Curve Event Publishing Library Configuration Example
 
 # =====================================
-# 기본 설정 (프로덕션 환경)
+# Default Configuration (Production)
 # =====================================
 curve:
-  # Curve 활성화 여부 (기본값: true)
+  # Enable/disable Curve (default: true)
   enabled: true
 
-  # ===== ID Generator 설정 =====
+  # ===== ID Generator Settings =====
   id-generator:
     # Snowflake Worker ID (0 ~ 1023)
-    # 분산 환경에서 각 인스턴스마다 고유한 값을 설정해야 함
+    # Must be unique per instance in distributed environments
     worker-id: 1
 
-    # Worker ID 자동 생성 (MAC 주소 기반)
-    # 주의: 가상 환경에서는 충돌 가능성이 있으므로 프로덕션에서는 권장하지 않음
+    # Auto-generate Worker ID (MAC address based)
+    # Warning: May cause collisions in virtual environments, not recommended for production
     auto-generate: false
 
-  # ===== Kafka 설정 =====
+  # ===== Kafka Settings =====
   kafka:
-    # 메인 이벤트 토픽
+    # Main event topic
     topic: event.audit.v1
 
-    # Dead Letter Queue 토픽 (선택사항)
-    # 설정하지 않으면 DLQ 기능이 비활성화됨
+    # Dead Letter Queue topic (optional)
+    # DLQ is disabled if not configured
     dlq-topic: event.audit.dlq.v1
 
-    # Kafka Producer 재시도 횟수
+    # Kafka Producer retry count
     retries: 3
 
-    # 재시도 백오프 시간 (ms)
+    # Retry backoff time (ms)
     retry-backoff-ms: 1000
 
-    # 요청 타임아웃 (ms)
+    # Request timeout (ms)
     request-timeout-ms: 30000
 
-    # ===== 비동기 전송 설정 =====
-    # 비동기 모드 활성화 여부
-    # true: 비동기 전송 (높은 성능, non-blocking)
-    # false: 동기 전송 (낮은 성능, 전송 보장)
+    # ===== Async Send Settings =====
+    # Enable async mode
+    # true: Asynchronous sending (high performance, non-blocking)
+    # false: Synchronous sending (lower performance, delivery guarantee)
     async-mode: false
 
-    # 비동기 전송 타임아웃 (ms)
-    # async-mode가 true일 때만 사용
+    # Async send timeout (ms)
+    # Only used when async-mode is true
     async-timeout-ms: 5000
 
-    # DLQ 전송 전용 스레드 풀 크기 (기본값: 2)
-    # 비동기 모드에서 DLQ 전송 시 콜백 스레드 블로킹 방지
+    # DLQ executor thread pool size (default: 2)
+    # Prevents callback thread blocking during async DLQ sends
     dlq-executor-threads: 2
 
-    # ===== 보안 설정 =====
-    # 프로덕션 환경 여부 (기본값: false)
-    # true: DLQ 백업 파일 보안 실패 시 예외 발생 (권장)
-    # false: 개발 모드 - 보안 실패 시 경고만 출력
-    # 주의: 프로덕션 환경에서는 반드시 true로 설정
-    #       Windows 환경에서는 ACL 지원 필수, POSIX 시스템 권장
+    # ===== Security Settings =====
+    # Production environment flag (default: false)
+    # true: Throws exception on DLQ backup file security failure (recommended)
+    # false: Development mode - only logs warnings on security failure
+    # Warning: Must be true in production environments
+    #          Windows requires ACL support, POSIX systems recommended
     is-production: false
 
-  # ===== Retry 설정 =====
+  # ===== Retry Settings =====
   retry:
-    # 재시도 활성화 여부
+    # Enable retry
     enabled: true
 
-    # 최대 재시도 횟수
+    # Maximum retry attempts
     max-attempts: 3
 
-    # 초기 재시도 지연 시간 (ms)
+    # Initial retry delay (ms)
     initial-interval: 1000
 
-    # 재시도 지연 시간 배수 (Exponential Backoff)
-    # 예: 1초 -> 2초 -> 4초
+    # Retry delay multiplier (Exponential Backoff)
+    # Example: 1s -> 2s -> 4s
     multiplier: 2.0
 
-    # 최대 재시도 지연 시간 (ms)
+    # Maximum retry delay (ms)
     max-interval: 10000
 
-  # ===== AOP 설정 =====
+  # ===== AOP Settings =====
   aop:
-    # @PublishEvent 어노테이션 AOP 활성화 여부
+    # Enable @PublishEvent annotation AOP
     enabled: true
 
-  # ===== 보안 설정 =====
+  # ===== Security Settings =====
   security:
-    # X-Forwarded-For 헤더 사용 여부 (기본값: false)
-    # 프록시/로드밸런서 뒤에서 실행되는 경우에만 true로 설정
-    # 주의: 신뢰할 수 없는 환경에서는 false로 유지 (보안 취약점)
+    # Use X-Forwarded-For header (default: false)
+    # Only set to true when running behind proxy/load balancer
+    # Warning: Keep false in untrusted environments (security vulnerability)
     use-forwarded-headers: false
 
 # =====================================
-# Spring Boot 기본 설정
+# Spring Boot Default Settings
 # =====================================
 server:
-  # 프록시 헤더 처리 전략
-  # - none: 프록시 헤더 무시 (기본값, 가장 안전)
-  # - native: 서버의 네이티브 프록시 헤더 처리 사용
-  # - framework: Spring의 ForwardedHeaderFilter 사용 (권장)
+  # Proxy header handling strategy
+  # - none: Ignore proxy headers (default, most secure)
+  # - native: Use server's native proxy header handling
+  # - framework: Use Spring's ForwardedHeaderFilter (recommended)
   forward-headers-strategy: none
 
-# Kafka 설정
+# Kafka Configuration
 spring:
   kafka:
     bootstrap-servers: localhost:9094
@@ -108,7 +108,7 @@ spring:
 
 ---
 # =====================================
-# 개발 환경 설정
+# Development Environment Configuration
 # =====================================
 spring:
   config:
@@ -123,7 +123,7 @@ curve:
   kafka:
     topic: event.audit.dev.v1
     dlq-topic: event.audit.dlq.dev.v1
-    async-mode: true  # 개발 환경에서는 빠른 테스트를 위해 비동기
+    async-mode: true  # Async for faster testing in dev
     async-timeout-ms: 3000
     retries: 3
 
@@ -136,7 +136,7 @@ curve:
 
 ---
 # =====================================
-# 고성능 환경 설정
+# High Performance Configuration
 # =====================================
 spring:
   config:
@@ -145,22 +145,22 @@ spring:
 
 curve:
   id-generator:
-    worker-id: ${WORKER_ID:1}  # 환경변수에서 주입
+    worker-id: ${WORKER_ID:1}  # Inject from environment variable
     auto-generate: false
 
   kafka:
     topic: event.audit.v1
     dlq-topic: event.audit.dlq.v1
-    async-mode: true  # 비동기 전송으로 높은 처리량 확보
+    async-mode: true  # Async for high throughput
     async-timeout-ms: 5000
-    retries: 1  # 최소 재시도로 레이턴시 감소
+    retries: 1  # Minimal retries for low latency
 
   retry:
-    enabled: false  # 재시도 비활성화 (성능 우선)
+    enabled: false  # Disabled for performance priority
 
 ---
 # =====================================
-# 안정성 우선 환경 설정
+# High Reliability Configuration
 # =====================================
 spring:
   config:
@@ -175,7 +175,7 @@ curve:
   kafka:
     topic: event.audit.v1
     dlq-topic: event.audit.dlq.v1
-    async-mode: false  # 동기 전송으로 전송 보장
+    async-mode: false  # Sync for delivery guarantee
     retries: 5
     retry-backoff-ms: 2000
     request-timeout-ms: 60000
@@ -189,7 +189,7 @@ curve:
 
 ---
 # =====================================
-# Kubernetes 환경 설정 예시
+# Kubernetes Environment Configuration
 # =====================================
 spring:
   config:
@@ -198,8 +198,8 @@ spring:
 
 curve:
   id-generator:
-    # Pod Ordinal을 Worker ID로 사용 (StatefulSet)
-    # 예: my-app-0 -> 0, my-app-1 -> 1
+    # Use Pod Ordinal as Worker ID (StatefulSet)
+    # Example: my-app-0 -> 0, my-app-1 -> 1
     worker-id: ${POD_ORDINAL:1}
     auto-generate: false
 
@@ -211,7 +211,7 @@ curve:
 
 ---
 # =====================================
-# 프록시 환경 설정 (Nginx, AWS ALB, GCP Load Balancer 등)
+# Proxy Environment Configuration (Nginx, AWS ALB, GCP Load Balancer, etc.)
 # =====================================
 spring:
   config:
@@ -220,32 +220,32 @@ spring:
 
 curve:
   security:
-    # 프록시 뒤에서 실행되므로 X-Forwarded-For 헤더 사용
+    # Use X-Forwarded-For header when running behind proxy
     use-forwarded-headers: true
 
-# Spring Boot의 ForwardedHeaderFilter 활성화
+# Enable Spring Boot's ForwardedHeaderFilter
 server:
   forward-headers-strategy: framework
 
-  # Tomcat 프록시 설정 (프로덕션 필수)
+  # Tomcat proxy settings (required for production)
   tomcat:
     remoteip:
-      # 신뢰할 수 있는 프록시 IP 패턴 (정규식)
-      # 예: 10.0.0.0/8, 192.168.0.0/16, 172.16.0.0/12
-      internal-proxies: 10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3}|172\\.(1[6-9]|2[0-9]|3[0-1])\\.\\d{1,3}\\.\\d{1,3}
+      # Trusted proxy IP patterns (regex)
+      # Example: 10.0.0.0/8, 192.168.0.0/16, 172.16.0.0/12
+      internal-proxies: 10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}
 
-      # X-Forwarded-Proto 헤더 이름
+      # X-Forwarded-Proto header name
       protocol-header: X-Forwarded-Proto
 
-      # X-Forwarded-For 헤더 이름
+      # X-Forwarded-For header name
       remote-ip-header: X-Forwarded-For
 
-      # 포트 헤더 이름 (선택)
+      # Port header name (optional)
       port-header: X-Forwarded-Port
 
 ---
 # =====================================
-# AWS 환경 설정 (ALB/ELB 뒤)
+# AWS Environment Configuration (Behind ALB/ELB)
 # =====================================
 spring:
   config:
@@ -254,7 +254,7 @@ spring:
 
 curve:
   id-generator:
-    worker-id: ${AWS_CONTAINER_CREDENTIALS_RELATIVE_URI:1}  # ECS Task ID 사용
+    worker-id: ${AWS_CONTAINER_CREDENTIALS_RELATIVE_URI:1}  # Use ECS Task ID
     auto-generate: false
 
   security:
@@ -264,14 +264,14 @@ server:
   forward-headers-strategy: framework
   tomcat:
     remoteip:
-      # AWS ALB/ELB의 프라이빗 IP 대역
-      internal-proxies: 10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|172\\.(1[6-9]|2[0-9]|3[0-1])\\.\\d{1,3}\\.\\d{1,3}
+      # AWS ALB/ELB private IP ranges
+      internal-proxies: 10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}
       protocol-header: X-Forwarded-Proto
       remote-ip-header: X-Forwarded-For
 
 ---
 # =====================================
-# 로컬 개발 환경 (프록시 없음)
+# Local Development Environment (No Proxy)
 # =====================================
 spring:
   config:
@@ -280,16 +280,16 @@ spring:
 
 curve:
   security:
-    # 로컬 환경에서는 프록시 헤더 사용 안 함
+    # Don't use proxy headers in local environment
     use-forwarded-headers: false
 
 server:
-  # 로컬에서는 프록시 헤더 처리 비활성화
+  # Disable proxy header handling in local
   forward-headers-strategy: none
 
 ---
 # =====================================
-# Transactional Outbox Pattern 설정
+# Transactional Outbox Pattern Configuration
 # =====================================
 spring:
   config:
@@ -297,59 +297,59 @@ spring:
       on-profile: outbox
 
 curve:
-  # ===== Outbox Pattern 설정 =====
+  # ===== Outbox Pattern Settings =====
   outbox:
-    # Outbox Pattern 활성화 여부 (기본값: false)
-    # true: DB 트랜잭션과 이벤트 발행의 원자성 보장
+    # Enable Outbox Pattern (default: false)
+    # true: Guarantees atomicity between DB transaction and event publishing
     enabled: true
 
-    # Outbox 이벤트 발행기 활성화 여부 (기본값: true)
-    # true: 애플리케이션 내에서 주기적으로 PENDING 이벤트를 Kafka로 발행
-    # false: DB 저장만 수행 (CDC 사용 시)
+    # Enable Outbox event publisher (default: true)
+    # true: Periodically publish PENDING events to Kafka within application
+    # false: Only save to DB (when using CDC)
     publisher-enabled: true
 
-    # 테이블 스키마 초기화 모드 (embedded/always/never)
-    # embedded: 임베디드 DB에서만 자동 생성
-    # always: 항상 자동 생성 (테이블이 없을 때만)
-    # never: 수동 관리 (Flyway/Liquibase 권장)
+    # Table schema initialization mode (embedded/always/never)
+    # embedded: Auto-create only for embedded DB
+    # always: Always auto-create (only when table doesn't exist)
+    # never: Manual management (Flyway/Liquibase recommended)
     initialize-schema: embedded
 
-    # 폴링 주기 (ms)
+    # Polling interval (ms)
     poll-interval-ms: 1000
 
-    # 배치 크기 (한 번에 처리할 이벤트 수)
+    # Batch size (events to process per cycle)
     batch-size: 100
 
-    # 최대 재시도 횟수
+    # Maximum retry attempts
     max-retries: 3
 
-    # Kafka 전송 타임아웃 (초)
+    # Kafka send timeout (seconds)
     send-timeout-seconds: 10
 
-    # ===== 자동 정리 설정 =====
-    # PUBLISHED 이벤트 자동 정리 활성화
+    # ===== Auto Cleanup Settings =====
+    # Enable auto cleanup of PUBLISHED events
     cleanup-enabled: true
 
-    # 보관 기간 (일)
+    # Retention period (days)
     retention-days: 7
 
-    # 정리 작업 실행 주기 (cron)
-    cleanup-cron: "0 0 2 * * *"  # 매일 새벽 2시
+    # Cleanup job schedule (cron)
+    cleanup-cron: "0 0 2 * * *"  # Daily at 2 AM
 
-    # ===== 확장성 개선 설정 (NEW!) =====
-    # 동적 배치 크기 조정 활성화 (기본값: true)
-    # pending 이벤트 수에 따라 배치 크기를 자동 조정하여 처리량 증가
-    # - pending > 1000: batchSize * 2 (최대 500)
-    # - pending > 500: batchSize * 1.5 (최대 300)
+    # ===== Scalability Enhancement Settings =====
+    # Enable dynamic batch sizing (default: true)
+    # Automatically adjusts batch size based on pending event count
+    # - pending > 1000: batchSize * 2 (max 500)
+    # - pending > 500: batchSize * 1.5 (max 300)
     # - pending < 10: min(batchSize, 10)
     dynamic-batching-enabled: true
 
-    # Circuit Breaker 활성화 (기본값: true)
-    # Kafka 장애 감지 시 자동으로 요청 차단하여 시스템 보호
-    # - 연속 5회 실패 시 Circuit OPEN
-    # - 1분 후 Half-Open 상태로 전환하여 복구 시도
+    # Enable Circuit Breaker (default: true)
+    # Automatically blocks requests when Kafka failure detected to protect system
+    # - Circuit OPEN after 5 consecutive failures
+    # - Transitions to Half-Open after 1 minute for recovery attempt
     circuit-breaker-enabled: true
 
   kafka:
-    # Outbox에서는 프로덕션 모드 권장
+    # Production mode recommended for Outbox
     is-production: true

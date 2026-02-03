@@ -1,12 +1,9 @@
 package com.project.curve.spring.test;
 
-import com.project.curve.core.envelope.EventEnvelope;
 import com.project.curve.core.payload.DomainEventPayload;
 import com.project.curve.core.port.EventProducer;
 import com.project.curve.core.type.EventSeverity;
-import lombok.Getter;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

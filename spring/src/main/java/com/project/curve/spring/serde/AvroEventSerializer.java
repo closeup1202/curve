@@ -9,8 +9,6 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 
-import java.util.Map;
-
 /**
  * Avro-based event serialization implementation.
  * <p>
@@ -62,19 +60,19 @@ public class AvroEventSerializer implements EventSerializer {
             record.put("eventId", envelope.eventId().value());
             record.put("eventType", envelope.eventType().getValue());
             record.put("severity", envelope.severity().name());
-            
+
             GenericRecord metadataRecord = new GenericData.Record(avroSchema.getField("metadata").schema());
             metadataRecord.put("source", objectMapper.writeValueAsString(envelope.metadata().source()));
             metadataRecord.put("actor", objectMapper.writeValueAsString(envelope.metadata().actor()));
             metadataRecord.put("trace", objectMapper.writeValueAsString(envelope.metadata().trace()));
             metadataRecord.put("schema", objectMapper.writeValueAsString(envelope.metadata().schema()));
             metadataRecord.put("tags", envelope.metadata().tags());
-            
+
             record.put("metadata", metadataRecord);
             record.put("payload", objectMapper.writeValueAsString(envelope.payload()));
             record.put("occurredAt", envelope.occurredAt().toEpochMilli());
             record.put("publishedAt", envelope.publishedAt().toEpochMilli());
-            
+
             return record;
         } catch (Exception e) {
             throw new EventSerializationException("Failed to convert EventEnvelope to Avro GenericRecord", e);

@@ -79,6 +79,6 @@ curve:
   # Transactional Outbox Pattern
   outbox:
     enabled: true
-    publisher-enabled: false # 테스트를 위해 true로 변경 (CDC가 없으므로)
+    publisher-enabled: false
     batch-size: 100
     max-retries: 3
