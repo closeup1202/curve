@@ -192,11 +192,13 @@ subprojects {
                 mavenJava(MavenPublication) {
                     from components.java
 
+                    artifactId = project.name == 'spring-boot-autoconfigure' ? 'curve' : "curve-${project.name}"
+
                     artifact sourcesJar
                     artifact javadocJar
 
                     pom {
-                        name = "curve-${project.name}"
+                        name = project.name == 'spring-boot-autoconfigure' ? 'curve' : "curve-${project.name}"
                         description = 'Curve - Declarative Event Publishing Library for Spring Boot Microservices'
                         url = 'https://github.com/closeup1202/curve'
 

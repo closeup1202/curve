@@ -230,14 +230,14 @@ Users can add your library:
 **Gradle (Kotlin DSL)**:
 ```kotlin
 dependencies {
-    implementation("io.github.closeup1202:curve-spring-boot-autoconfigure:0.0.1")
+    implementation("io.github.closeup1202:curve:0.0.1")
 }
 ```
 
 **Gradle (Groovy)**:
 ```groovy
 dependencies {
-    implementation 'io.github.closeup1202:curve-spring-boot-autoconfigure:0.0.1'
+    implementation 'io.github.closeup1202:curve:0.0.1'
 }
 ```
 
@@ -245,7 +245,7 @@ dependencies {
 ```xml
 <dependency>
     <groupId>io.github.closeup1202</groupId>
-    <artifactId>curve-spring-boot-autoconfigure</artifactId>
+    <artifactId>curve</artifactId>
     <version>0.0.1</version>
 </dependency>
 ```

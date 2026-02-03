@@ -163,7 +163,7 @@ Kafka가 24시간 장애여도 이벤트 손실 제로
 **Gradle (build.gradle)**
 ```gradle
 dependencies {
-    implementation 'io.github.closeup1202:curve-spring-boot-starter:0.0.1-SNAPSHOT'
+    implementation 'io.github.closeup1202:curve:0.0.1-SNAPSHOT'
 }
 ```
 
@@ -171,7 +171,7 @@ dependencies {
 ```xml
 <dependency>
     <groupId>io.github.closeup1202</groupId>
-    <artifactId>curve-spring-boot-starter</artifactId>
+    <artifactId>curve</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 </dependency>
 ```
