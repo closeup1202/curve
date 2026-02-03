@@ -3,6 +3,10 @@
 This guide explains how to publish Curve to Maven Central.
 
 > **Note**: As of January 2024, Sonatype has migrated from the old JIRA-based system (issues.sonatype.org) to the new **Central Publisher Portal**.
+>
+> **Important**: Central Portal uses new API endpoints:
+> - **New URL**: `https://ossrh-staging-api.central.sonatype.com/service/local/`
+> - **Old URL** (deprecated): `https://s01.oss.sonatype.org/service/local/` - Central Portal tokens do NOT work with this URL
 
 ## Prerequisites
 
