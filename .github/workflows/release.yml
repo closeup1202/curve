@@ -60,9 +60,8 @@ jobs:
       env:
         OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
         OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-        ORG_GRADLE_PROJECT_signingKeyId: ${{ secrets.GPG_KEY_ID }}
-        ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
-        ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
+        ORG_GRADLE_PROJECT_signing.gnupg.keyName: ${{ secrets.GPG_KEY_ID }}
+        ORG_GRADLE_PROJECT_signing.gnupg.passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
   release:
     name: Create GitHub Release

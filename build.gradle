@@ -244,12 +244,7 @@ subprojects {
 
         signing {
             required { !version.endsWith('SNAPSHOT') }
-            def signingKeyId = findProperty("signingKeyId") ?: System.getenv("ORG_GRADLE_PROJECT_signingKeyId")
-            def signingKey = findProperty("signingKey") ?: System.getenv("ORG_GRADLE_PROJECT_signingKey")
-            def signingPassword = findProperty("signingPassword") ?: System.getenv("ORG_GRADLE_PROJECT_signingPassword")
-            if (signingKeyId && signingKey && signingPassword) {
-                useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
-            }
+            useGpgCmd()
             sign publishing.publications.mavenJava
         }
     }
