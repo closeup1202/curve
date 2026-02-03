@@ -8,6 +8,13 @@
         <xhtml:link rel="alternate" hreflang="ko" href="https://closeup1202.github.io/curve/ko/"/>
     </url>
     <url>
+        <loc>https://closeup1202.github.io/curve/CHANGELOG/</loc>
+        <lastmod>2026-02-03</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://closeup1202.github.io/curve/CHANGELOG/"/>
+        <xhtml:link rel="alternate" hreflang="ko" href="https://closeup1202.github.io/curve/ko/CHANGELOG/"/>
+    </url>
+    <url>
         <loc>https://closeup1202.github.io/curve/CONFIGURATION/</loc>
         <lastmod>2026-02-03</lastmod>
         <changefreq>daily</changefreq>
@@ -69,6 +76,13 @@
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://closeup1202.github.io/curve/api/properties/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://closeup1202.github.io/curve/ko/api/properties/"/>
+    </url>
+    <url>
+        <loc>https://closeup1202.github.io/curve/community/contributing/</loc>
+        <lastmod>2026-02-03</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://closeup1202.github.io/curve/community/contributing/"/>
+        <xhtml:link rel="alternate" hreflang="ko" href="https://closeup1202.github.io/curve/ko/community/contributing/"/>
     </url>
     <url>
         <loc>https://closeup1202.github.io/curve/community/faq/</loc>
@@ -162,6 +176,13 @@
         <xhtml:link rel="alternate" hreflang="en" href="https://closeup1202.github.io/curve/"/>
     </url>
     <url>
+        <loc>https://closeup1202.github.io/curve/ko/CHANGELOG/</loc>
+        <lastmod>2026-02-03</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ko" href="https://closeup1202.github.io/curve/ko/CHANGELOG/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://closeup1202.github.io/curve/CHANGELOG/"/>
+    </url>
+    <url>
         <loc>https://closeup1202.github.io/curve/ko/CONFIGURATION/</loc>
         <lastmod>2026-02-03</lastmod>
         <changefreq>daily</changefreq>
@@ -223,6 +244,13 @@
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://closeup1202.github.io/curve/ko/api/properties/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://closeup1202.github.io/curve/api/properties/"/>
+    </url>
+    <url>
+        <loc>https://closeup1202.github.io/curve/ko/community/contributing/</loc>
+        <lastmod>2026-02-03</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ko" href="https://closeup1202.github.io/curve/ko/community/contributing/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://closeup1202.github.io/curve/community/contributing/"/>
     </url>
     <url>
         <loc>https://closeup1202.github.io/curve/ko/community/faq/</loc>
