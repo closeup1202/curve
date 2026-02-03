@@ -1,0 +1,158 @@
+site_name: Curve
+site_description: Declarative Event Publishing Library for Spring Boot Microservices - Kafka + DLQ + PII Protection + Transactional Outbox
+site_author: closeup1202
+site_url: https://closeup1202.github.io/curve/
+repo_name: closeup1202/curve
+repo_url: https://github.com/closeup1202/curve
+edit_uri: edit/main/docs/
+
+# SEO and Social
+copyright: Copyright &copy; 2025 closeup1202
+
+theme:
+  name: material
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+  icon:
+    repo: fontawesome/brands/github
+
+# Extensions
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+# Plugins
+plugins:
+  - search:
+      lang:
+        - en
+        - ko
+  - tags
+  - minify:
+      minify_html: true
+  - social
+  - rss:
+      match_path: .*
+      date_from_meta:
+        as_creation: date
+      categories:
+        - categories
+        - tags
+  - i18n:
+      docs_structure: suffix
+      languages:
+        - locale: en
+          default: true
+          name: English
+        - locale: ko
+          name: 한국어
+
+# Extra
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/closeup1202/curve
+      name: GitHub Repository
+    - icon: fontawesome/solid/envelope
+      link: mailto:closeup1202@gmail.com
+      name: Email
+
+  # SEO
+  analytics:
+    provider: google
+    property: !ENV [GOOGLE_ANALYTICS_KEY, 'G-XXXXXXXXXX']
+
+  # Version selector (for future)
+  version:
+    provider: mike
+    default: latest
+
+# Navigation
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Quick Start: getting-started/quick-start.md
+      - Installation: getting-started/installation.md
+      - First Event: getting-started/first-event.md
+
+  - Features:
+      - Overview: features/overview.md
+      - Declarative Publishing: features/declarative-publishing.md
+      - PII Protection: features/pii-protection.md
+      - Failure Recovery: features/failure-recovery.md
+      - Transactional Outbox: features/transactional-outbox.md
+      - Observability: features/observability.md
+
+  - Configuration:
+      - Basic Setup: configuration/basic-setup.md
+      - Advanced Options: CONFIGURATION.md
+      - Environment Profiles: configuration/profiles.md
+
+  - Operations:
+      - Production Guide: OPERATIONS.md
+      - Monitoring: MONITORING.md
+      - Troubleshooting: TROUBLESHOOTING.md
+
+  - Migration:
+      - Version Upgrade: MIGRATION.md
+      - Changelog: ../CHANGELOG.md
+
+  - API Reference:
+      - Annotations: api/annotations.md
+      - Configuration Properties: api/properties.md
+      - Custom Implementation: api/custom-implementation.md
+
+  - Community:
+      - Contributing: ../CONTRIBUTING.md
+      - Publishing Guide: PUBLISHING.md
+      - FAQ: community/faq.md
+
+# Extra CSS/JS for SEO
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/extra.js

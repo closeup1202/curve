@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://closeup1202.github.io/curve/sitemap.xml

@@ -1,0 +1,67 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'README.md'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcairo2-dev libfreetype6-dev libffi-dev libjpeg-dev libpng-dev libz-dev
+
+      - name: Install MkDocs Material and dependencies
+        run: |
+          pip install --upgrade pip
+          pip install "mkdocs-material[imaging]"
+          pip install mkdocs-minify-plugin
+          pip install mkdocs-redirects
+          pip install mkdocs-rss-plugin
+          pip install mkdocs-static-i18n
+          pip install pillow cairosvg
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Deploy to GitHub Pages
+        run: |
+          mkdocs gh-deploy --force --clean --verbose
+
+      - name: Create sitemap notification
+        if: success()
+        run: |
+          echo "Documentation deployed successfully!"
+          echo "Site URL: https://closeup1202.github.io/curve/"
+          echo "Sitemap: https://closeup1202.github.io/curve/sitemap.xml"
