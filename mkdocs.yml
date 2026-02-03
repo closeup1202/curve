@@ -138,7 +138,7 @@ nav:
 
   - Migration:
       - Version Upgrade: MIGRATION.md
-      - Changelog: ../CHANGELOG.md
+      - Changelog: CHANGELOG.md
 
   - API Reference:
       - Annotations: api/annotations.md
@@ -146,7 +146,7 @@ nav:
       - Custom Implementation: api/custom-implementation.md
 
   - Community:
-      - Contributing: ../CONTRIBUTING.md
+      - Contributing: community/contributing.md
       - Publishing Guide: PUBLISHING.md
       - FAQ: community/faq.md
 
