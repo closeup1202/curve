@@ -18,10 +18,10 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Outbox 테이블에 이벤트를 저장하는 컴포넌트.
+ * Component that saves events to the Outbox table.
  * <p>
- * {@link PublishEventAspect}에서 outbox=true인 경우 호출됩니다.
- * SpEL 표현식을 통한 aggregateId 추출과 페이로드 직렬화를 담당합니다.
+ * Called by {@link PublishEventAspect} when outbox=true.
+ * Handles aggregateId extraction via SpEL expressions and payload serialization.
  *
  * @see PublishEventAspect
  * @see OutboxEventRepository
@@ -35,12 +35,12 @@ public class OutboxEventSaver {
     private final SpelExpressionParser spelParser = new SpelExpressionParser();
 
     /**
-     * Outbox 테이블에 이벤트를 저장합니다.
+     * Saves an event to the Outbox table.
      *
-     * @param joinPoint    AOP 조인 포인트
-     * @param publishEvent @PublishEvent 어노테이션
-     * @param payload      이벤트 페이로드
-     * @param returnValue  메서드 반환값
+     * @param joinPoint    AOP join point
+     * @param publishEvent @PublishEvent annotation
+     * @param payload      Event payload
+     * @param returnValue  Method return value
      */
     public void save(JoinPoint joinPoint, PublishEvent publishEvent, EventPayload payload, Object returnValue) {
         String aggregateType = validateAggregateType(publishEvent);
@@ -96,7 +96,7 @@ public class OutboxEventSaver {
     }
 
     /**
-     * SpEL 표현식으로 Aggregate ID를 추출합니다.
+     * Extracts Aggregate ID using SpEL expression.
      */
     private String extractAggregateId(String expression, JoinPoint joinPoint, Object returnValue) {
         try {

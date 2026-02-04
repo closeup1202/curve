@@ -33,7 +33,7 @@ class MaskingPiiProcessorTest {
     }
 
     @Test
-    @DisplayName("지원하는 전략은 MASK이다")
+    @DisplayName("Supported strategy should be MASK")
     void supportedStrategy_shouldBeMask() {
         // When
         PiiStrategy strategy = processor.supportedStrategy();
@@ -43,7 +43,7 @@ class MaskingPiiProcessorTest {
     }
 
     @Test
-    @DisplayName("이메일을 마스킹하면 일부가 가려진다")
+    @DisplayName("Email should be masked")
     void process_email_shouldMask() {
         // Given
         String email = "test@example.com";
@@ -58,7 +58,7 @@ class MaskingPiiProcessorTest {
     }
 
     @Test
-    @DisplayName("전화번호를 마스킹하면 일부가 가려진다")
+    @DisplayName("Phone number should be masked")
     void process_phone_shouldMask() {
         // Given
         String phone = "010-1234-5678";
@@ -73,7 +73,7 @@ class MaskingPiiProcessorTest {
     }
 
     @Test
-    @DisplayName("null을 마스킹하면 null을 반환한다")
+    @DisplayName("Masking null should return null")
     void process_null_shouldReturnNull() {
         // Given
         PiiField piiField = createPiiField(PiiType.EMAIL, MaskingLevel.NORMAL);
@@ -86,7 +86,7 @@ class MaskingPiiProcessorTest {
     }
 
     @Test
-    @DisplayName("빈 문자열을 마스킹하면 빈 문자열을 반환한다")
+    @DisplayName("Masking empty string should return empty string")
     void process_emptyString_shouldReturnEmpty() {
         // Given
         PiiField piiField = createPiiField(PiiType.EMAIL, MaskingLevel.NORMAL);

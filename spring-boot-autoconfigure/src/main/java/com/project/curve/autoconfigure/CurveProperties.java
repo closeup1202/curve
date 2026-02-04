@@ -140,6 +140,35 @@ public class CurveProperties {
          * - POSIX systems (Linux, macOS) recommended
          */
         private boolean isProduction = false;
+
+        /**
+         * Backup strategy configuration.
+         */
+        @Valid
+        private final Backup backup = new Backup();
+
+        @Data
+        public static class Backup {
+            /**
+             * Whether to enable local file backup (default: true).
+             */
+            private boolean localEnabled = true;
+
+            /**
+             * Whether to enable S3 backup (default: false).
+             */
+            private boolean s3Enabled = false;
+
+            /**
+             * S3 bucket name (required if s3Enabled=true).
+             */
+            private String s3Bucket;
+
+            /**
+             * S3 object key prefix (default: dlq-backup).
+             */
+            private String s3Prefix = "dlq-backup";
+        }
     }
 
     @Data

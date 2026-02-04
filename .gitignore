@@ -37,3 +37,6 @@ out/
 
 ### Claude Code ###
 .claude/
+
+### Local Docker ###
+docker-compose-local.yaml

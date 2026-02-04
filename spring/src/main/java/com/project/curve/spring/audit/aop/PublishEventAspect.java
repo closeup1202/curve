@@ -65,7 +65,7 @@ public class PublishEventAspect {
             Object payloadData = extractPayload(joinPoint, publishEvent, returnValue);
             EventPayload payload = createEventPayload(eventType, joinPoint, payloadData);
 
-            // Outbox Pattern 사용 여부 확인
+            // Check if Outbox Pattern is used
             if (publishEvent.outbox()) {
                 if (outboxEventSaver == null) {
                     throw new EventPublishException(
@@ -132,7 +132,7 @@ public class PublishEventAspect {
         if (!publishEvent.eventType().isBlank()) {
             return publishEvent.eventType();
         }
-        // Default: 클래스명.메서드명
+        // Default: ClassName.methodName
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         String className = signature.getDeclaringType().getSimpleName();
         String methodName = signature.getName();
@@ -140,18 +140,18 @@ public class PublishEventAspect {
     }
 
     private Object extractPayload(JoinPoint joinPoint, PublishEvent publishEvent, Object returnValue) {
-        // 1. SpEL 표현식이 있는 경우 우선 처리
+        // 1. Prioritize SpEL expression if present
         if (!publishEvent.payload().isBlank()) {
             return extractPayloadUsingSpel(joinPoint, publishEvent.payload(), returnValue);
         }
 
-        // 2. payloadIndex 사용
+        // 2. Use payloadIndex
         int payloadIndex = publishEvent.payloadIndex();
         if (payloadIndex == -1) {
-            // 반환값 사용
+            // Use return value
             return returnValue;
         } else {
-            // 파라미터 사용
+            // Use parameter
             Object[] args = joinPoint.getArgs();
             if (payloadIndex >= 0 && payloadIndex < args.length) {
                 return args[payloadIndex];
@@ -182,7 +182,7 @@ public class PublishEventAspect {
             Expression expr = spelParser.parseExpression(expression);
             return expr.getValue(context);
         } catch (Exception e) {
-            // SpEL 파싱/실행 실패 시 로그를 남기고 null 반환 (비즈니스 로직 영향 최소화)
+            // Log and return null on SpEL parsing/execution failure (minimize impact on business logic)
             log.warn("Failed to extract payload using SpEL expression '{}': {}", expression, e.getMessage());
             return null;
         }

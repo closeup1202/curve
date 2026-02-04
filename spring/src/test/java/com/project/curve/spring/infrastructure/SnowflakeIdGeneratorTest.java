@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.*;
 class SnowflakeIdGeneratorTest {
 
     @Test
-    @DisplayName("유효한 Worker ID로 생성자를 호출하면 성공한다")
+    @DisplayName("Should succeed when constructor is called with valid Worker ID")
     void constructor_withValidWorkerId_shouldSucceed() {
         // Given
         long workerId = 100L;
@@ -31,7 +31,7 @@ class SnowflakeIdGeneratorTest {
 
     @ParameterizedTest
     @ValueSource(longs = {-1, 1024, 2000})
-    @DisplayName("유효하지 않은 Worker ID로 생성자를 호출하면 예외가 발생한다")
+    @DisplayName("Should throw exception when constructor is called with invalid Worker ID")
     void constructor_withInvalidWorkerId_shouldThrowException(long invalidWorkerId) {
         // When & Then
         assertThatThrownBy(() -> new SnowflakeIdGenerator(invalidWorkerId))
@@ -40,7 +40,7 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("ID를 생성하면 null이 아닌 EventId를 반환한다")
+    @DisplayName("Should return non-null EventId when generating ID")
     void generate_shouldReturnNonNullEventId() {
         // Given
         SnowflakeIdGenerator generator = new SnowflakeIdGenerator(1L);
@@ -54,7 +54,7 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("연속으로 생성된 ID는 모두 고유해야 한다")
+    @DisplayName("Consecutively generated IDs should all be unique")
     void generate_consecutiveIds_shouldAllBeUnique() {
         // Given
         SnowflakeIdGenerator generator = new SnowflakeIdGenerator(1L);
@@ -72,7 +72,7 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("동시에 여러 스레드에서 ID를 생성해도 고유성이 보장되어야 한다")
+    @DisplayName("Should maintain uniqueness when generating IDs concurrently from multiple threads")
     void generate_concurrently_shouldMaintainUniqueness() throws InterruptedException {
         // Given
         SnowflakeIdGenerator generator = new SnowflakeIdGenerator(1L);
@@ -110,13 +110,13 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("같은 밀리초 내에 4096개 이상의 ID를 생성하면 다음 밀리초까지 대기한다")
+    @DisplayName("Should wait for next millisecond if more than 4096 IDs are generated within same millisecond")
     void generate_sequenceOverflow_shouldWaitForNextMillis() {
         // Given
         SnowflakeIdGenerator generator = new SnowflakeIdGenerator(1L);
         Set<String> generatedIds = new HashSet<>();
 
-        // When: 5000개의 ID를 빠르게 생성 (sequence overflow 발생 가능)
+        // When: Generate 5000 IDs quickly (sequence overflow possible)
         long startTime = System.currentTimeMillis();
         for (int i = 0; i < 5000; i++) {
             EventId eventId = generator.generate();
@@ -124,13 +124,13 @@ class SnowflakeIdGeneratorTest {
         }
         long endTime = System.currentTimeMillis();
 
-        // Then: 모든 ID는 고유해야 하고, 시간이 소요되어야 함
+        // Then: All IDs should be unique and time should have elapsed
         assertThat(generatedIds).hasSize(5000);
         assertThat(endTime - startTime).isGreaterThanOrEqualTo(0);
     }
 
     @Test
-    @DisplayName("서로 다른 Worker ID를 가진 제너레이터는 다른 ID를 생성한다")
+    @DisplayName("Generators with different Worker IDs should generate different IDs")
     void generate_differentWorkerIds_shouldGenerateDifferentIds() {
         // Given
         SnowflakeIdGenerator generator1 = new SnowflakeIdGenerator(1L);
@@ -145,14 +145,14 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("MAC 주소 기반 자동 Worker ID 생성은 예외를 발생시키지 않는다")
+    @DisplayName("Automatic Worker ID generation based on MAC address should not throw exception")
     void createWithAutoWorkerId_shouldNotThrowException() {
         // When & Then
         assertThatNoException().isThrownBy(SnowflakeIdGenerator::createWithAutoWorkerId);
     }
 
     @Test
-    @DisplayName("생성된 ID는 숫자 형태의 문자열이어야 한다")
+    @DisplayName("Generated ID should be a numeric string")
     void generate_shouldReturnNumericStringId() {
         // Given
         SnowflakeIdGenerator generator = new SnowflakeIdGenerator(1L);
@@ -165,7 +165,7 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("생성된 ID는 양수여야 한다")
+    @DisplayName("Generated ID should be positive")
     void generate_shouldReturnPositiveId() {
         // Given
         SnowflakeIdGenerator generator = new SnowflakeIdGenerator(1L);
@@ -179,7 +179,7 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("경계값 Worker ID(0, 1023)로도 정상적으로 ID를 생성한다")
+    @DisplayName("Should successfully generate IDs with boundary Worker IDs (0, 1023)")
     void generate_withBoundaryWorkerIds_shouldSucceed() {
         // Given
         SnowflakeIdGenerator generator1 = new SnowflakeIdGenerator(0L);
@@ -196,7 +196,7 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("MAC 주소 기반 자동 Worker ID로 ID 생성이 가능하다")
+    @DisplayName("Should be able to generate IDs with auto-generated Worker ID based on MAC address")
     void createWithAutoWorkerId_shouldGenerateId() {
         // Given
         SnowflakeIdGenerator generator = SnowflakeIdGenerator.createWithAutoWorkerId();
@@ -210,7 +210,7 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("자동 생성된 Worker ID로도 고유한 ID를 생성한다")
+    @DisplayName("Should generate unique IDs even with auto-generated Worker ID")
     void createWithAutoWorkerId_shouldGenerateUniqueIds() {
         // Given
         SnowflakeIdGenerator generator = SnowflakeIdGenerator.createWithAutoWorkerId();
@@ -227,7 +227,7 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("연속 생성된 ID는 시간순으로 증가한다")
+    @DisplayName("Consecutively generated IDs should be monotonically increasing")
     void generate_consecutiveIds_shouldBeMonotonicallyIncreasing() {
         // Given
         SnowflakeIdGenerator generator = new SnowflakeIdGenerator(1L);
@@ -243,20 +243,20 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("작은 시계 역행(100ms 이하)은 대기 후 정상 처리된다")
+    @DisplayName("Small clock backward movement (<= 100ms) should wait and succeed")
     void generate_smallClockBackward_shouldWaitAndSucceed() {
         // Given
         TestableSnowflakeIdGenerator generator = new TestableSnowflakeIdGenerator(1L);
         long baseTime = System.currentTimeMillis();
 
-        // 첫 번째 ID 생성
+        // Generate first ID
         generator.setCurrentTime(baseTime);
         EventId id1 = generator.generate();
 
-        // 시계를 50ms 뒤로 이동 (작은 역행)
+        // Move clock backward by 50ms (small backward)
         generator.setCurrentTime(baseTime - 50);
-        generator.addTimeSequence(baseTime - 50); // 한 번 더 같은 시간 반환
-        generator.addTimeSequence(baseTime + 1);  // 그 다음 정상 시간 반환
+        generator.addTimeSequence(baseTime - 50); // Return same time once more
+        generator.addTimeSequence(baseTime + 1);  // Then return normal time
 
         // When
         EventId id2 = generator.generate();
@@ -267,17 +267,17 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("큰 시계 역행(100ms 초과)은 예외를 발생시킨다")
+    @DisplayName("Large clock backward movement (> 100ms) should throw exception")
     void generate_largeClockBackward_shouldThrowException() {
         // Given
         TestableSnowflakeIdGenerator generator = new TestableSnowflakeIdGenerator(1L);
         long baseTime = System.currentTimeMillis();
 
-        // 첫 번째 ID 생성
+        // Generate first ID
         generator.setCurrentTime(baseTime);
         generator.generate();
 
-        // 시계를 200ms 뒤로 이동 (큰 역행)
+        // Move clock backward by 200ms (large backward)
         generator.setCurrentTime(baseTime - 200);
 
         // When & Then
@@ -286,17 +286,17 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("waitUntilNextMillis 타임아웃 시 예외를 발생시킨다")
+    @DisplayName("Should throw exception on waitUntilNextMillis timeout")
     void generate_waitTimeout_shouldThrowException() {
         // Given
         TimeoutTestableSnowflakeIdGenerator generator = new TimeoutTestableSnowflakeIdGenerator(1L);
         long baseTime = System.currentTimeMillis();
 
-        // 첫 번째 ID 생성
+        // Generate first ID
         generator.setCurrentTime(baseTime);
         generator.generate();
 
-        // 시계를 1ms 뒤로 이동하고, 계속 같은 시간 반환 (타임아웃 유발)
+        // Move clock backward by 1ms and keep returning same time (cause timeout)
         generator.setStuckTime(baseTime - 1);
 
         // When & Then
@@ -306,17 +306,17 @@ class SnowflakeIdGeneratorTest {
     }
 
     @Test
-    @DisplayName("waitUntilNextMillis 중 인터럽트 시 예외를 발생시킨다")
+    @DisplayName("Should throw exception on interrupt during waitUntilNextMillis")
     void generate_waitInterrupted_shouldThrowException() throws InterruptedException {
         // Given
         InterruptibleTestableSnowflakeIdGenerator generator = new InterruptibleTestableSnowflakeIdGenerator(1L);
         long baseTime = System.currentTimeMillis();
 
-        // 첫 번째 ID 생성
+        // Generate first ID
         generator.setCurrentTime(baseTime);
         generator.generate();
 
-        // 시계를 1ms 뒤로 이동
+        // Move clock backward by 1ms
         generator.setCurrentTime(baseTime - 1);
 
         CountDownLatch latch = new CountDownLatch(1);
@@ -333,23 +333,23 @@ class SnowflakeIdGeneratorTest {
         thread.start();
 
         latch.await();
-        Thread.sleep(10); // 스레드가 대기 상태에 들어갈 때까지 잠시 대기
+        Thread.sleep(10); // Wait briefly for thread to enter wait state
         testThread[0].interrupt();
         thread.join(1000);
     }
 
     @Test
-    @DisplayName("exponential backoff가 적용되어 대기한다")
+    @DisplayName("Should wait with exponential backoff")
     void generate_exponentialBackoff_shouldWaitWithIncreasingIntervals() {
         // Given
         BackoffTrackingSnowflakeIdGenerator generator = new BackoffTrackingSnowflakeIdGenerator(1L);
         long baseTime = System.currentTimeMillis();
 
-        // 첫 번째 ID 생성
+        // Generate first ID
         generator.setCurrentTime(baseTime);
         generator.generate();
 
-        // 시계를 10ms 뒤로 이동하고, 여러 번 시도 후 정상 시간 반환
+        // Move clock backward by 10ms, retry multiple times, then return normal time
         generator.setCurrentTime(baseTime - 10);
         for (int i = 0; i < 3; i++) {
             generator.addTimeSequence(baseTime - 10);
@@ -365,7 +365,7 @@ class SnowflakeIdGeneratorTest {
     }
 
     /**
-     * 시계 시간을 조작할 수 있는 테스트용 SnowflakeIdGenerator
+     * Testable SnowflakeIdGenerator allowing clock manipulation
      */
     private static class TestableSnowflakeIdGenerator extends SnowflakeIdGenerator {
         private long currentTime;
@@ -394,7 +394,7 @@ class SnowflakeIdGeneratorTest {
     }
 
     /**
-     * 타임아웃 테스트용 SnowflakeIdGenerator
+     * Timeout testable SnowflakeIdGenerator
      */
     private static class TimeoutTestableSnowflakeIdGenerator extends SnowflakeIdGenerator {
         private long currentTime;
@@ -416,8 +416,8 @@ class SnowflakeIdGeneratorTest {
         @Override
         protected long currentTimeMillis() {
             if (stuckTime != null) {
-                // System.currentTimeMillis()는 실제 시간으로 증가하지만,
-                // currentTimeMillis()는 고정된 과거 시간을 반환하여 타임아웃 유발
+                // System.currentTimeMillis() increases in reality,
+                // but currentTimeMillis() returns fixed past time to cause timeout
                 return stuckTime;
             }
             return currentTime;
@@ -425,7 +425,7 @@ class SnowflakeIdGeneratorTest {
     }
 
     /**
-     * 인터럽트 테스트용 SnowflakeIdGenerator
+     * Interrupt testable SnowflakeIdGenerator
      */
     private static class InterruptibleTestableSnowflakeIdGenerator extends SnowflakeIdGenerator {
         private long currentTime;
@@ -446,7 +446,7 @@ class SnowflakeIdGeneratorTest {
     }
 
     /**
-     * Exponential backoff 추적용 SnowflakeIdGenerator
+     * Exponential backoff tracking SnowflakeIdGenerator
      */
     private static class BackoffTrackingSnowflakeIdGenerator extends SnowflakeIdGenerator {
         private long currentTime;
@@ -475,7 +475,7 @@ class SnowflakeIdGeneratorTest {
             if (!timeSequence.isEmpty()) {
                 Long time = timeSequence.poll();
                 if (time != null && time <= currentTime) {
-                    sleepCalls++; // sleep이 호출되었을 것으로 추정
+                    sleepCalls++; // Assume sleep was called
                 }
                 return time;
             }

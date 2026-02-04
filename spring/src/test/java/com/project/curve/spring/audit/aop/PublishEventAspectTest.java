@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("PublishEventAspect 테스트")
+@DisplayName("PublishEventAspect Test")
 @MockitoSettings(strictness = Strictness.LENIENT)
 class PublishEventAspectTest {
 
@@ -58,7 +58,7 @@ class PublishEventAspectTest {
     void setUp() throws NoSuchMethodException {
         aspect = new PublishEventAspect(eventProducer, metricsCollector);
 
-        // 기본 JoinPoint 설정
+        // Default JoinPoint setup
         when(joinPoint.getSignature()).thenReturn(methodSignature);
         when(methodSignature.getDeclaringType()).thenReturn(TestService.class);
         when(methodSignature.getName()).thenReturn("testMethod");
@@ -66,7 +66,7 @@ class PublishEventAspectTest {
         Method method = TestService.class.getMethod("testMethod", String.class);
         when(methodSignature.getMethod()).thenReturn(method);
 
-        // PublishEvent 기본값 설정 (NPE 방지)
+        // Default PublishEvent setup (prevent NPE)
         when(publishEvent.payload()).thenReturn("");
         when(publishEvent.eventType()).thenReturn("");
         when(publishEvent.aggregateType()).thenReturn("");
@@ -74,11 +74,11 @@ class PublishEventAspectTest {
     }
 
     @Nested
-    @DisplayName("Phase.BEFORE 테스트")
+    @DisplayName("Phase.BEFORE Test")
     class BeforePhaseTest {
 
         @Test
-        @DisplayName("BEFORE phase에서 메서드 실행 전에 이벤트를 발행한다")
+        @DisplayName("Should publish event before method execution in BEFORE phase")
         void beforeMethod_withBeforePhase_shouldPublishEvent() {
             // Given
             when(publishEvent.phase()).thenReturn(PublishEvent.Phase.BEFORE);
@@ -100,7 +100,7 @@ class PublishEventAspectTest {
         }
 
         @Test
-        @DisplayName("AFTER_RETURNING phase에서는 beforeMethod가 이벤트를 발행하지 않는다")
+        @DisplayName("beforeMethod should not publish event in AFTER_RETURNING phase")
         void beforeMethod_withAfterReturningPhase_shouldNotPublishEvent() {
             // Given
             when(publishEvent.phase()).thenReturn(PublishEvent.Phase.AFTER_RETURNING);
@@ -114,17 +114,17 @@ class PublishEventAspectTest {
     }
 
     @Nested
-    @DisplayName("Phase.AFTER_RETURNING 테스트")
+    @DisplayName("Phase.AFTER_RETURNING Test")
     class AfterReturningPhaseTest {
 
         @Test
-        @DisplayName("AFTER_RETURNING phase에서 반환값을 페이로드로 사용한다")
+        @DisplayName("Should use return value as payload in AFTER_RETURNING phase")
         void afterReturning_withAfterReturningPhase_shouldUseReturnValueAsPayload() {
             // Given
             when(publishEvent.phase()).thenReturn(PublishEvent.Phase.AFTER_RETURNING);
             when(publishEvent.eventType()).thenReturn("ORDER_CREATED");
             when(publishEvent.severity()).thenReturn(EventSeverity.INFO);
-            when(publishEvent.payloadIndex()).thenReturn(-1); // 반환값 사용
+            when(publishEvent.payloadIndex()).thenReturn(-1); // Use return value
             Object returnValue = new TestOrder("order-123");
 
             // When
@@ -139,7 +139,7 @@ class PublishEventAspectTest {
         }
 
         @Test
-        @DisplayName("BEFORE phase에서는 afterReturning이 이벤트를 발행하지 않는다")
+        @DisplayName("afterReturning should not publish event in BEFORE phase")
         void afterReturning_withBeforePhase_shouldNotPublishEvent() {
             // Given
             when(publishEvent.phase()).thenReturn(PublishEvent.Phase.BEFORE);
@@ -153,11 +153,11 @@ class PublishEventAspectTest {
     }
 
     @Nested
-    @DisplayName("Phase.AFTER 테스트")
+    @DisplayName("Phase.AFTER Test")
     class AfterPhaseTest {
 
         @Test
-        @DisplayName("AFTER phase에서 메서드 실행 후 이벤트를 발행한다")
+        @DisplayName("Should publish event after method execution in AFTER phase")
         void afterMethod_withAfterPhase_shouldPublishEvent() {
             // Given
             when(publishEvent.phase()).thenReturn(PublishEvent.Phase.AFTER);
@@ -175,15 +175,15 @@ class PublishEventAspectTest {
     }
 
     @Nested
-    @DisplayName("eventType 결정 테스트")
+    @DisplayName("eventType Determination Test")
     class EventTypeDeterminationTest {
 
         @Test
-        @DisplayName("eventType이 지정되지 않으면 클래스명.메서드명을 사용한다")
+        @DisplayName("Should use ClassName.methodName if eventType is not specified")
         void determineEventType_withBlankEventType_shouldUseClassName() {
             // Given
             when(publishEvent.phase()).thenReturn(PublishEvent.Phase.AFTER_RETURNING);
-            when(publishEvent.eventType()).thenReturn(""); // 빈 문자열
+            when(publishEvent.eventType()).thenReturn(""); // Blank string
             when(publishEvent.severity()).thenReturn(EventSeverity.INFO);
             when(publishEvent.payloadIndex()).thenReturn(-1);
 
@@ -197,11 +197,11 @@ class PublishEventAspectTest {
     }
 
     @Nested
-    @DisplayName("payloadIndex 테스트")
+    @DisplayName("payloadIndex Test")
     class PayloadIndexTest {
 
         @Test
-        @DisplayName("payloadIndex가 0이면 첫 번째 파라미터를 사용한다")
+        @DisplayName("Should use first parameter if payloadIndex is 0")
         void extractPayload_withPayloadIndex0_shouldUseFirstArg() {
             // Given
             when(publishEvent.phase()).thenReturn(PublishEvent.Phase.AFTER_RETURNING);
@@ -219,13 +219,13 @@ class PublishEventAspectTest {
         }
 
         @Test
-        @DisplayName("유효하지 않은 payloadIndex는 null을 반환한다")
+        @DisplayName("Should return null if payloadIndex is invalid")
         void extractPayload_withInvalidPayloadIndex_shouldReturnNull() {
             // Given
             when(publishEvent.phase()).thenReturn(PublishEvent.Phase.AFTER_RETURNING);
             when(publishEvent.eventType()).thenReturn("TEST");
             when(publishEvent.severity()).thenReturn(EventSeverity.INFO);
-            when(publishEvent.payloadIndex()).thenReturn(99); // 유효하지 않은 인덱스
+            when(publishEvent.payloadIndex()).thenReturn(99); // Invalid index
             when(joinPoint.getArgs()).thenReturn(new Object[]{"arg"});
 
             // When
@@ -238,11 +238,11 @@ class PublishEventAspectTest {
     }
 
     @Nested
-    @DisplayName("예외 처리 테스트")
+    @DisplayName("Exception Handling Test")
     class ExceptionHandlingTest {
 
         @Test
-        @DisplayName("failOnError가 true일 때 예외가 발생하면 EventPublishException을 던진다")
+        @DisplayName("Should throw EventPublishException if failOnError is true and exception occurs")
         void handlePublishFailure_withFailOnErrorTrue_shouldThrowException() {
             // Given
             when(publishEvent.phase()).thenReturn(PublishEvent.Phase.AFTER_RETURNING);
@@ -261,7 +261,7 @@ class PublishEventAspectTest {
         }
 
         @Test
-        @DisplayName("failOnError가 false일 때 예외가 발생해도 비즈니스 로직은 계속된다")
+        @DisplayName("Should continue business logic if failOnError is false and exception occurs")
         void handlePublishFailure_withFailOnErrorFalse_shouldContinue() {
             // Given
             when(publishEvent.phase()).thenReturn(PublishEvent.Phase.AFTER_RETURNING);
@@ -273,18 +273,18 @@ class PublishEventAspectTest {
             doThrow(new RuntimeException("Kafka connection failed"))
                     .when(eventProducer).publish(any(), any());
 
-            // When & Then - 예외가 발생하지 않아야 함
+            // When & Then - Should not throw exception
             assertThatCode(() -> aspect.afterReturning(joinPoint, publishEvent, "result"))
                     .doesNotThrowAnyException();
         }
     }
 
     @Nested
-    @DisplayName("심각도(Severity) 테스트")
+    @DisplayName("Severity Test")
     class SeverityTest {
 
         @Test
-        @DisplayName("CRITICAL 심각도로 이벤트를 발행할 수 있다")
+        @DisplayName("Should publish event with CRITICAL severity")
         void publishEvent_withCriticalSeverity_shouldPublish() {
             // Given
             when(publishEvent.phase()).thenReturn(PublishEvent.Phase.AFTER_RETURNING);
@@ -300,7 +300,7 @@ class PublishEventAspectTest {
         }
 
         @Test
-        @DisplayName("ERROR 심각도로 이벤트를 발행할 수 있다")
+        @DisplayName("Should publish event with ERROR severity")
         void publishEvent_withErrorSeverity_shouldPublish() {
             // Given
             when(publishEvent.phase()).thenReturn(PublishEvent.Phase.AFTER_RETURNING);
@@ -316,7 +316,7 @@ class PublishEventAspectTest {
         }
     }
 
-    // 테스트용 클래스
+    // Test class
     public static class TestService {
         public String testMethod(String input) {
             return "result: " + input;

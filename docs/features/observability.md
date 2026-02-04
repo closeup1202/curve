@@ -98,7 +98,7 @@ curl http://localhost:8080/actuator/curve-metrics
       {
         "eventType": "ORDER_CREATED",
         "failureReason": "Kafka timeout",
-        "timestamp": "2025-02-03T10:30:00Z"
+        "timestamp": "2026-02-03T10:30:00Z"
       }
     ]
   },
@@ -175,9 +175,9 @@ logging:
 ### Log Output
 
 ```
-2025-02-03 10:30:00.123 DEBUG [curve] Publishing event: ORDER_CREATED
-2025-02-03 10:30:00.125 DEBUG [curve.kafka] Sending to topic: event.audit.v1
-2025-02-03 10:30:00.150 INFO  [curve] Event published successfully: eventId=7355889748156289024
+2026-02-03 10:30:00.123 DEBUG [curve] Publishing event: ORDER_CREATED
+2026-02-03 10:30:00.125 DEBUG [curve.kafka] Sending to topic: event.audit.v1
+2026-02-03 10:30:00.150 INFO  [curve] Event published successfully: eventId=7355889748156289024
 ```
 
 ### Structured Logging (JSON)

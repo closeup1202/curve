@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("NoOpCurveMetricsCollector 테스트")
+@DisplayName("NoOpCurveMetricsCollector Test")
 class NoOpCurveMetricsCollectorTest {
 
     @Test
-    @DisplayName("NoOpCurveMetricsCollector 생성")
+    @DisplayName("Create NoOpCurveMetricsCollector")
     void createNoOpCollector() {
         // when
         NoOpCurveMetricsCollector collector = new NoOpCurveMetricsCollector();
@@ -19,7 +19,7 @@ class NoOpCurveMetricsCollectorTest {
     }
 
     @Test
-    @DisplayName("CurveMetricsCollector 인터페이스 구현")
+    @DisplayName("Implement CurveMetricsCollector interface")
     void implementsCurveMetricsCollector() {
         // given
         NoOpCurveMetricsCollector collector = new NoOpCurveMetricsCollector();
@@ -29,7 +29,7 @@ class NoOpCurveMetricsCollectorTest {
     }
 
     @Test
-    @DisplayName("recordEventPublished 호출 시 예외 없음")
+    @DisplayName("recordEventPublished does not throw exception")
     void recordEventPublishedDoesNotThrow() {
         // given
         NoOpCurveMetricsCollector collector = new NoOpCurveMetricsCollector();
@@ -41,7 +41,7 @@ class NoOpCurveMetricsCollectorTest {
     }
 
     @Test
-    @DisplayName("recordDlqEvent 호출 시 예외 없음")
+    @DisplayName("recordDlqEvent does not throw exception")
     void recordDlqEventDoesNotThrow() {
         // given
         NoOpCurveMetricsCollector collector = new NoOpCurveMetricsCollector();
@@ -53,7 +53,7 @@ class NoOpCurveMetricsCollectorTest {
     }
 
     @Test
-    @DisplayName("recordRetry 호출 시 예외 없음")
+    @DisplayName("recordRetry does not throw exception")
     void recordRetryDoesNotThrow() {
         // given
         NoOpCurveMetricsCollector collector = new NoOpCurveMetricsCollector();
@@ -65,7 +65,7 @@ class NoOpCurveMetricsCollectorTest {
     }
 
     @Test
-    @DisplayName("recordKafkaError 호출 시 예외 없음")
+    @DisplayName("recordKafkaError does not throw exception")
     void recordKafkaErrorDoesNotThrow() {
         // given
         NoOpCurveMetricsCollector collector = new NoOpCurveMetricsCollector();
@@ -77,7 +77,7 @@ class NoOpCurveMetricsCollectorTest {
     }
 
     @Test
-    @DisplayName("recordAuditFailure 호출 시 예외 없음")
+    @DisplayName("recordAuditFailure does not throw exception")
     void recordAuditFailureDoesNotThrow() {
         // given
         NoOpCurveMetricsCollector collector = new NoOpCurveMetricsCollector();
@@ -89,7 +89,7 @@ class NoOpCurveMetricsCollectorTest {
     }
 
     @Test
-    @DisplayName("recordPiiProcessing 호출 시 예외 없음")
+    @DisplayName("recordPiiProcessing does not throw exception")
     void recordPiiProcessingDoesNotThrow() {
         // given
         NoOpCurveMetricsCollector collector = new NoOpCurveMetricsCollector();
@@ -101,7 +101,7 @@ class NoOpCurveMetricsCollectorTest {
     }
 
     @Test
-    @DisplayName("recordIdGeneration 호출 시 예외 없음")
+    @DisplayName("recordIdGeneration does not throw exception")
     void recordIdGenerationDoesNotThrow() {
         // given
         NoOpCurveMetricsCollector collector = new NoOpCurveMetricsCollector();
@@ -113,7 +113,7 @@ class NoOpCurveMetricsCollectorTest {
     }
 
     @Test
-    @DisplayName("null 값으로 메서드 호출 시 예외 없음")
+    @DisplayName("Methods with null values do not throw exception")
     void methodsWithNullValuesDoNotThrow() {
         // given
         NoOpCurveMetricsCollector collector = new NoOpCurveMetricsCollector();
@@ -131,7 +131,7 @@ class NoOpCurveMetricsCollectorTest {
     }
 
     @Test
-    @DisplayName("연속 호출 시 안정적으로 동작")
+    @DisplayName("Stable across multiple calls")
     void stableAcrossMultipleCalls() {
         // given
         NoOpCurveMetricsCollector collector = new NoOpCurveMetricsCollector();
@@ -151,7 +151,7 @@ class NoOpCurveMetricsCollectorTest {
     }
 
     @Test
-    @DisplayName("극한 값으로 메서드 호출 시 예외 없음")
+    @DisplayName("Methods with extreme values do not throw exception")
     void methodsWithExtremeValuesDoNotThrow() {
         // given
         NoOpCurveMetricsCollector collector = new NoOpCurveMetricsCollector();

@@ -468,10 +468,10 @@ Or use Logback with JSON encoder:
 
 ```bash
 # Check Kafka connectivity
-nc -zv kafka-host 9094
+nc -zv kafka-host 9092
 
 # View recent DLQ events
-kafka-console-consumer --bootstrap-server localhost:9094 \
+kafka-console-consumer --bootstrap-server localhost:9092 \
   --topic event.audit.dlq.v1 --from-beginning --max-messages 10
 
 # Check outbox table

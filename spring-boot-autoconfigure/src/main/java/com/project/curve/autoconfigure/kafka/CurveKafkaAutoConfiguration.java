@@ -5,6 +5,10 @@ import com.project.curve.autoconfigure.CurveProperties;
 import com.project.curve.core.context.EventContextProvider;
 import com.project.curve.core.port.EventProducer;
 import com.project.curve.core.serde.EventSerializer;
+import com.project.curve.kafka.backup.CompositeBackupStrategy;
+import com.project.curve.kafka.backup.EventBackupStrategy;
+import com.project.curve.kafka.backup.LocalFileBackupStrategy;
+import com.project.curve.kafka.backup.S3BackupStrategy;
 import com.project.curve.kafka.producer.KafkaEventProducer;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
 import com.project.curve.spring.metrics.CurveMetricsCollector;
@@ -14,7 +18,9 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,8 +28,11 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.retry.support.RetryTemplate;
+import software.amazon.awssdk.services.s3.S3Client;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -75,6 +84,49 @@ public class CurveKafkaAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(EventBackupStrategy.class)
+    public EventBackupStrategy eventBackupStrategy(
+            CurveProperties properties,
+            ObjectMapper objectMapper,
+            @Autowired(required = false) S3Client s3Client
+    ) {
+        List<EventBackupStrategy> strategies = new ArrayList<>();
+        var kafkaConfig = properties.getKafka();
+
+        // 1. S3 Backup (if configured and client available)
+        if (kafkaConfig.getBackup().isS3Enabled() && s3Client != null) {
+            strategies.add(new S3BackupStrategy(
+                    s3Client,
+                    kafkaConfig.getBackup().getS3Bucket(),
+                    kafkaConfig.getBackup().getS3Prefix(),
+                    objectMapper
+            ));
+            log.info("S3 Backup Strategy configured: bucket={}", kafkaConfig.getBackup().getS3Bucket());
+        }
+
+        // 2. Local File Backup (always added as fallback unless disabled)
+        if (kafkaConfig.getBackup().isLocalEnabled()) {
+            strategies.add(new LocalFileBackupStrategy(
+                    kafkaConfig.getDlqBackupPath(),
+                    objectMapper,
+                    kafkaConfig.isProduction()
+            ));
+            log.info("Local File Backup Strategy configured: path={}", kafkaConfig.getDlqBackupPath());
+        }
+
+        if (strategies.isEmpty()) {
+            log.warn("No backup strategies configured. Events may be lost if DLQ fails.");
+            return null;
+        }
+
+        if (strategies.size() == 1) {
+            return strategies.get(0);
+        }
+
+        return new CompositeBackupStrategy(strategies);
+    }
+
+    @Bean
     @ConditionalOnMissingBean(EventProducer.class)
     public EventProducer eventProducer(
             EventEnvelopeFactory envelopeFactory,
@@ -85,7 +137,8 @@ public class CurveKafkaAutoConfiguration {
             CurveProperties properties,
             CurveMetricsCollector metricsCollector,
             @Autowired(required = false) @Qualifier("curveRetryTemplate") RetryTemplate retryTemplate,
-            @Autowired(required = false) @Qualifier("curveDlqExecutor") ExecutorService dlqExecutor
+            @Autowired(required = false) @Qualifier("curveDlqExecutor") ExecutorService dlqExecutor,
+            @Autowired(required = false) EventBackupStrategy backupStrategy
     ) {
         var kafkaConfig = properties.getKafka();
         boolean hasRetry = retryTemplate != null && properties.getRetry().isEnabled();
@@ -102,10 +155,10 @@ public class CurveKafkaAutoConfiguration {
                 .asyncMode(kafkaConfig.isAsyncMode())
                 .asyncTimeoutMs(kafkaConfig.getAsyncTimeoutMs())
                 .syncTimeoutSeconds(kafkaConfig.getSyncTimeoutSeconds())
-                .dlqBackupPath(kafkaConfig.getDlqBackupPath())
                 .dlqExecutor(dlqExecutor)
                 .metricsCollector(metricsCollector)
                 .isProduction(kafkaConfig.isProduction())
+                .backupStrategy(backupStrategy)
                 .build();
     }
 

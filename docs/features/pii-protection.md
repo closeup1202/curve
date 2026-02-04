@@ -294,7 +294,7 @@ public class UserRegisteredPayload implements DomainEventPayload {
   "lastName": "7f8e9d1a...",
   "address": "*** Main St, ***",
   "lastLoginIp": "8f7e6d5c...",
-  "createdAt": "2025-02-03T10:30:00Z"
+  "createdAt": "2026-02-03T10:30:00Z"
 }
 ```
 

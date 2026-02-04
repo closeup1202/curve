@@ -11,7 +11,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("MdcTagsContextProvider 테스트")
+@DisplayName("MdcTagsContextProvider Test")
 class MdcTagsContextProviderTest {
 
     @BeforeEach
@@ -25,11 +25,11 @@ class MdcTagsContextProviderTest {
     }
 
     @Nested
-    @DisplayName("기본 생성자 테스트")
+    @DisplayName("Default Constructor Test")
     class DefaultConstructorTest {
 
         @Test
-        @DisplayName("기본 생성자는 region과 tenant를 추출한다")
+        @DisplayName("Default constructor should extract region and tenant")
         void getTags_withDefaultKeys_shouldExtractRegionAndTenant() {
             // Given
             MDC.put("region", "ap-northeast-2");
@@ -47,7 +47,7 @@ class MdcTagsContextProviderTest {
         }
 
         @Test
-        @DisplayName("MDC에 값이 없으면 빈 맵을 반환한다")
+        @DisplayName("Should return empty map if MDC has no values")
         void getTags_withNoMdcValues_shouldReturnEmptyMap() {
             // Given
             MdcTagsContextProvider provider = new MdcTagsContextProvider();
@@ -60,7 +60,7 @@ class MdcTagsContextProviderTest {
         }
 
         @Test
-        @DisplayName("일부 키만 설정되어 있으면 해당 키만 반환한다")
+        @DisplayName("Should return only set keys if partial values are set")
         void getTags_withPartialValues_shouldReturnOnlySetKeys() {
             // Given
             MDC.put("region", "us-east-1");
@@ -79,11 +79,11 @@ class MdcTagsContextProviderTest {
     }
 
     @Nested
-    @DisplayName("커스텀 키 테스트")
+    @DisplayName("Custom Keys Test")
     class CustomKeysTest {
 
         @Test
-        @DisplayName("withKeys로 커스텀 키를 설정할 수 있다")
+        @DisplayName("Should use custom keys with withKeys")
         void withKeys_shouldUseCustomKeys() {
             // Given
             MDC.put("customKey1", "value1");
@@ -101,7 +101,7 @@ class MdcTagsContextProviderTest {
         }
 
         @Test
-        @DisplayName("커스텀 키가 설정되면 기본 키는 무시된다")
+        @DisplayName("Should ignore default keys if custom keys are set")
         void withKeys_shouldIgnoreDefaultKeys() {
             // Given
             MDC.put("region", "ap-northeast-2");
@@ -119,7 +119,7 @@ class MdcTagsContextProviderTest {
         }
 
         @Test
-        @DisplayName("빈 키 배열로 생성하면 빈 맵을 반환한다")
+        @DisplayName("Should return empty map if created with empty key array")
         void withKeys_withEmptyArray_shouldReturnEmptyMap() {
             // Given
             MDC.put("region", "ap-northeast-2");
@@ -134,11 +134,11 @@ class MdcTagsContextProviderTest {
     }
 
     @Nested
-    @DisplayName("불변성 테스트")
+    @DisplayName("Immutability Test")
     class ImmutabilityTest {
 
         @Test
-        @DisplayName("반환된 맵은 불변이다")
+        @DisplayName("Returned map should be immutable")
         void getTags_shouldReturnImmutableMap() {
             // Given
             MDC.put("region", "ap-northeast-2");
@@ -153,7 +153,7 @@ class MdcTagsContextProviderTest {
         }
 
         @Test
-        @DisplayName("tagKeys는 불변이다")
+        @DisplayName("tagKeys should be immutable")
         void tagKeys_shouldBeImmutable() {
             // Given
             MdcTagsContextProvider provider = new MdcTagsContextProvider();
@@ -165,11 +165,11 @@ class MdcTagsContextProviderTest {
     }
 
     @Nested
-    @DisplayName("null 안전성 테스트")
+    @DisplayName("Null Safety Test")
     class NullSafetyTest {
 
         @Test
-        @DisplayName("MDC 값이 null이어도 NPE가 발생하지 않는다")
+        @DisplayName("Should not throw NPE even if MDC value is null")
         void getTags_withNullMdcValue_shouldNotThrowNpe() {
             // Given
             // MDC.get() returns null for non-existent keys

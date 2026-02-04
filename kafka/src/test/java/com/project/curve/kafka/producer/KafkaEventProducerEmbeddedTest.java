@@ -15,7 +15,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -38,9 +41,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * EmbeddedKafka를 사용한 Kafka 통합 테스트
- * Docker 없이 JVM 내에서 Kafka를 실행하여 테스트합니다.
- * Testcontainers보다 빠르고 가벼우며, CI/CD 환경에서 더 안정적입니다.
+ * Kafka integration test using EmbeddedKafka.
+ * Runs Kafka within the JVM without Docker.
+ * Faster and lighter than Testcontainers, and more stable in CI/CD environments.
  */
 @ExtendWith(SpringExtension.class)
 @EmbeddedKafka(
@@ -59,7 +62,7 @@ class KafkaEventProducerEmbeddedTest {
     @BeforeEach
     void setUp() {
 
-        // Kafka 프로듀서 설정
+        // Kafka Producer Configuration
         Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka);
         producerProps.put("key.serializer", StringSerializer.class);
         producerProps.put("value.serializer", StringSerializer.class);
@@ -68,7 +71,7 @@ class KafkaEventProducerEmbeddedTest {
                 new DefaultKafkaProducerFactory<>(producerProps);
         KafkaTemplate<String, Object> kafkaTemplate = new KafkaTemplate<>(producerFactory);
 
-        // ObjectMapper 설정
+        // ObjectMapper Configuration
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
@@ -84,11 +87,11 @@ class KafkaEventProducerEmbeddedTest {
 
         EventEnvelopeFactory envelopeFactory = new EventEnvelopeFactory(clockProvider, idGenerator);
 
-        // EventSerializer mock 설정
+        // EventSerializer mock configuration
         com.project.curve.core.serde.EventSerializer eventSerializer = mock(com.project.curve.core.serde.EventSerializer.class);
         when(eventSerializer.serialize(any())).thenAnswer(invocation -> objectMapper.writeValueAsString(invocation.getArgument(0)));
 
-        // KafkaEventProducer 생성
+        // Create KafkaEventProducer
         producer = KafkaEventProducer.builder()
                 .envelopeFactory(envelopeFactory)
                 .eventContextProvider(contextProvider)
@@ -101,7 +104,7 @@ class KafkaEventProducerEmbeddedTest {
                 .asyncMode(false)
                 .build();
 
-        // Kafka 컨슈머 설정
+        // Kafka Consumer Configuration
         Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("embedded-test-group", "true", embeddedKafka);
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -110,7 +113,7 @@ class KafkaEventProducerEmbeddedTest {
         consumer = new KafkaConsumer<>(consumerProps);
         consumer.subscribe(Collections.singletonList("embedded-test-topic"));
 
-        // DLQ 컨슈머 설정
+        // DLQ Consumer Configuration
         Map<String, Object> dlqConsumerProps = KafkaTestUtils.consumerProps("embedded-dlq-group", "true", embeddedKafka);
         dlqConsumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         dlqConsumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -131,7 +134,7 @@ class KafkaEventProducerEmbeddedTest {
     }
 
     @Test
-    @DisplayName("EmbeddedKafka가 정상적으로 시작되었는지 확인")
+    @DisplayName("Verify EmbeddedKafka started successfully")
     void embeddedKafka_shouldBeRunning() {
         // Then
         assertThat(embeddedKafka).isNotNull();
@@ -139,7 +142,7 @@ class KafkaEventProducerEmbeddedTest {
     }
 
     @Test
-    @DisplayName("이벤트를 Kafka에 발행할 수 있다")
+    @DisplayName("Should be able to publish events to Kafka")
     void publish_shouldSendEventToKafka() {
         // Given
         TestEventPayload payload = new TestEventPayload("order-1", "embedded-test-data", 100);
@@ -151,7 +154,7 @@ class KafkaEventProducerEmbeddedTest {
     }
 
     @Test
-    @DisplayName("여러 이벤트를 연속으로 발행할 수 있다")
+    @DisplayName("Should succeed in publishing multiple events consecutively")
     void publish_multipleEvents_shouldSucceed() {
         // Given
         int eventCount = 5;
@@ -166,22 +169,22 @@ class KafkaEventProducerEmbeddedTest {
     }
 
     @Test
-    @DisplayName("실제로 Kafka에 메시지가 전송되고 Consumer로 받을 수 있다")
+    @DisplayName("Should actually send message to Kafka and receive it with Consumer")
     void publish_shouldSendMessageAndConsumeSuccessfully() {
         // Given
         String testData = "embedded-kafka-message-test-" + System.currentTimeMillis();
         TestEventPayload payload = new TestEventPayload("order-123", testData, 100);
 
-        // When: 메시지 발행
+        // When: Publish message
         producer.publish(payload, EventSeverity.INFO);
 
-        // Then: Consumer로 메시지 수신
+        // Then: Receive message with Consumer
         ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(10));
 
         assertThat(records).isNotEmpty();
         assertThat(records.count()).isGreaterThan(0);
 
-        // 메시지 내용 검증
+        // Verify message content
         AtomicBoolean foundMessage = new AtomicBoolean(false);
 
         Iterable<ConsumerRecord<String, String>> recordsList = records.records("embedded-test-topic");
@@ -193,12 +196,12 @@ class KafkaEventProducerEmbeddedTest {
         });
 
         assertThat(foundMessage.get())
-                .as("전송한 메시지가 Consumer에서 수신되어야 함")
+                .as("Sent message should be received by Consumer")
                 .isTrue();
     }
 
     @Test
-    @DisplayName("발행된 메시지에 이벤트 메타데이터가 포함되어 있다")
+    @DisplayName("Published message should include event metadata")
     void publish_shouldIncludeEventMetadata() throws Exception {
         // Given
         String testData = "metadata-test-" + System.currentTimeMillis();
@@ -206,17 +209,17 @@ class KafkaEventProducerEmbeddedTest {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        // When: 메시지 발행
+        // When: Publish message
         producer.publish(payload, EventSeverity.INFO);
 
-        // Then: Consumer로 메시지 수신 및 검증
+        // Then: Receive and verify message with Consumer
         ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(10));
 
         assertThat(records).isNotEmpty();
 
         Iterable<ConsumerRecord<String, String>> recordIterable = records.records("embedded-test-topic");
 
-        // JSON 파싱하여 필수 필드 검증
+        // Parse JSON and verify required fields
         boolean hasValidMetadata = false;
         for (ConsumerRecord<String, String> record : recordIterable) {
             if (record.value().contains(testData)) {
@@ -224,7 +227,7 @@ class KafkaEventProducerEmbeddedTest {
                     String json = record.value();
                     Map<?, ?> envelope = objectMapper.readValue(json, Map.class);
 
-                    // 필수 필드 검증
+                    // Verify required fields
                     hasValidMetadata = envelope.containsKey("eventId") &&
                             envelope.containsKey("eventType") &&
                             envelope.containsKey("severity") &&
@@ -237,26 +240,26 @@ class KafkaEventProducerEmbeddedTest {
                         break;
                     }
                 } catch (Exception e) {
-                    // 파싱 실패 시 계속 진행
+                    // Continue if parsing fails
                 }
             }
         }
 
         assertThat(hasValidMetadata)
-                .as("메시지에 모든 필수 메타데이터가 포함되어야 함")
+                .as("Message should include all required metadata")
                 .isTrue();
     }
 
     @Test
-    @DisplayName("DLQ 토픽이 정상적으로 설정되어 있다")
+    @DisplayName("DLQ topic should be configured correctly")
     void dlq_shouldBeConfigured() {
-        // Given & When: DLQ Consumer가 구독되어 있음
-        // Then: DLQ Consumer가 정상 동작
+        // Given & When: DLQ Consumer is subscribed
+        // Then: DLQ Consumer operates normally
         assertThat(dlqConsumer.subscription()).contains("embedded-test-dlq-topic");
     }
 
     @Test
-    @DisplayName("비동기 모드로 이벤트를 발행할 수 있다")
+    @DisplayName("Should be able to publish events in async mode")
     void publish_asyncMode_shouldSendEventSuccessfully() throws InterruptedException {
         // Given: Async mode producer
         Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka);

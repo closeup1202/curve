@@ -282,7 +282,7 @@ ERROR: Failed to send event to Kafka
 
 **Solution**:
 - Verify Kafka is running: `docker-compose ps`
-- Check bootstrap-servers setting: `localhost:9094`
+- Check bootstrap-servers setting: `localhost:9092`
 
 ### 2. PII Encryption Failure
 

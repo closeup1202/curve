@@ -43,7 +43,7 @@ Add Kafka configuration to your `application.yml`:
 ```yaml title="application.yml"
 spring:
   kafka:
-    bootstrap-servers: localhost:9094
+    bootstrap-servers: localhost:9092
 
 curve:
   enabled: true
@@ -88,7 +88,7 @@ Start your application and create an order. Check the Kafka topic:
 
 ```bash
 # View events in Kafka
-kafka-console-consumer --bootstrap-server localhost:9094 \
+kafka-console-consumer --bootstrap-server localhost:9092 \
     --topic event.audit.v1 --from-beginning
 ```
 
@@ -98,8 +98,8 @@ kafka-console-consumer --bootstrap-server localhost:9094 \
 {
   "eventId": "7355889748156289024",
   "eventType": "ORDER_CREATED",
-  "occurredAt": "2025-02-03T10:30:00Z",
-  "publishedAt": "2025-02-03T10:30:00.123Z",
+  "occurredAt": "2026-02-03T10:30:00Z",
+  "publishedAt": "2026-02-03T10:30:00.123Z",
   "severity": "INFO",
   "metadata": {
     "source": {

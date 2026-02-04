@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("EventPublishException 테스트")
+@DisplayName("EventPublishException Test")
 class EventPublishExceptionTest {
 
     @Test
-    @DisplayName("메시지로 예외 생성")
+    @DisplayName("Create exception with message")
     void createExceptionWithMessage() {
         // given
         String message = "Failed to publish event";
@@ -24,7 +24,7 @@ class EventPublishExceptionTest {
     }
 
     @Test
-    @DisplayName("메시지와 cause로 예외 생성")
+    @DisplayName("Create exception with message and cause")
     void createExceptionWithMessageAndCause() {
         // given
         String message = "Failed to publish event";
@@ -40,7 +40,7 @@ class EventPublishExceptionTest {
     }
 
     @Test
-    @DisplayName("RuntimeException을 상속함")
+    @DisplayName("Should extend RuntimeException")
     void extendsRuntimeException() {
         // given
         EventPublishException exception = new EventPublishException("test");
@@ -50,7 +50,7 @@ class EventPublishExceptionTest {
     }
 
     @Test
-    @DisplayName("null 메시지로 예외 생성")
+    @DisplayName("Create exception with null message")
     void createExceptionWithNullMessage() {
         // when
         EventPublishException exception = new EventPublishException(null);
@@ -61,7 +61,7 @@ class EventPublishExceptionTest {
     }
 
     @Test
-    @DisplayName("빈 메시지로 예외 생성")
+    @DisplayName("Create exception with empty message")
     void createExceptionWithEmptyMessage() {
         // given
         String message = "";
@@ -75,7 +75,7 @@ class EventPublishExceptionTest {
     }
 
     @Test
-    @DisplayName("긴 메시지로 예외 생성")
+    @DisplayName("Create exception with long message")
     void createExceptionWithLongMessage() {
         // given
         String message = "Failed to publish event: " + "x".repeat(1000);
@@ -90,7 +90,7 @@ class EventPublishExceptionTest {
     }
 
     @Test
-    @DisplayName("중첩된 예외 처리")
+    @DisplayName("Handle nested exceptions")
     void testNestedExceptions() {
         // given
         Throwable rootCause = new IllegalStateException("Invalid state");

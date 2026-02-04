@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("DefaultActorContextProvider 테스트")
+@DisplayName("DefaultActorContextProvider Test")
 class DefaultActorContextProviderTest {
 
     @Mock
@@ -36,11 +36,11 @@ class DefaultActorContextProviderTest {
     }
 
     @Nested
-    @DisplayName("사용자 정보 테스트")
+    @DisplayName("User Info Test")
     class UserInfoTest {
 
         @Test
-        @DisplayName("항상 SYSTEM 사용자를 반환한다")
+        @DisplayName("Should always return SYSTEM user")
         void getActor_shouldReturnSystemUser() {
             // Given
             setUpRequestContext("192.168.1.100");
@@ -55,11 +55,11 @@ class DefaultActorContextProviderTest {
     }
 
     @Nested
-    @DisplayName("클라이언트 IP 테스트")
+    @DisplayName("Client IP Test")
     class ClientIpTest {
 
         @Test
-        @DisplayName("Request Context가 있으면 remoteAddr를 반환한다")
+        @DisplayName("Should return remoteAddr if Request Context exists")
         void getActor_withRequestContext_shouldReturnRemoteAddr() {
             // Given
             setUpRequestContext("10.0.0.1");
@@ -72,7 +72,7 @@ class DefaultActorContextProviderTest {
         }
 
         @Test
-        @DisplayName("Request Context가 없으면 기본 IP(127.0.0.1)를 반환한다")
+        @DisplayName("Should return default IP (127.0.0.1) if Request Context does not exist")
         void getActor_withoutRequestContext_shouldReturnDefaultIp() {
             // Given - No request context set
 
@@ -84,7 +84,7 @@ class DefaultActorContextProviderTest {
         }
 
         @Test
-        @DisplayName("remoteAddr가 null이면 기본 IP를 반환한다")
+        @DisplayName("Should return default IP if remoteAddr is null")
         void getActor_withNullRemoteAddr_shouldReturnDefaultIp() {
             // Given
             setUpRequestContext(null);
@@ -97,7 +97,7 @@ class DefaultActorContextProviderTest {
         }
 
         @Test
-        @DisplayName("remoteAddr가 빈 문자열이면 기본 IP를 반환한다")
+        @DisplayName("Should return default IP if remoteAddr is empty string")
         void getActor_withEmptyRemoteAddr_shouldReturnDefaultIp() {
             // Given
             setUpRequestContext("");
@@ -110,7 +110,7 @@ class DefaultActorContextProviderTest {
         }
 
         @Test
-        @DisplayName("remoteAddr가 'unknown'이면 기본 IP를 반환한다")
+        @DisplayName("Should return default IP if remoteAddr is 'unknown'")
         void getActor_withUnknownRemoteAddr_shouldReturnDefaultIp() {
             // Given
             setUpRequestContext("unknown");
@@ -123,7 +123,7 @@ class DefaultActorContextProviderTest {
         }
 
         @Test
-        @DisplayName("IPv6 주소도 정상적으로 반환된다")
+        @DisplayName("Should return IPv6 address correctly")
         void getActor_withIpv6Address_shouldReturnIpv6() {
             // Given
             setUpRequestContext("::1");
@@ -136,9 +136,9 @@ class DefaultActorContextProviderTest {
         }
 
         @Test
-        @DisplayName("X-Forwarded-For로 처리된 IP도 정상 반환된다")
+        @DisplayName("Should return IP processed by X-Forwarded-For correctly")
         void getActor_withForwardedIp_shouldReturnForwardedIp() {
-            // Given - ForwardedHeaderFilter가 처리한 후의 IP
+            // Given - IP after ForwardedHeaderFilter processing
             setUpRequestContext("203.0.113.42");
 
             // When
@@ -150,11 +150,11 @@ class DefaultActorContextProviderTest {
     }
 
     @Nested
-    @DisplayName("일관성 테스트")
+    @DisplayName("Consistency Test")
     class ConsistencyTest {
 
         @Test
-        @DisplayName("여러 번 호출해도 일관된 결과를 반환한다")
+        @DisplayName("Should return consistent results when called multiple times")
         void getActor_calledMultipleTimes_shouldReturnConsistentResults() {
             // Given
             setUpRequestContext("192.168.1.1");

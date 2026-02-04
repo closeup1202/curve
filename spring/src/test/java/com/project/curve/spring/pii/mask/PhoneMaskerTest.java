@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("PhoneMasker 테스트")
+@DisplayName("PhoneMasker Test")
 class PhoneMaskerTest {
 
     private PhoneMasker masker;
@@ -19,7 +19,7 @@ class PhoneMaskerTest {
     }
 
     @Test
-    @DisplayName("WEAK 레벨 - 뒤 4자리만 마스킹")
+    @DisplayName("WEAK level - mask last 4 digits")
     void maskWeakLevel() {
         // when
         String result = masker.mask("010-1234-5678", MaskingLevel.WEAK);
@@ -29,7 +29,7 @@ class PhoneMaskerTest {
     }
 
     @Test
-    @DisplayName("NORMAL 레벨 - 중간 4자리 마스킹")
+    @DisplayName("NORMAL level - mask middle 4 digits")
     void maskNormalLevel() {
         // when
         String result = masker.mask("010-1234-5678", MaskingLevel.NORMAL);
@@ -39,7 +39,7 @@ class PhoneMaskerTest {
     }
 
     @Test
-    @DisplayName("STRONG 레벨 - 뒤 8자리 마스킹")
+    @DisplayName("STRONG level - mask last 8 digits")
     void maskStrongLevel() {
         // when
         String result = masker.mask("010-1234-5678", MaskingLevel.STRONG);
@@ -49,7 +49,7 @@ class PhoneMaskerTest {
     }
 
     @Test
-    @DisplayName("하이픈 없는 전화번호 - WEAK")
+    @DisplayName("Phone without hyphen - WEAK")
     void maskWithoutHyphenWeak() {
         // when
         String result = masker.mask("01012345678", MaskingLevel.WEAK);
@@ -59,7 +59,7 @@ class PhoneMaskerTest {
     }
 
     @Test
-    @DisplayName("하이픈 없는 전화번호 - NORMAL")
+    @DisplayName("Phone without hyphen - NORMAL")
     void maskWithoutHyphenNormal() {
         // when
         String result = masker.mask("01012345678", MaskingLevel.NORMAL);
@@ -69,7 +69,7 @@ class PhoneMaskerTest {
     }
 
     @Test
-    @DisplayName("짧은 전화번호 (4자리 미만)")
+    @DisplayName("Short phone number (less than 4 digits)")
     void maskShortPhone() {
         // when
         String result = masker.mask("123", MaskingLevel.NORMAL);
@@ -79,7 +79,7 @@ class PhoneMaskerTest {
     }
 
     @Test
-    @DisplayName("null 값 처리")
+    @DisplayName("Handle null value")
     void maskNullValue() {
         // when
         String result = masker.mask(null, MaskingLevel.NORMAL);
@@ -89,7 +89,7 @@ class PhoneMaskerTest {
     }
 
     @Test
-    @DisplayName("빈 문자열 처리")
+    @DisplayName("Handle empty string")
     void maskEmptyString() {
         // when
         String result = masker.mask("", MaskingLevel.NORMAL);
@@ -99,17 +99,17 @@ class PhoneMaskerTest {
     }
 
     @Test
-    @DisplayName("null 레벨 처리")
+    @DisplayName("Handle null level")
     void maskWithNullLevel() {
         // when
         String result = masker.mask("010-1234-5678", null);
 
         // then
-        assertEquals("010-****-5678", result); // NORMAL 레벨 동작
+        assertEquals("010-****-5678", result); // NORMAL level behavior
     }
 
     @Test
-    @DisplayName("supports 메서드 - PHONE 타입만 지원")
+    @DisplayName("supports method - only supports PHONE type")
     void supportsPhoneType() {
         // then
         assertTrue(masker.supports(PiiType.PHONE));
@@ -119,7 +119,7 @@ class PhoneMaskerTest {
     }
 
     @Test
-    @DisplayName("괄호 포함 전화번호 - WEAK")
+    @DisplayName("Phone with parenthesis - WEAK")
     void maskWithParenthesisWeak() {
         // when
         String result = masker.mask("(010)1234-5678", MaskingLevel.WEAK);
@@ -130,7 +130,7 @@ class PhoneMaskerTest {
     }
 
     @Test
-    @DisplayName("공백 포함 전화번호 - WEAK")
+    @DisplayName("Phone with space - WEAK")
     void maskWithSpaceWeak() {
         // when
         String result = masker.mask("010 1234 5678", MaskingLevel.WEAK);

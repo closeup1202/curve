@@ -60,7 +60,7 @@ This guide helps you diagnose and resolve common issues with Curve.
 **Diagnosis:**
 ```bash
 # Check DLQ topic
-kafka-console-consumer --bootstrap-server localhost:9094 \
+kafka-console-consumer --bootstrap-server localhost:9092 \
   --topic event.audit.dlq.v1 --from-beginning
 ```
 
@@ -105,18 +105,18 @@ Failed to update metadata after 60000 ms
    ```bash
    docker ps | grep kafka
    # or
-   nc -zv localhost 9094
+   nc -zv localhost 9092
    ```
 
 2. **Check bootstrap servers configuration**
    ```yaml
    spring:
      kafka:
-       bootstrap-servers: localhost:9094  # Correct address?
+       bootstrap-servers: localhost:9092  # Correct address?
    ```
 
 3. **Network/Firewall issues**
-   - Ensure port 9094 is accessible
+   - Ensure port 9092 is accessible
    - Check Docker network configuration
 
 ### SSL/TLS Handshake Failure

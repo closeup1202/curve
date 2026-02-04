@@ -22,7 +22,7 @@ class EncryptingPiiProcessorTest {
 
     @BeforeEach
     void setUp() {
-        // 32바이트 AES 키 생성
+        // Generate 32-byte AES key
         byte[] keyBytes = new byte[32];
         for (int i = 0; i < 32; i++) {
             keyBytes[i] = (byte) i;
@@ -33,7 +33,7 @@ class EncryptingPiiProcessorTest {
     }
 
     @Test
-    @DisplayName("지원하는 전략은 ENCRYPT이다")
+    @DisplayName("Supported strategy should be ENCRYPT")
     void supportedStrategy_shouldBeEncrypt() {
         // When
         PiiStrategy strategy = processor.supportedStrategy();
@@ -43,7 +43,7 @@ class EncryptingPiiProcessorTest {
     }
 
     @Test
-    @DisplayName("문자열을 암호화하면 ENC() 형식으로 감싸진다")
+    @DisplayName("Encrypted string should be wrapped with ENC() prefix")
     void process_shouldWrapWithEncPrefix() {
         // Given
         String value = "sensitive-data";
@@ -59,7 +59,7 @@ class EncryptingPiiProcessorTest {
     }
 
     @Test
-    @DisplayName("암호화된 값은 원본과 달라야 한다")
+    @DisplayName("Encrypted value should be different from original")
     void process_shouldReturnDifferentValue() {
         // Given
         String value = "sensitive-data";
@@ -74,7 +74,7 @@ class EncryptingPiiProcessorTest {
     }
 
     @Test
-    @DisplayName("null을 암호화하면 null을 반환한다")
+    @DisplayName("Encrypting null should return null")
     void process_null_shouldReturnNull() {
         // Given
         PiiField piiField = createPiiField("");
@@ -87,7 +87,7 @@ class EncryptingPiiProcessorTest {
     }
 
     @Test
-    @DisplayName("빈 문자열을 암호화하면 빈 문자열을 반환한다")
+    @DisplayName("Encrypting empty string should return empty string")
     void process_emptyString_shouldReturnEmpty() {
         // Given
         PiiField piiField = createPiiField("");
@@ -100,7 +100,7 @@ class EncryptingPiiProcessorTest {
     }
 
     @Test
-    @DisplayName("같은 값을 여러 번 암호화하면 매번 다른 결과를 반환한다")
+    @DisplayName("Encrypting same value multiple times should return different results")
     void process_sameValue_shouldReturnDifferentResults() {
         // Given
         String value = "sensitive-data";
@@ -115,7 +115,7 @@ class EncryptingPiiProcessorTest {
     }
 
     @Test
-    @DisplayName("encryptKey가 지정되면 해당 키를 사용한다")
+    @DisplayName("Should use custom key if encryptKey is specified")
     void process_withCustomKey_shouldUseCustomKey() {
         // Given
         String value = "sensitive-data";
@@ -131,7 +131,7 @@ class EncryptingPiiProcessorTest {
     }
 
     @Test
-    @DisplayName("암호화된 값을 복호화하면 원본을 얻을 수 있다")
+    @DisplayName("Decrypted value should match original")
     void process_encrypt_decrypt_roundTrip() {
         // Given
         String value = "sensitive-data";
@@ -139,7 +139,7 @@ class EncryptingPiiProcessorTest {
 
         // When
         String encrypted = processor.process(value, piiField);
-        String encryptedValue = encrypted.substring(4, encrypted.length() - 1); // "ENC(" 제거
+        String encryptedValue = encrypted.substring(4, encrypted.length() - 1); // Remove "ENC("
         String decrypted = cryptoProvider.decrypt(encryptedValue, null);
 
         // Then

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("EmailMasker 테스트")
+@DisplayName("EmailMasker Test")
 class EmailMaskerTest {
 
     private EmailMasker masker;
@@ -19,7 +19,7 @@ class EmailMaskerTest {
     }
 
     @Test
-    @DisplayName("WEAK 레벨 - 로컬 앞 3자 표시")
+    @DisplayName("WEAK level - show first 3 chars of local part")
     void maskWeakLevel() {
         // when
         String result = masker.mask("john.doe@gmail.com", MaskingLevel.WEAK);
@@ -29,7 +29,7 @@ class EmailMaskerTest {
     }
 
     @Test
-    @DisplayName("NORMAL 레벨 - 로컬 앞 2자 + 도메인 앞 2자 표시")
+    @DisplayName("NORMAL level - show first 2 chars of local part + first 2 chars of domain")
     void maskNormalLevel() {
         // when
         String result = masker.mask("john.doe@gmail.com", MaskingLevel.NORMAL);
@@ -39,7 +39,7 @@ class EmailMaskerTest {
     }
 
     @Test
-    @DisplayName("STRONG 레벨 - 로컬 전체 + 도메인 전체 마스킹")
+    @DisplayName("STRONG level - mask all local part + all domain")
     void maskStrongLevel() {
         // when
         String result = masker.mask("john.doe@gmail.com", MaskingLevel.STRONG);
@@ -49,17 +49,17 @@ class EmailMaskerTest {
     }
 
     @Test
-    @DisplayName("짧은 로컬 부분 - WEAK")
+    @DisplayName("Short local part - WEAK")
     void maskShortLocalWeak() {
         // when
         String result = masker.mask("ab@test.com", MaskingLevel.WEAK);
 
         // then
-        assertEquals("ab@test.com", result); // 3자 미만이면 마스킹하지 않음
+        assertEquals("ab@test.com", result); // Do not mask if less than 3 chars
     }
 
     @Test
-    @DisplayName("@ 기호가 없는 경우")
+    @DisplayName("Handle missing @ symbol")
     void maskWithoutAt() {
         // when
         String result = masker.mask("notanemail", MaskingLevel.NORMAL);
@@ -69,7 +69,7 @@ class EmailMaskerTest {
     }
 
     @Test
-    @DisplayName("@ 기호가 맨 앞에 있는 경우")
+    @DisplayName("Handle @ symbol at start")
     void maskWithAtAtStart() {
         // when
         String result = masker.mask("@gmail.com", MaskingLevel.NORMAL);
@@ -79,7 +79,7 @@ class EmailMaskerTest {
     }
 
     @Test
-    @DisplayName("도메인에 점이 없는 경우")
+    @DisplayName("Handle domain without dot")
     void maskWithoutDotInDomain() {
         // when
         String result = masker.mask("john@localhost", MaskingLevel.NORMAL);
@@ -89,7 +89,7 @@ class EmailMaskerTest {
     }
 
     @Test
-    @DisplayName("null 값 처리")
+    @DisplayName("Handle null value")
     void maskNullValue() {
         // when
         String result = masker.mask(null, MaskingLevel.NORMAL);
@@ -99,7 +99,7 @@ class EmailMaskerTest {
     }
 
     @Test
-    @DisplayName("빈 문자열 처리")
+    @DisplayName("Handle empty string")
     void maskEmptyString() {
         // when
         String result = masker.mask("", MaskingLevel.NORMAL);
@@ -109,17 +109,17 @@ class EmailMaskerTest {
     }
 
     @Test
-    @DisplayName("null 레벨 처리")
+    @DisplayName("Handle null level")
     void maskWithNullLevel() {
         // when
         String result = masker.mask("test@test.com", null);
 
         // then
-        assertEquals("te**@te**.com", result); // NORMAL 레벨 동작
+        assertEquals("te**@te**.com", result); // NORMAL level behavior
     }
 
     @Test
-    @DisplayName("supports 메서드 - EMAIL 타입만 지원")
+    @DisplayName("supports method - only supports EMAIL type")
     void supportsEmailType() {
         // then
         assertTrue(masker.supports(PiiType.EMAIL));
@@ -129,7 +129,7 @@ class EmailMaskerTest {
     }
 
     @Test
-    @DisplayName("복잡한 이메일 - WEAK")
+    @DisplayName("Complex email - WEAK")
     void maskComplexEmailWeak() {
         // when
         String result = masker.mask("user.name+tag@example.co.uk", MaskingLevel.WEAK);
@@ -141,7 +141,7 @@ class EmailMaskerTest {
     }
 
     @Test
-    @DisplayName("복잡한 이메일 - STRONG")
+    @DisplayName("Complex email - STRONG")
     void maskComplexEmailStrong() {
         // when
         String result = masker.mask("user.name@example.com", MaskingLevel.STRONG);

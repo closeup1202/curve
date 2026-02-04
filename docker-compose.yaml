@@ -5,14 +5,15 @@ services:
     networks:
       - kafka-net
     ports:
-      - "9094:9094"
+      - "9092:9092"
     volumes:
       - kafka-1-data:/apache/kafka
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9094,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://curve-apache-kafka:9092,EXTERNAL://localhost:9094
+      # Internal: 29092, External: 9092 (Standard port)
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://curve-apache-kafka:29092,EXTERNAL://localhost:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
 
@@ -35,7 +36,8 @@ services:
       - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: curve-apache-kafka:9092
+      # Connect via internal network port
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: curve-apache-kafka:29092
 
 networks:
   kafka-net:

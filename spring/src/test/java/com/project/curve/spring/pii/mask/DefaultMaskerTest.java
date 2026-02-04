@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("DefaultMasker 테스트")
+@DisplayName("DefaultMasker Test")
 class DefaultMaskerTest {
 
     private DefaultMasker masker;
@@ -19,7 +19,7 @@ class DefaultMaskerTest {
     }
 
     @Test
-    @DisplayName("WEAK 레벨 마스킹 - 앞 절반 표시")
+    @DisplayName("WEAK level masking - show first half")
     void maskWeakLevel() {
         // when
         String result = masker.mask("abcdef", MaskingLevel.WEAK);
@@ -29,7 +29,7 @@ class DefaultMaskerTest {
     }
 
     @Test
-    @DisplayName("NORMAL 레벨 마스킹 - 앞 2자 표시")
+    @DisplayName("NORMAL level masking - show first 2 chars")
     void maskNormalLevel() {
         // when
         String result = masker.mask("abcdef", MaskingLevel.NORMAL);
@@ -39,7 +39,7 @@ class DefaultMaskerTest {
     }
 
     @Test
-    @DisplayName("STRONG 레벨 마스킹 - 전체 마스킹")
+    @DisplayName("STRONG level masking - mask all")
     void maskStrongLevel() {
         // when
         String result = masker.mask("abcdef", MaskingLevel.STRONG);
@@ -49,7 +49,7 @@ class DefaultMaskerTest {
     }
 
     @Test
-    @DisplayName("null 값 처리")
+    @DisplayName("Handle null value")
     void maskNullValue() {
         // when
         String result = masker.mask(null, MaskingLevel.NORMAL);
@@ -59,7 +59,7 @@ class DefaultMaskerTest {
     }
 
     @Test
-    @DisplayName("빈 문자열 처리")
+    @DisplayName("Handle empty string")
     void maskEmptyString() {
         // when
         String result = masker.mask("", MaskingLevel.NORMAL);
@@ -69,27 +69,27 @@ class DefaultMaskerTest {
     }
 
     @Test
-    @DisplayName("null 레벨 처리 - 기본값 NORMAL")
+    @DisplayName("Handle null level - default to NORMAL")
     void maskWithNullLevel() {
         // when
         String result = masker.mask("abcdef", null);
 
         // then
-        assertEquals("ab****", result); // NORMAL 레벨 동작
+        assertEquals("ab****", result); // NORMAL level behavior
     }
 
     @Test
-    @DisplayName("한 글자 마스킹 - WEAK")
+    @DisplayName("Mask single char - WEAK")
     void maskSingleCharWeak() {
         // when
         String result = masker.mask("a", MaskingLevel.WEAK);
 
         // then
-        assertEquals("a", result); // 최소 1자 표시
+        assertEquals("a", result); // Show at least 1 char
     }
 
     @Test
-    @DisplayName("한 글자 마스킹 - NORMAL")
+    @DisplayName("Mask single char - NORMAL")
     void maskSingleCharNormal() {
         // when
         String result = masker.mask("a", MaskingLevel.NORMAL);
@@ -99,7 +99,7 @@ class DefaultMaskerTest {
     }
 
     @Test
-    @DisplayName("한 글자 마스킹 - STRONG")
+    @DisplayName("Mask single char - STRONG")
     void maskSingleCharStrong() {
         // when
         String result = masker.mask("a", MaskingLevel.STRONG);
@@ -109,7 +109,7 @@ class DefaultMaskerTest {
     }
 
     @Test
-    @DisplayName("긴 문자열 마스킹 - WEAK")
+    @DisplayName("Mask long string - WEAK")
     void maskLongStringWeak() {
         // when
         String result = masker.mask("abcdefghijklmnop", MaskingLevel.WEAK);
@@ -119,7 +119,7 @@ class DefaultMaskerTest {
     }
 
     @Test
-    @DisplayName("한글 마스킹")
+    @DisplayName("Mask Korean characters")
     void maskKorean() {
         // when
         String weakResult = masker.mask("홍길동", MaskingLevel.WEAK);
@@ -133,7 +133,7 @@ class DefaultMaskerTest {
     }
 
     @Test
-    @DisplayName("supports 메서드 - CUSTOM 타입만 지원")
+    @DisplayName("supports method - only supports CUSTOM type")
     void supportsCustomType() {
         // then
         assertTrue(masker.supports(PiiType.CUSTOM));
@@ -144,7 +144,7 @@ class DefaultMaskerTest {
     }
 
     @Test
-    @DisplayName("PiiMasker 인터페이스 구현")
+    @DisplayName("Implement PiiMasker interface")
     void implementsPiiMasker() {
         // then
         assertTrue(masker instanceof PiiMasker);

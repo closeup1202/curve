@@ -11,21 +11,21 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("ClientIpExtractor 테스트")
+@DisplayName("ClientIpExtractor Test")
 class ClientIpExtractorTest {
 
     @AfterEach
     void tearDown() {
-        // 각 테스트 후 RequestContext 정리
+        // Reset RequestContext after each test
         RequestContextHolder.resetRequestAttributes();
     }
 
     @Nested
-    @DisplayName("getClientIp() - RequestContext 기반")
+    @DisplayName("getClientIp() - RequestContext based")
     class GetClientIpFromContextTest {
 
         @Test
-        @DisplayName("정상적인 클라이언트 IP를 추출할 수 있다")
+        @DisplayName("Should extract valid client IP")
         void extractValidClientIp() {
             // Given
             MockHttpServletRequest request = new MockHttpServletRequest();
@@ -40,7 +40,7 @@ class ClientIpExtractorTest {
         }
 
         @Test
-        @DisplayName("IPv6 주소를 정상적으로 추출할 수 있다")
+        @DisplayName("Should extract IPv6 address correctly")
         void extractIpv6Address() {
             // Given
             MockHttpServletRequest request = new MockHttpServletRequest();
@@ -55,7 +55,7 @@ class ClientIpExtractorTest {
         }
 
         @Test
-        @DisplayName("RequestContext가 없으면 기본 IP를 반환한다")
+        @DisplayName("Should return default IP if RequestContext is missing")
         void noRequestContext_shouldReturnDefaultIp() {
             // Given
             RequestContextHolder.resetRequestAttributes();
@@ -68,7 +68,7 @@ class ClientIpExtractorTest {
         }
 
         @Test
-        @DisplayName("remoteAddr이 null이면 기본 IP를 반환한다")
+        @DisplayName("Should return default IP if remoteAddr is null")
         void nullRemoteAddr_shouldReturnDefaultIp() {
             // Given
             MockHttpServletRequest request = new MockHttpServletRequest();
@@ -83,7 +83,7 @@ class ClientIpExtractorTest {
         }
 
         @Test
-        @DisplayName("remoteAddr이 빈 문자열이면 기본 IP를 반환한다")
+        @DisplayName("Should return default IP if remoteAddr is empty string")
         void emptyRemoteAddr_shouldReturnDefaultIp() {
             // Given
             MockHttpServletRequest request = new MockHttpServletRequest();
@@ -98,7 +98,7 @@ class ClientIpExtractorTest {
         }
 
         @Test
-        @DisplayName("remoteAddr이 'unknown'이면 기본 IP를 반환한다")
+        @DisplayName("Should return default IP if remoteAddr is 'unknown'")
         void unknownRemoteAddr_shouldReturnDefaultIp() {
             // Given
             MockHttpServletRequest request = new MockHttpServletRequest();
@@ -113,7 +113,7 @@ class ClientIpExtractorTest {
         }
 
         @Test
-        @DisplayName("remoteAddr이 'UNKNOWN'(대소문자 무관)이면 기본 IP를 반환한다")
+        @DisplayName("Should return default IP if remoteAddr is 'UNKNOWN' (case insensitive)")
         void unknownUppercaseRemoteAddr_shouldReturnDefaultIp() {
             // Given
             MockHttpServletRequest request = new MockHttpServletRequest();
@@ -129,11 +129,11 @@ class ClientIpExtractorTest {
     }
 
     @Nested
-    @DisplayName("getClientIp(HttpServletRequest) - 직접 request 제공")
+    @DisplayName("getClientIp(HttpServletRequest) - Direct request provided")
     class GetClientIpFromRequestTest {
 
         @Test
-        @DisplayName("정상적인 클라이언트 IP를 추출할 수 있다")
+        @DisplayName("Should extract valid client IP")
         void extractValidClientIp() {
             // Given
             MockHttpServletRequest request = new MockHttpServletRequest();
@@ -147,7 +147,7 @@ class ClientIpExtractorTest {
         }
 
         @Test
-        @DisplayName("null request는 기본 IP를 반환한다")
+        @DisplayName("Should return default IP if request is null")
         void nullRequest_shouldReturnDefaultIp() {
             // When
             String clientIp = ClientIpExtractor.getClientIp(null);
@@ -157,7 +157,7 @@ class ClientIpExtractorTest {
         }
 
         @Test
-        @DisplayName("remoteAddr이 null이면 기본 IP를 반환한다")
+        @DisplayName("Should return default IP if remoteAddr is null")
         void nullRemoteAddr_shouldReturnDefaultIp() {
             // Given
             MockHttpServletRequest request = new MockHttpServletRequest();
@@ -171,7 +171,7 @@ class ClientIpExtractorTest {
         }
 
         @Test
-        @DisplayName("remoteAddr이 빈 문자열이면 기본 IP를 반환한다")
+        @DisplayName("Should return default IP if remoteAddr is empty string")
         void emptyRemoteAddr_shouldReturnDefaultIp() {
             // Given
             MockHttpServletRequest request = new MockHttpServletRequest();
@@ -185,7 +185,7 @@ class ClientIpExtractorTest {
         }
 
         @Test
-        @DisplayName("remoteAddr이 'unknown'이면 기본 IP를 반환한다")
+        @DisplayName("Should return default IP if remoteAddr is 'unknown'")
         void unknownRemoteAddr_shouldReturnDefaultIp() {
             // Given
             MockHttpServletRequest request = new MockHttpServletRequest();
@@ -200,11 +200,11 @@ class ClientIpExtractorTest {
     }
 
     @Nested
-    @DisplayName("getDefaultIp() 테스트")
+    @DisplayName("getDefaultIp() Test")
     class GetDefaultIpTest {
 
         @Test
-        @DisplayName("기본 IP는 127.0.0.1이다")
+        @DisplayName("Default IP should be 127.0.0.1")
         void getDefaultIp() {
             // When
             String defaultIp = ClientIpExtractor.getDefaultIp();
@@ -215,15 +215,15 @@ class ClientIpExtractorTest {
     }
 
     @Nested
-    @DisplayName("실제 프록시 환경 시뮬레이션")
+    @DisplayName("Proxy Environment Simulation")
     class ProxyEnvironmentTest {
 
         @Test
-        @DisplayName("ForwardedHeaderFilter 처리 후 remoteAddr는 실제 클라이언트 IP를 가진다")
+        @DisplayName("Should return actual client IP after ForwardedHeaderFilter processing")
         void forwardedHeaderFilterProcessed() {
-            // Given: ForwardedHeaderFilter가 X-Forwarded-For를 처리한 후
+            // Given: After ForwardedHeaderFilter processed X-Forwarded-For
             MockHttpServletRequest request = new MockHttpServletRequest();
-            request.setRemoteAddr("203.0.113.42");  // 실제 클라이언트 IP (ForwardedHeaderFilter 처리 후)
+            request.setRemoteAddr("203.0.113.42");  // Actual client IP
 
             RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
@@ -235,11 +235,11 @@ class ClientIpExtractorTest {
         }
 
         @Test
-        @DisplayName("로드밸런서 뒤에서도 정상적으로 작동한다")
+        @DisplayName("Should work correctly behind load balancer")
         void behindLoadBalancer() {
-            // Given: AWS ALB, Nginx 등 로드밸런서 환경
+            // Given: AWS ALB, Nginx etc.
             MockHttpServletRequest request = new MockHttpServletRequest();
-            request.setRemoteAddr("172.16.0.10");  // 로드밸런서가 ForwardedHeaderFilter 처리 후
+            request.setRemoteAddr("172.16.0.10");  // After LB processing
 
             RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
@@ -252,20 +252,20 @@ class ClientIpExtractorTest {
     }
 
     @Nested
-    @DisplayName("예외 처리 테스트")
+    @DisplayName("Exception Handling Test")
     class ExceptionHandlingTest {
 
         @Test
-        @DisplayName("예외 발생 시 기본 IP를 반환한다")
+        @DisplayName("Should return default IP when exception occurs")
         void exceptionDuringExtraction_shouldReturnDefaultIp() {
-            // Given: request가 예외를 발생시키도록 구성
+            // Given: Request that throws exception
             HttpServletRequest faultyRequest = new HttpServletRequest() {
                 @Override
                 public String getRemoteAddr() {
                     throw new RuntimeException("Simulated error");
                 }
 
-                // 나머지 메서드는 기본 구현 (미사용)
+                // Other methods (unused)
                 @Override
                 public Object getAttribute(String name) {
                     return null;

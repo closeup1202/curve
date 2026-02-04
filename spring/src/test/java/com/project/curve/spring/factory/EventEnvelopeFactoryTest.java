@@ -31,7 +31,7 @@ class EventEnvelopeFactoryTest {
     }
 
     @Test
-    @DisplayName("EventEnvelope을 정상적으로 생성한다")
+    @DisplayName("Should create valid EventEnvelope")
     void create_shouldReturnValidEventEnvelope() {
         // Given
         Instant now = Instant.parse("2024-01-01T00:00:00Z");
@@ -59,7 +59,7 @@ class EventEnvelopeFactoryTest {
     }
 
     @Test
-    @DisplayName("ClockProvider를 통해 현재 시간을 가져온다")
+    @DisplayName("Should use ClockProvider to get current time")
     void create_shouldUseClockProvider() {
         // Given
         Instant now = Instant.parse("2024-01-01T12:34:56Z");
@@ -81,7 +81,7 @@ class EventEnvelopeFactoryTest {
     }
 
     @Test
-    @DisplayName("IdGenerator를 통해 이벤트 ID를 생성한다")
+    @DisplayName("Should use IdGenerator to generate event ID")
     void create_shouldUseIdGenerator() {
         // Given
         EventId expectedId = EventId.of("generated-id-12345");
@@ -102,7 +102,7 @@ class EventEnvelopeFactoryTest {
     }
 
     @Test
-    @DisplayName("여러 severity 레벨로 EventEnvelope을 생성할 수 있다")
+    @DisplayName("Should create EventEnvelope with different severity levels")
     void create_withDifferentSeverities_shouldWork() {
         // Given
         when(clockProvider.now()).thenReturn(Instant.now());
@@ -119,7 +119,7 @@ class EventEnvelopeFactoryTest {
     }
 
     @Test
-    @DisplayName("다른 페이로드 타입으로도 EventEnvelope을 생성할 수 있다")
+    @DisplayName("Should create EventEnvelope with different payload types")
     void create_withDifferentPayloadTypes_shouldWork() {
         // Given
         when(clockProvider.now()).thenReturn(Instant.now());

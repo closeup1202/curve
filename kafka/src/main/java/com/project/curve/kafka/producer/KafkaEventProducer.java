@@ -7,6 +7,7 @@ import com.project.curve.core.envelope.EventEnvelope;
 import com.project.curve.core.exception.EventSerializationException;
 import com.project.curve.core.payload.DomainEventPayload;
 import com.project.curve.core.serde.EventSerializer;
+import com.project.curve.kafka.backup.EventBackupStrategy;
 import com.project.curve.kafka.dlq.FailedEventRecord;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
 import com.project.curve.spring.metrics.CurveMetricsCollector;
@@ -19,23 +20,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.retry.support.RetryTemplate;
 
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.AclEntry;
-import java.nio.file.attribute.AclEntryPermission;
-import java.nio.file.attribute.AclEntryType;
-import java.nio.file.attribute.AclFileAttributeView;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.nio.file.attribute.UserPrincipal;
-import java.util.Collections;
-import java.util.EnumSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -48,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  * <ul>
  *   <li>Retry support via RetryTemplate</li>
  *   <li>Sends to DLQ (Dead Letter Queue) on transmission failure to prevent event loss</li>
- *   <li>Local file backup as last resort if DLQ transmission also fails</li>
+ *   <li>Backup strategy support (Local File, S3, etc.) as last resort if DLQ transmission also fails</li>
  *   <li>Supports both synchronous and asynchronous transmission modes</li>
  * </ul>
  *
@@ -60,8 +45,7 @@ import java.util.concurrent.TimeUnit;
  * <b>Security Notes:</b>
  * <ul>
  *   <li>PII masking is applied only when {@code curve.pii.enabled=true} (default).</li>
- *   <li>Data stored in DLQ and local backup files are also in masked state.</li>
- *   <li>Local backup files are created with 600 permissions (rw-------) on POSIX systems.</li>
+ *   <li>Data stored in DLQ and backup storage are also in masked state.</li>
  * </ul>
  *
  * @see com.project.curve.spring.pii.annotation.PiiField
@@ -80,10 +64,10 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     private final boolean asyncMode;
     private final long asyncTimeoutMs;
     private final long syncTimeoutSeconds;
-    private final String dlqBackupPath;
     private final ExecutorService dlqExecutor;
     private final CurveMetricsCollector metricsCollector;
     private final boolean isProduction;
+    private final EventBackupStrategy backupStrategy;
 
     @Builder
     public KafkaEventProducer(
@@ -98,10 +82,10 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             Boolean asyncMode,
             Long asyncTimeoutMs,
             Long syncTimeoutSeconds,
-            String dlqBackupPath,
             ExecutorService dlqExecutor,
             @NonNull CurveMetricsCollector metricsCollector,
-            Boolean isProduction
+            Boolean isProduction,
+            EventBackupStrategy backupStrategy
     ) {
         super(envelopeFactory, eventContextProvider);
         this.kafkaTemplate = kafkaTemplate;
@@ -114,18 +98,18 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         this.asyncMode = asyncMode != null ? asyncMode : false;
         this.asyncTimeoutMs = asyncTimeoutMs != null ? asyncTimeoutMs : 5000L;
         this.syncTimeoutSeconds = syncTimeoutSeconds != null ? syncTimeoutSeconds : 30L;
-        this.dlqBackupPath = dlqBackupPath != null ? dlqBackupPath : "./dlq-backup";
         this.dlqExecutor = dlqExecutor;
         this.metricsCollector = metricsCollector;
         this.isProduction = isProduction != null ? isProduction : false;
+        this.backupStrategy = backupStrategy;
 
-        log.debug("KafkaEventProducer initialized: topic={}, asyncMode={}, syncTimeout={}s, asyncTimeout={}ms, dlq={}, retry={}, backupPath={}, dlqExecutor={}, isProduction={}",
+        log.debug("KafkaEventProducer initialized: topic={}, asyncMode={}, syncTimeout={}s, asyncTimeout={}ms, dlq={}, retry={}, dlqExecutor={}, isProduction={}, backupStrategy={}",
                 this.topic, this.asyncMode, this.syncTimeoutSeconds, this.asyncTimeoutMs,
                 this.dlqEnabled ? this.dlqTopic : "disabled",
                 this.retryTemplate != null ? "enabled" : "disabled",
-                this.dlqBackupPath,
                 this.dlqExecutor != null ? "enabled" : "disabled",
-                this.isProduction);
+                this.isProduction,
+                this.backupStrategy != null ? this.backupStrategy.getClass().getSimpleName() : "none");
     }
 
     @Override
@@ -329,7 +313,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
 
         } catch (Exception e) {
             log.error("Failed to send event to DLQ ({}): eventId={}, dlqTopic={}", mode, eventId, dlqTopic, e);
-            backupToLocalFile(eventId, originalValue);
+            executeBackup(eventId, originalValue, e);
         }
     }
 
@@ -338,7 +322,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
      */
     private String createDlqPayload(String eventId, Object originalValue, Throwable originalException)
             throws JsonProcessingException {
-        
+
         String payloadString;
         if (originalValue instanceof String) {
             payloadString = (String) originalValue;
@@ -351,7 +335,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                 payloadString = String.valueOf(originalValue);
             }
         }
-        
+
         FailedEventRecord failedRecord = new FailedEventRecord(
                 eventId,
                 topic,
@@ -364,186 +348,14 @@ public class KafkaEventProducer extends AbstractEventPublisher {
     }
 
     /**
-     * Backup to local file when DLQ transmission also fails.
-     * <p>
-     * This is the last resort safety net to prevent event loss.
-     *
-     * <h3>Security Enhancements</h3>
-     * <ul>
-     *   <li>POSIX file system: Created with 600 permissions (rw-------)</li>
-     *   <li>Windows: Uses ACL to make file accessible only to current user</li>
-     *   <li>Production environment: Throws IllegalStateException if security setup fails</li>
-     *   <li>Stored data is in masked state if PiiModule is applied</li>
-     *   <li>Payload content is not logged</li>
-     * </ul>
-     *
-     * <h3>Recovery Method</h3>
-     * <p>
-     * Backup files are in JSON format and can be manually resent when Kafka is recovered.
-     * <pre>
-     * # Check backup files
-     * ls -la ./dlq-backup/
-     *
-     * # Resend (example)
-     * cat ./dlq-backup/{eventId}.json | kafka-console-producer --topic event.audit.v1
-     * </pre>
-     *
-     * @param eventId       Event ID
-     * @param originalValue Serialized event payload (with PII masking applied)
+     * Execute backup strategy when DLQ transmission also fails.
      */
-    private void backupToLocalFile(String eventId, Object originalValue) {
-        try {
-            Path backupDir = Paths.get(dlqBackupPath);
-            Files.createDirectories(backupDir);
-
-            Path backupFile = backupDir.resolve(eventId + ".json");
-
-            String content = serializeContent(originalValue);
-
-            // Write file
-            Files.writeString(backupFile, content, StandardOpenOption.CREATE);
-
-            // Apply security permissions
-            boolean securityApplied = applyFilePermissions(backupFile);
-
-            if (!securityApplied) {
-                handleSecurityFailure(eventId, backupFile);
-            } else {
-                log.error("Event backed up to file with restricted permissions: eventId={}, file={}", eventId, backupFile);
-            }
-
-        } catch (IOException e) {
-            log.error("Failed to backup event to file: eventId={}", eventId, e);
-            log.error("Event permanently lost. eventId={}, cause={}", eventId, e.getMessage());
-        }
-    }
-
-    /**
-     * Serialize file content
-     */
-    private String serializeContent(Object originalValue) {
-        if (originalValue instanceof String) {
-            return (String) originalValue;
-        }
-
-        try {
-            return objectMapper.writeValueAsString(originalValue);
-        } catch (Exception e) {
-            log.warn("Failed to serialize value as JSON, using toString()", e);
-            return String.valueOf(originalValue);
-        }
-    }
-
-    /**
-     * Platform-specific file permission setup.
-     * <p>
-     * On POSIX systems, sets 600 permissions (rw-------).
-     * On Windows, uses ACL to make file accessible only to current user.
-     *
-     * @param file File to set permissions on
-     * @return Whether security setup succeeded
-     */
-    private boolean applyFilePermissions(Path file) {
-        Set<String> supportedViews = FileSystems.getDefault().supportedFileAttributeViews();
-
-        // POSIX systems (Linux, macOS)
-        if (supportedViews.contains("posix")) {
-            return applyPosixPermissions(file);
-        }
-        // Windows (ACL)
-        else if (supportedViews.contains("acl")) {
-            return applyWindowsAclPermissions(file);
-        }
-        // Other systems
-        else {
-            log.warn("File system does not support POSIX or ACL. File permissions cannot be restricted: {}", file);
-            return false;
-        }
-    }
-
-    /**
-     * Set POSIX file permissions (Linux, macOS).
-     */
-    private boolean applyPosixPermissions(Path file) {
-        try {
-            Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-------");
-            Files.setPosixFilePermissions(file, perms);
-            log.debug("Applied POSIX permissions (600) to file: {}", file);
-            return true;
-        } catch (Exception e) {
-            log.error("Failed to set POSIX permissions on file: {}", file, e);
-            return false;
-        }
-    }
-
-    /**
-     * Set Windows ACL permissions.
-     * <p>
-     * Sets ACL to allow only current user to read/write.
-     * Denies access to all other users/groups.
-     */
-    private boolean applyWindowsAclPermissions(Path file) {
-        try {
-            // Get ACL view
-            AclFileAttributeView aclView = Files.getFileAttributeView(file, AclFileAttributeView.class);
-            if (aclView == null) {
-                log.error("Failed to get ACL view for file: {}", file);
-                return false;
-            }
-
-            // Current user principal
-            UserPrincipal owner = Files.getOwner(file);
-
-            // Grant read/write permissions only to current user
-            AclEntry entry = AclEntry.newBuilder()
-                    .setType(AclEntryType.ALLOW)
-                    .setPrincipal(owner)
-                    .setPermissions(
-                            EnumSet.of(
-                                    AclEntryPermission.READ_DATA,
-                                    AclEntryPermission.WRITE_DATA,
-                                    AclEntryPermission.APPEND_DATA,
-                                    AclEntryPermission.READ_ATTRIBUTES,
-                                    AclEntryPermission.WRITE_ATTRIBUTES,
-                                    AclEntryPermission.READ_ACL,
-                                    AclEntryPermission.SYNCHRONIZE
-                            )
-                    )
-                    .build();
-
-            // Remove existing ACL and set only new ACL (only owner can access)
-            aclView.setAcl(Collections.singletonList(entry));
-            log.debug("Applied Windows ACL permissions (owner-only) to file: {}", file);
-            return true;
-
-        } catch (Exception e) {
-            log.error("Failed to set Windows ACL permissions on file: {}", file, e);
-            return false;
-        }
-    }
-
-    /**
-     * Handle security setup failure.
-     * <p>
-     * In production environments, security is critical so exception is thrown.
-     * In development environments, only warning is logged.
-     */
-    private void handleSecurityFailure(String eventId, Path backupFile) {
-        String errorMessage = String.format(
-                "Failed to apply secure file permissions. " +
-                        "File may be accessible to unauthorized users: %s. " +
-                        "Please configure file system security manually or use a POSIX/ACL-compliant file system.",
-                backupFile);
-
-        if (isProduction) {
-            log.error("SECURITY VIOLATION in production: {}", errorMessage);
-            throw new IllegalStateException(
-                    "Cannot backup event with insecure file permissions in production environment. " +
-                            "EventId: " + eventId + ". " + errorMessage);
+    private void executeBackup(String eventId, Object originalValue, Throwable cause) {
+        if (backupStrategy != null) {
+            log.warn("Executing backup strategy for event: eventId={}", eventId);
+            backupStrategy.backup(eventId, originalValue, cause);
         } else {
-            log.warn("Event backed up without secure permissions (development mode): eventId={}, file={}",
-                    eventId, backupFile);
-            log.warn(errorMessage);
+            log.error("No backup strategy configured. Event permanently lost: eventId={}", eventId, cause);
         }
     }
 }

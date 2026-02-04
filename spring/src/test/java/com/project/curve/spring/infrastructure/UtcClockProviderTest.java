@@ -8,11 +8,11 @@ import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("UtcClockProvider 테스트")
+@DisplayName("UtcClockProvider Test")
 class UtcClockProviderTest {
 
     @Test
-    @DisplayName("UtcClockProvider 생성")
+    @DisplayName("Create UtcClockProvider")
     void createUtcClockProvider() {
         // when
         UtcClockProvider provider = new UtcClockProvider();
@@ -22,7 +22,7 @@ class UtcClockProviderTest {
     }
 
     @Test
-    @DisplayName("ClockProvider 인터페이스 구현")
+    @DisplayName("Implement ClockProvider interface")
     void implementsClockProvider() {
         // given
         UtcClockProvider provider = new UtcClockProvider();
@@ -32,7 +32,7 @@ class UtcClockProviderTest {
     }
 
     @Test
-    @DisplayName("now() 메서드가 현재 시간 반환")
+    @DisplayName("now() method returns current time")
     void nowReturnsCurrentTime() {
         // given
         UtcClockProvider provider = new UtcClockProvider();
@@ -49,7 +49,7 @@ class UtcClockProviderTest {
     }
 
     @Test
-    @DisplayName("연속 호출 시 시간이 증가함")
+    @DisplayName("Consecutive calls increase time")
     void consecutiveCallsIncreaseTime() throws InterruptedException {
         // given
         UtcClockProvider provider = new UtcClockProvider();
@@ -64,7 +64,7 @@ class UtcClockProviderTest {
     }
 
     @Test
-    @DisplayName("여러 인스턴스가 동일한 시간 반환")
+    @DisplayName("Multiple instances return same time")
     void multipleInstancesReturnSameTime() {
         // given
         UtcClockProvider provider1 = new UtcClockProvider();
@@ -76,11 +76,11 @@ class UtcClockProviderTest {
 
         // then
         long diff = Math.abs(time1.toEpochMilli() - time2.toEpochMilli());
-        assertTrue(diff < 100); // 100ms 이내 차이
+        assertTrue(diff < 100); // Within 100ms difference
     }
 
     @Test
-    @DisplayName("UTC 타임존 사용")
+    @DisplayName("Use UTC timezone")
     void usesUtcTimezone() {
         // given
         UtcClockProvider provider = new UtcClockProvider();
@@ -90,12 +90,12 @@ class UtcClockProviderTest {
 
         // then
         assertNotNull(now);
-        // UTC 시간이므로 epoch 시간과 동일
+        // Since it's UTC time, it's same as epoch time
         assertTrue(now.getEpochSecond() > 0);
     }
 
     @Test
-    @DisplayName("반환된 Instant가 null이 아님")
+    @DisplayName("Returned Instant is not null")
     void returnedInstantIsNotNull() {
         // given
         UtcClockProvider provider = new UtcClockProvider();
@@ -108,7 +108,7 @@ class UtcClockProviderTest {
     }
 
     @Test
-    @DisplayName("여러 번 호출해도 안정적으로 동작")
+    @DisplayName("Stable across multiple calls")
     void stableAcrossMultipleCalls() {
         // given
         UtcClockProvider provider = new UtcClockProvider();

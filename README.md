@@ -182,7 +182,7 @@ dependencies {
 ```yaml
 spring:
   kafka:
-    bootstrap-servers: localhost:9094
+    bootstrap-servers: localhost:9092
 
 curve:
   enabled: true
@@ -606,7 +606,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 ./scripts/dlq-recovery.sh --list
 
 # Recover all files
-./scripts/dlq-recovery.sh --topic event.audit.v1 --broker localhost:9094
+./scripts/dlq-recovery.sh --topic event.audit.v1 --broker localhost:9092
 
 # Recover specific file
 ./scripts/dlq-recovery.sh --file 1234567890.json --topic event.audit.v1

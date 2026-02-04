@@ -3,6 +3,7 @@ package com.project.curve.kafka.producer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.curve.core.context.EventContextProvider;
 import com.project.curve.core.serde.EventSerializer;
+import com.project.curve.kafka.backup.EventBackupStrategy;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
 import com.project.curve.spring.metrics.CurveMetricsCollector;
 import com.project.curve.spring.metrics.NoOpCurveMetricsCollector;
@@ -12,10 +13,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.retry.support.RetryTemplate;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
-@DisplayName("KafkaEventProducer Unit 테스트")
+@DisplayName("KafkaEventProducer Unit Test")
 class KafkaEventProducerUnitTest {
 
     private KafkaTemplate<String, Object> kafkaTemplate;
@@ -24,6 +26,7 @@ class KafkaEventProducerUnitTest {
     private EventContextProvider eventContextProvider;
     private CurveMetricsCollector metricsCollector;
     private ObjectMapper objectMapper;
+    private EventBackupStrategy backupStrategy;
 
     @BeforeEach
     void setUp() {
@@ -33,10 +36,11 @@ class KafkaEventProducerUnitTest {
         eventContextProvider = mock(EventContextProvider.class);
         metricsCollector = new NoOpCurveMetricsCollector();
         objectMapper = new ObjectMapper();
+        backupStrategy = mock(EventBackupStrategy.class);
     }
 
     @Test
-    @DisplayName("Builder로 KafkaEventProducer 생성 - 최소 설정")
+    @DisplayName("Create KafkaEventProducer with Builder - Minimal Configuration")
     void testBuilderWithMinimalConfig() {
         // when
         KafkaEventProducer producer = KafkaEventProducer.builder()
@@ -54,7 +58,7 @@ class KafkaEventProducerUnitTest {
     }
 
     @Test
-    @DisplayName("Builder로 KafkaEventProducer 생성 - 전체 설정")
+    @DisplayName("Create KafkaEventProducer with Builder - Full Configuration")
     void testBuilderWithFullConfig() {
         // given
         RetryTemplate retryTemplate = new RetryTemplate();
@@ -72,8 +76,8 @@ class KafkaEventProducerUnitTest {
                 .asyncMode(true)
                 .asyncTimeoutMs(10000L)
                 .syncTimeoutSeconds(60L)
-                .dlqBackupPath("/custom/backup/path")
                 .metricsCollector(metricsCollector)
+                .backupStrategy(backupStrategy)
                 .build();
 
         // then
@@ -81,7 +85,7 @@ class KafkaEventProducerUnitTest {
     }
 
     @Test
-    @DisplayName("Builder로 KafkaEventProducer 생성 - null 검증")
+    @DisplayName("Create KafkaEventProducer with Builder - Null Validation")
     void testBuilderWithNullValues() {
         // when & then
         assertThrows(NullPointerException.class, () ->
@@ -98,7 +102,7 @@ class KafkaEventProducerUnitTest {
     }
 
     @Test
-    @DisplayName("기본 asyncMode는 false")
+    @DisplayName("Default asyncMode is false")
     void testDefaultAsyncMode() {
         // when
         KafkaEventProducer producer = KafkaEventProducer.builder()
@@ -113,11 +117,11 @@ class KafkaEventProducerUnitTest {
 
         // then
         assertNotNull(producer);
-        // asyncMode는 기본값 false로 설정됨
+        // asyncMode defaults to false
     }
 
     @Test
-    @DisplayName("기본 asyncTimeoutMs는 5000L")
+    @DisplayName("Default asyncTimeoutMs is 5000L")
     void testDefaultAsyncTimeoutMs() {
         // when
         KafkaEventProducer producer = KafkaEventProducer.builder()
@@ -135,7 +139,7 @@ class KafkaEventProducerUnitTest {
     }
 
     @Test
-    @DisplayName("기본 syncTimeoutSeconds는 30L")
+    @DisplayName("Default syncTimeoutSeconds is 30L")
     void testDefaultSyncTimeoutSeconds() {
         // when
         KafkaEventProducer producer = KafkaEventProducer.builder()
@@ -153,25 +157,7 @@ class KafkaEventProducerUnitTest {
     }
 
     @Test
-    @DisplayName("기본 dlqBackupPath는 ./dlq-backup")
-    void testDefaultDlqBackupPath() {
-        // when
-        KafkaEventProducer producer = KafkaEventProducer.builder()
-                .envelopeFactory(envelopeFactory)
-                .eventContextProvider(eventContextProvider)
-                .kafkaTemplate(kafkaTemplate)
-                .eventSerializer(eventSerializer)
-                .objectMapper(objectMapper)
-                .topic("test-topic")
-                .metricsCollector(metricsCollector)
-                .build();
-
-        // then
-        assertNotNull(producer);
-    }
-
-    @Test
-    @DisplayName("DLQ가 설정되지 않으면 dlqEnabled는 false")
+    @DisplayName("dlqEnabled is false if DLQ is not configured")
     void testDlqNotEnabled() {
         // when
         KafkaEventProducer producer = KafkaEventProducer.builder()
@@ -189,7 +175,7 @@ class KafkaEventProducerUnitTest {
     }
 
     @Test
-    @DisplayName("DLQ가 빈 문자열이면 dlqEnabled는 false")
+    @DisplayName("dlqEnabled is false if DLQ is empty string")
     void testDlqWithEmptyString() {
         // when
         KafkaEventProducer producer = KafkaEventProducer.builder()
@@ -208,7 +194,7 @@ class KafkaEventProducerUnitTest {
     }
 
     @Test
-    @DisplayName("DLQ가 공백이면 dlqEnabled는 false")
+    @DisplayName("dlqEnabled is false if DLQ is blank string")
     void testDlqWithBlankString() {
         // when
         KafkaEventProducer producer = KafkaEventProducer.builder()
@@ -227,7 +213,7 @@ class KafkaEventProducerUnitTest {
     }
 
     @Test
-    @DisplayName("DLQ 토픽이 설정되면 dlqEnabled는 true")
+    @DisplayName("dlqEnabled is true if DLQ topic is configured")
     void testDlqEnabled() {
         // when
         KafkaEventProducer producer = KafkaEventProducer.builder()
@@ -246,7 +232,7 @@ class KafkaEventProducerUnitTest {
     }
 
     @Test
-    @DisplayName("RetryTemplate이 설정되면 재시도 활성화")
+    @DisplayName("Retry is enabled if RetryTemplate is configured")
     void testRetryEnabled() {
         // given
         RetryTemplate retryTemplate = new RetryTemplate();
@@ -268,7 +254,7 @@ class KafkaEventProducerUnitTest {
     }
 
     @Test
-    @DisplayName("asyncMode true로 설정")
+    @DisplayName("Set asyncMode to true")
     void testAsyncModeEnabled() {
         // when
         KafkaEventProducer producer = KafkaEventProducer.builder()
@@ -287,7 +273,7 @@ class KafkaEventProducerUnitTest {
     }
 
     @Test
-    @DisplayName("커스텀 타임아웃 설정")
+    @DisplayName("Configure custom timeouts")
     void testCustomTimeouts() {
         // when
         KafkaEventProducer producer = KafkaEventProducer.builder()
@@ -307,8 +293,8 @@ class KafkaEventProducerUnitTest {
     }
 
     @Test
-    @DisplayName("커스텀 DLQ backup 경로 설정")
-    void testCustomDlqBackupPath() {
+    @DisplayName("Configure BackupStrategy")
+    void testBackupStrategy() {
         // when
         KafkaEventProducer producer = KafkaEventProducer.builder()
                 .envelopeFactory(envelopeFactory)
@@ -317,8 +303,8 @@ class KafkaEventProducerUnitTest {
                 .eventSerializer(eventSerializer)
                 .objectMapper(objectMapper)
                 .topic("test-topic")
-                .dlqBackupPath("/custom/backup")
                 .metricsCollector(metricsCollector)
+                .backupStrategy(backupStrategy)
                 .build();
 
         // then
@@ -326,7 +312,7 @@ class KafkaEventProducerUnitTest {
     }
 
     @Test
-    @DisplayName("모든 옵션 조합 테스트")
+    @DisplayName("Test combination of all options")
     void testAllOptionsCombination() {
         // given
         RetryTemplate retryTemplate = new RetryTemplate();
@@ -344,8 +330,8 @@ class KafkaEventProducerUnitTest {
                 .asyncMode(true)
                 .asyncTimeoutMs(20000L)
                 .syncTimeoutSeconds(90L)
-                .dlqBackupPath("/var/dlq")
                 .metricsCollector(metricsCollector)
+                .backupStrategy(backupStrategy)
                 .build();
 
         // then

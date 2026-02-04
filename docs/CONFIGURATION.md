@@ -9,6 +9,7 @@ This document describes the detailed configuration methods for the Curve event p
 - [Worker ID Configuration](#worker-id-configuration)
 - [Kafka Transmission Mode Configuration](#kafka-transmission-mode-configuration)
 - [DLQ Configuration](#dlq-configuration)
+- [Backup Strategy Configuration](#backup-strategy-configuration)
 - [Retry Configuration](#retry-configuration)
 - [AOP Configuration](#aop-configuration)
 - [PII Protection Configuration](#pii-protection-configuration)
@@ -236,6 +237,37 @@ curve:
   "exceptionMessage": "Failed to send message after 3 retries",
   "failedAt": 1704067200000
 }
+```
+
+---
+
+## Backup Strategy Configuration
+
+Configure backup strategies for events that fail to be sent to DLQ.
+
+### S3 Backup (Recommended for Cloud)
+
+```yaml
+curve:
+  kafka:
+    backup:
+      s3-enabled: true
+      s3-bucket: "my-event-backup-bucket"
+      s3-prefix: "dlq-backup"
+```
+
+**Requirements:**
+- `software.amazon.awssdk:s3` dependency
+- `S3Client` bean in Spring Context
+
+### Local File Backup
+
+```yaml
+curve:
+  kafka:
+    backup:
+      local-enabled: true
+    dlq-backup-path: "./dlq-backup"
 ```
 
 ---
@@ -522,6 +554,12 @@ curve:
     retries: 5
     retry-backoff-ms: 1000
     request-timeout-ms: 30000
+    
+    # Backup Strategy
+    backup:
+      s3-enabled: true
+      s3-bucket: "prod-event-backups"
+      local-enabled: false
 
   retry:
     enabled: true
@@ -562,6 +600,9 @@ curve:
     async-mode: true  # Asynchronous transmission
     async-timeout-ms: 3000
     retries: 3
+    
+    backup:
+      local-enabled: true
 
   retry:
     enabled: true
@@ -612,6 +653,7 @@ curve:
 - DLQ: Enabled
 - Retry: Minimum (fast failure)
 - Outbox: Enabled (auto schema generation)
+- Backup: Local File
 
 ### Staging
 
@@ -620,6 +662,7 @@ curve:
 - DLQ: Enabled
 - Retry: Medium level
 - Outbox: Enabled
+- Backup: S3 (if available) or Local
 
 ### Production
 
@@ -628,6 +671,7 @@ curve:
 - DLQ: Mandatory enabled
 - Retry: High level
 - Outbox: Mandatory enabled (data consistency)
+- Backup: S3 (Mandatory for K8s)
 
 ---
 

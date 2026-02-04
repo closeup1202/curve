@@ -47,7 +47,7 @@ Curve is a production-ready library that simplifies event-driven architecture in
 ```yaml title="application.yml"
 spring:
   kafka:
-    bootstrap-servers: localhost:9094
+    bootstrap-servers: localhost:9092
 
 curve:
   enabled: true

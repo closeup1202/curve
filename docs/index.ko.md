@@ -182,7 +182,7 @@ dependencies {
 ```yaml
 spring:
   kafka:
-    bootstrap-servers: localhost:9094
+    bootstrap-servers: localhost:9092
 
 curve:
   enabled: true
@@ -527,7 +527,7 @@ curve:
     retries: 5
 ```
 
-자세한 내용은 [설정 가이드](CONFIGURATION.ko.md)를 참고하세요.
+자세한 내용은 [설정 가이드](docs/CONFIGURATION.md)를 참고하세요.
 
 ---
 
@@ -606,7 +606,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 ./scripts/dlq-recovery.sh --list
 
 # 모든 파일 복구
-./scripts/dlq-recovery.sh --topic event.audit.v1 --broker localhost:9094
+./scripts/dlq-recovery.sh --topic event.audit.v1 --broker localhost:9092
 
 # 특정 파일 복구
 ./scripts/dlq-recovery.sh --file 1234567890.json --topic event.audit.v1
@@ -618,11 +618,11 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 | 문서 | 설명 |
 |------|------|
-| [설정 가이드](CONFIGURATION.ko.md) | 상세 설정 옵션 |
-| [운영 가이드](OPERATIONS.ko.md) | 프로덕션 운영 및 모범 사례 |
-| [문제 해결](TROUBLESHOOTING.md) | 일반적인 문제 및 해결 방법 |
-| [모니터링 가이드](MONITORING.md) | 메트릭, 대시보드, 알림 설정 |
-| [마이그레이션 가이드](MIGRATION.md) | 버전 업그레이드 지침 |
+| [설정 가이드](docs/CONFIGURATION.ko.md) | 상세 설정 옵션 |
+| [운영 가이드](docs/OPERATIONS.ko.md) | 프로덕션 운영 및 모범 사례 |
+| [문제 해결](docs/TROUBLESHOOTING.md) | 일반적인 문제 및 해결 방법 |
+| [모니터링 가이드](docs/MONITORING.md) | 메트릭, 대시보드, 알림 설정 |
+| [마이그레이션 가이드](docs/MIGRATION.md) | 버전 업그레이드 지침 |
 | [변경 이력](CHANGELOG.md) | 버전 히스토리 및 변경 사항 |
 | [예시 설정](application.example.yml) | 설정 예시 |
 | [샘플 애플리케이션](sample/) | 완전한 작동 예시

@@ -39,8 +39,8 @@ All events follow CloudEvents-inspired schema:
 {
   "eventId": "7355889748156289024",
   "eventType": "ORDER_CREATED",
-  "occurredAt": "2025-02-03T10:30:00Z",
-  "publishedAt": "2025-02-03T10:30:00.123Z",
+  "occurredAt": "2026-02-03T10:30:00Z",
+  "publishedAt": "2026-02-03T10:30:00.123Z",
   "severity": "INFO",
   "metadata": {
     "source": { ... },

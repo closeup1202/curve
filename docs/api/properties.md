@@ -401,7 +401,7 @@ spring:
   application:
     name: my-service
   kafka:
-    bootstrap-servers: localhost:9094
+    bootstrap-servers: localhost:9092
 
 curve:
   enabled: true

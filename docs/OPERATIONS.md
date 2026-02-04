@@ -83,12 +83,12 @@ curl http://localhost:8081/actuator/curve-metrics | jq '.summary'
 ```bash
 # Count messages in DLQ topic
 kafka-run-class.sh kafka.tools.GetOffsetShell \
-  --broker-list localhost:9094 \
+  --broker-list localhost:9092 \
   --topic event.audit.dlq.v1
 
 # Consume DLQ messages
 kafka-console-consumer.sh \
-  --bootstrap-server localhost:9094 \
+  --bootstrap-server localhost:9092 \
   --topic event.audit.dlq.v1 \
   --from-beginning
 ```
@@ -265,7 +265,7 @@ curl http://localhost:8081/actuator/health/curve
 ```bash
 ./scripts/dlq-recovery.sh \
   --topic event.audit.v1 \
-  --broker localhost:9094 \
+  --broker localhost:9092 \
   --dir ./dlq-backup
 ```
 
@@ -274,7 +274,7 @@ curl http://localhost:8081/actuator/health/curve
 ./scripts/dlq-recovery.sh \
   --file 123456789012345678.json \
   --topic event.audit.v1 \
-  --broker localhost:9094
+  --broker localhost:9092
 ```
 
 5. **Verify recovery:**
@@ -307,7 +307,7 @@ done
 ./scripts/dlq-recovery.sh \
   --dir ./dlq-backup \
   --topic event.audit.v1 \
-  --broker localhost:9094
+  --broker localhost:9092
 ```
 
 4. **Manual recovery (if script fails):**
@@ -317,7 +317,7 @@ EVENT_ID="123456789012345678"
 
 cat ./dlq-backup/${EVENT_ID}.json | \
   kafka-console-producer.sh \
-  --broker-list localhost:9094 \
+  --broker-list localhost:9092 \
   --topic event.audit.v1
 ```
 

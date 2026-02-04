@@ -9,7 +9,7 @@ import org.slf4j.MDC;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("MdcTraceContextProvider 테스트")
+@DisplayName("MdcTraceContextProvider Test")
 class MdcTraceContextProviderTest {
 
     private MdcTraceContextProvider provider;
@@ -26,7 +26,7 @@ class MdcTraceContextProviderTest {
     }
 
     @Test
-    @DisplayName("MDC에 traceId와 spanId가 설정되어 있으면 해당 값을 반환한다")
+    @DisplayName("Should return values if traceId and spanId are set in MDC")
     void getTrace_withMdcValues_shouldReturnValues() {
         // Given
         MDC.put("traceId", "abc123");
@@ -42,7 +42,7 @@ class MdcTraceContextProviderTest {
     }
 
     @Test
-    @DisplayName("MDC에 값이 없으면 'unknown'을 반환한다")
+    @DisplayName("Should return 'unknown' if MDC has no values")
     void getTrace_withNoMdcValues_shouldReturnUnknown() {
         // Given - MDC is empty
 
@@ -55,7 +55,7 @@ class MdcTraceContextProviderTest {
     }
 
     @Test
-    @DisplayName("traceId만 설정되어 있으면 traceId는 반환하고 spanId는 'unknown'을 반환한다")
+    @DisplayName("Should return traceId and 'unknown' spanId if only traceId is set")
     void getTrace_withOnlyTraceId_shouldReturnPartialValues() {
         // Given
         MDC.put("traceId", "trace-only");
@@ -69,7 +69,7 @@ class MdcTraceContextProviderTest {
     }
 
     @Test
-    @DisplayName("spanId만 설정되어 있으면 spanId는 반환하고 traceId는 'unknown'을 반환한다")
+    @DisplayName("Should return spanId and 'unknown' traceId if only spanId is set")
     void getTrace_withOnlySpanId_shouldReturnPartialValues() {
         // Given
         MDC.put("spanId", "span-only");
@@ -83,7 +83,7 @@ class MdcTraceContextProviderTest {
     }
 
     @Test
-    @DisplayName("여러 번 호출해도 일관된 결과를 반환한다")
+    @DisplayName("Should return consistent results when called multiple times")
     void getTrace_calledMultipleTimes_shouldReturnConsistentResults() {
         // Given
         MDC.put("traceId", "consistent-trace");

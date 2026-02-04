@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.0.2] - 2025-02-03
+## [0.0.2] - 2026-02-03
 
 ### Changed
 - Avro dependencies (`avro`, `kafka-avro-serializer`) are now optional
@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.0.1] - 2025-02-03
+## [0.0.1] - 2026-02-03
 
 ### Added
 
@@ -86,10 +86,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
-| Version | Date | Description |
-|---------|------|-------------|
-| 0.0.2 | 2025-02-03 | Make Avro dependencies optional |
-| 0.0.1 | 2025-02-03 | Initial release |
+| Version | Date       | Description |
+|---------|------------|-------------|
+| 0.0.2 | 2026-02-03 | Make Avro dependencies optional |
+| 0.0.1 | 2026-02-03 | Initial release |
 
 ---
 

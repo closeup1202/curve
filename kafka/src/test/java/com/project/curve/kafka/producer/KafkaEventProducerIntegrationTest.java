@@ -9,6 +9,8 @@ import com.project.curve.core.exception.EventSerializationException;
 import com.project.curve.core.port.ClockProvider;
 import com.project.curve.core.port.IdGenerator;
 import com.project.curve.core.type.EventSeverity;
+import com.project.curve.kafka.backup.EventBackupStrategy;
+import com.project.curve.kafka.backup.LocalFileBackupStrategy;
 import com.project.curve.spring.factory.EventEnvelopeFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -41,21 +43,18 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNoException;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Testcontainers를 사용한 Kafka 통합 테스트
- * Docker가 설치되어 있어야 실행 가능합니다.
+ * Kafka integration test using Testcontainers.
+ * Requires Docker to be installed and running.
  */
 @Testcontainers
 class KafkaEventProducerIntegrationTest {
@@ -82,10 +81,10 @@ class KafkaEventProducerIntegrationTest {
 
     @BeforeAll
     static void setUp() {
-        // Kafka 프로듀서 설정
+        // Kafka Producer Configuration
         KafkaTemplate<String, Object> kafkaTemplate = getStringKafkaTemplate();
 
-        // ObjectMapper 설정
+        // ObjectMapper Configuration
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
@@ -101,11 +100,11 @@ class KafkaEventProducerIntegrationTest {
 
         EventEnvelopeFactory envelopeFactory = new EventEnvelopeFactory(clockProvider, idGenerator);
 
-        // EventSerializer mock 설정
+        // EventSerializer mock configuration
         com.project.curve.core.serde.EventSerializer eventSerializer = mock(com.project.curve.core.serde.EventSerializer.class);
         when(eventSerializer.serialize(any())).thenAnswer(invocation -> objectMapper.writeValueAsString(invocation.getArgument(0)));
 
-        // KafkaEventProducer 생성
+        // Create KafkaEventProducer
         producer = KafkaEventProducer.builder()
                 .envelopeFactory(envelopeFactory)
                 .eventContextProvider(contextProvider)
@@ -118,7 +117,7 @@ class KafkaEventProducerIntegrationTest {
                 .asyncMode(false)
                 .build();
 
-        // Kafka 컨슈머 설정
+        // Kafka Consumer Configuration
         Map<String, Object> consumerProps = new HashMap<>();
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "test-consumer-group");
@@ -130,7 +129,7 @@ class KafkaEventProducerIntegrationTest {
         consumer = new KafkaConsumer<>(consumerProps);
         consumer.subscribe(Collections.singletonList("test-topic"));
 
-        // DLQ 컨슈머 설정
+        // DLQ Consumer Configuration
         Map<String, Object> dlqConsumerProps = new HashMap<>();
         dlqConsumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
         dlqConsumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "test-dlq-consumer-group");
@@ -157,7 +156,7 @@ class KafkaEventProducerIntegrationTest {
     }
 
     @Test
-    @DisplayName("Kafka 컨테이너가 정상적으로 시작되었는지 확인")
+    @DisplayName("Verify Kafka container is running")
     void kafka_shouldBeRunning() {
         // Then
         assertThat(kafka.isRunning()).isTrue();
@@ -165,7 +164,7 @@ class KafkaEventProducerIntegrationTest {
     }
 
     @Test
-    @DisplayName("이벤트를 Kafka에 발행할 수 있다")
+    @DisplayName("Should be able to publish events to Kafka")
     void publish_shouldSendEventToKafka() {
         // Given
         TestEventPayload payload = new TestEventPayload("order-1", "test-data", 100);
@@ -177,7 +176,7 @@ class KafkaEventProducerIntegrationTest {
     }
 
     @Test
-    @DisplayName("여러 이벤트를 연속으로 발행할 수 있다")
+    @DisplayName("Should succeed in publishing multiple events consecutively")
     void publish_multipleEvents_shouldSucceed() {
         // Given
         int eventCount = 10;
@@ -192,22 +191,22 @@ class KafkaEventProducerIntegrationTest {
     }
 
     @Test
-    @DisplayName("실제로 Kafka에 메시지가 전송되고 Consumer로 받을 수 있다")
+    @DisplayName("Should actually send message to Kafka and receive it with Consumer")
     void publish_shouldSendMessageAndConsumeSuccessfully() {
         // Given
         String testData = "real-kafka-message-test";
         TestEventPayload payload = new TestEventPayload("order-1", testData, 100);
 
-        // When: 메시지 발행
+        // When: Publish message
         producer.publish(payload, EventSeverity.INFO);
 
-        // Then: Consumer로 메시지 수신
+        // Then: Receive message with Consumer
         ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(10));
 
         assertThat(records).isNotEmpty();
         assertThat(records.count()).isGreaterThan(0);
 
-        // 메시지 내용 검증
+        // Verify message content
         AtomicBoolean foundMessage = new AtomicBoolean(false);
 
         Iterable<ConsumerRecord<String, String>> recordsList = records.records("test-topic");
@@ -217,12 +216,12 @@ class KafkaEventProducerIntegrationTest {
         });
 
         assertThat(foundMessage.get())
-                .as("전송한 메시지가 Consumer에서 수신되어야 함")
+                .as("Sent message should be received by Consumer")
                 .isTrue();
     }
 
     @Test
-    @DisplayName("발행된 메시지에 이벤트 메타데이터가 포함되어 있다")
+    @DisplayName("Published message should include event metadata")
     void publish_shouldIncludeEventMetadata() throws Exception {
         // Given
         String testData = "metadata-test";
@@ -230,17 +229,17 @@ class KafkaEventProducerIntegrationTest {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        // When: 메시지 발행
+        // When: Publish message
         producer.publish(payload, EventSeverity.INFO);
 
-        // Then: Consumer로 메시지 수신 및 검증
+        // Then: Receive and verify message with Consumer
         ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(10));
 
         assertThat(records).isNotEmpty();
 
         Iterable<ConsumerRecord<String, String>> recordIterable = records.records("test-topic");
 
-        // JSON 파싱하여 필수 필드 검증
+        // Parse JSON and verify required fields
         boolean hasValidMetadata = false;
         for (ConsumerRecord<String, String> record : recordIterable) {
             if (record.value().contains(testData)) {
@@ -248,7 +247,7 @@ class KafkaEventProducerIntegrationTest {
                     String json = record.value();
                     Map<?, ?> envelope = objectMapper.readValue(json, Map.class);
 
-                    // 필수 필드 검증
+                    // Verify required fields
                     hasValidMetadata = envelope.containsKey("eventId") &&
                             envelope.containsKey("eventType") &&
                             envelope.containsKey("severity") &&
@@ -261,34 +260,34 @@ class KafkaEventProducerIntegrationTest {
                         break;
                     }
                 } catch (Exception e) {
-                    // 파싱 실패 시 계속 진행
+                    // Continue if parsing fails
                 }
             }
         }
 
         assertThat(hasValidMetadata)
-                .as("메시지에 모든 필수 메타데이터가 포함되어야 함")
+                .as("Message should include all required metadata")
                 .isTrue();
     }
 
     @Test
-    @DisplayName("DLQ 토픽이 정상적으로 설정되어 있다")
+    @DisplayName("DLQ topic should be configured correctly")
     void dlq_shouldBeConfigured() {
-        // Given & When: DLQ Consumer가 구독되어 있음
-        // Then: DLQ Consumer가 정상 동작
+        // Given & When: DLQ Consumer is subscribed
+        // Then: DLQ Consumer operates normally
         assertThat(dlqConsumer.subscription()).contains("test-dlq-topic");
     }
 
     @Test
-    @DisplayName("DLQ Consumer가 메시지를 수신할 수 있다")
+    @DisplayName("DLQ Consumer should be able to receive messages")
     void dlq_shouldConsumeMessages() throws Exception {
         // Given: Warm up DLQ consumer to ensure partition assignment
         dlqConsumer.poll(Duration.ofMillis(100));
 
-        // DLQ에 직접 메시지 전송 (실제 실패 시나리오 시뮬레이션)
+        // Send message directly to DLQ (simulate actual failure scenario)
         KafkaTemplate<String, Object> dlqTemplate = getStringKafkaTemplate();
 
-        // FailedEventRecord JSON 생성
+        // Create FailedEventRecord JSON
         String testEventId = "failed-event-123-" + System.currentTimeMillis();
         String testPayload = "{\"eventId\":\"" + testEventId + "\",\"data\":\"test-failure\"}";
         ObjectMapper objectMapper = new ObjectMapper();
@@ -303,13 +302,13 @@ class KafkaEventProducerIntegrationTest {
 
         String dlqMessage = objectMapper.writeValueAsString(failedRecord);
 
-        // When: DLQ로 메시지 전송
+        // When: Send message to DLQ
         dlqTemplate.send("test-dlq-topic", testEventId, dlqMessage).get();
 
         // Give Kafka time to commit
         Thread.sleep(500);
 
-        // Then: DLQ Consumer로 메시지 수신
+        // Then: Receive message with DLQ Consumer
         boolean foundDlqMessage = false;
         int maxAttempts = 3;
 
@@ -320,7 +319,7 @@ class KafkaEventProducerIntegrationTest {
                 if (record.value().contains(testEventId)) {
                     foundDlqMessage = true;
 
-                    // FailedEventRecord 파싱 및 검증
+                    // Parse and verify FailedEventRecord
                     @SuppressWarnings("unchecked")
                     Map<String, Object> parsedRecord = objectMapper.readValue(record.value(), Map.class);
                     assertThat(parsedRecord).containsKey("eventId");
@@ -333,12 +332,12 @@ class KafkaEventProducerIntegrationTest {
         }
 
         assertThat(foundDlqMessage)
-                .as("DLQ에 전송된 메시지를 Consumer에서 수신해야 함")
+                .as("Message sent to DLQ should be received by Consumer")
                 .isTrue();
     }
 
     @Test
-    @DisplayName("비동기 모드로 이벤트를 발행할 수 있다")
+    @DisplayName("Should be able to publish events in async mode")
     void publish_asyncMode_shouldSendEventSuccessfully() throws InterruptedException {
         // Given: Async mode producer
         KafkaTemplate<String, Object> kafkaTemplate = getStringKafkaTemplate();
@@ -394,7 +393,7 @@ class KafkaEventProducerIntegrationTest {
     }
 
     @Test
-    @DisplayName("MDC 컨텍스트가 비동기 콜백에서 올바르게 전파된다")
+    @DisplayName("MDC context should be propagated correctly in async callbacks")
     void publish_asyncMode_shouldPreserveMdcContext() throws InterruptedException {
         // Given: Async mode producer
         KafkaTemplate<String, Object> kafkaTemplate = getStringKafkaTemplate();
@@ -440,7 +439,7 @@ class KafkaEventProducerIntegrationTest {
     }
 
     @Test
-    @DisplayName("재시도 메커니즘이 활성화되면 실패 시 재시도한다")
+    @DisplayName("Should retry on failure when retry mechanism is enabled")
     void publish_withRetry_shouldRetryOnFailure() {
         // Given: Producer with retry template
         KafkaTemplate<String, Object> kafkaTemplate = mock(KafkaTemplate.class);
@@ -502,7 +501,7 @@ class KafkaEventProducerIntegrationTest {
     }
 
     @Test
-    @DisplayName("메시지 전송 실패 시 DLQ로 전송된다 (검증용 - Mock 기반)")
+    @DisplayName("Should trigger DLQ logic on message send failure (Verification - Mock based)")
     void publish_onFailure_shouldTriggerDlqLogic() throws Exception {
         // Given: Producer with mocked failing Kafka template
         KafkaTemplate<String, Object> mockKafkaTemplate = mock(KafkaTemplate.class);
@@ -555,7 +554,7 @@ class KafkaEventProducerIntegrationTest {
     }
 
     @Test
-    @DisplayName("DLQ 전송도 실패하면 로컬 파일에 백업된다")
+    @DisplayName("Should backup to local file if DLQ send also fails")
     void publish_onDlqFailure_shouldBackupToLocalFile() throws IOException {
         // Given: Producer with both main and DLQ topics failing
         KafkaTemplate<String, Object> mockKafkaTemplate = mock(KafkaTemplate.class);
@@ -581,6 +580,7 @@ class KafkaEventProducerIntegrationTest {
                 .thenThrow(new RuntimeException("Complete Kafka outage"));
 
         String testBackupPath = "./test-dlq-backup-" + System.currentTimeMillis();
+        EventBackupStrategy backupStrategy = new LocalFileBackupStrategy(testBackupPath, objectMapper, false);
 
         KafkaEventProducer backupProducer = KafkaEventProducer.builder()
                 .envelopeFactory(envelopeFactory)
@@ -591,7 +591,7 @@ class KafkaEventProducerIntegrationTest {
                 .metricsCollector(new com.project.curve.spring.metrics.NoOpCurveMetricsCollector())
                 .topic("test-topic")
                 .dlqTopic("test-dlq-topic")
-                .dlqBackupPath(testBackupPath)
+                .backupStrategy(backupStrategy)
                 .asyncMode(false)
                 .build();
 
@@ -603,7 +603,7 @@ class KafkaEventProducerIntegrationTest {
         // Then: Verify backup file was created
         Path backupFile = Paths.get(testBackupPath, "backup-test-id.json");
         assertThat(Files.exists(backupFile))
-                .as("백업 파일이 생성되어야 함")
+                .as("Backup file should be created")
                 .isTrue();
 
         String backupContent = Files.readString(backupFile);
@@ -623,7 +623,7 @@ class KafkaEventProducerIntegrationTest {
     }
 
     @Test
-    @DisplayName("Serialization 예외가 발생하면 즉시 실패한다")
+    @DisplayName("Should fail immediately if Serialization exception occurs")
     void publish_serializationException_shouldFailImmediately() {
         // Given: Producer with serializer that throws exception
         KafkaTemplate<String, Object> kafkaTemplate = getStringKafkaTemplate();
@@ -665,7 +665,7 @@ class KafkaEventProducerIntegrationTest {
     }
 
     @Test
-    @DisplayName("DLQ Executor가 설정되면 비동기로 DLQ 전송한다")
+    @DisplayName("Should send DLQ asynchronously if DLQ Executor is configured")
     void publish_withDlqExecutor_shouldSendDlqAsynchronously() throws InterruptedException {
         // Given: Producer with DLQ executor
         KafkaTemplate<String, Object> mockKafkaTemplate = mock(KafkaTemplate.class);

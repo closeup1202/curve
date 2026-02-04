@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("NameMasker 테스트")
+@DisplayName("NameMasker Test")
 class NameMaskerTest {
 
     private NameMasker masker;
@@ -19,7 +19,7 @@ class NameMaskerTest {
     }
 
     @Test
-    @DisplayName("WEAK 레벨 - 첫 글자만 표시")
+    @DisplayName("WEAK level - show only first char")
     void maskWeakLevel() {
         // when
         String result = masker.mask("홍길동", MaskingLevel.WEAK);
@@ -29,7 +29,7 @@ class NameMaskerTest {
     }
 
     @Test
-    @DisplayName("NORMAL 레벨 - 첫 글자와 마지막 글자 표시")
+    @DisplayName("NORMAL level - show first and last char")
     void maskNormalLevel() {
         // when
         String result = masker.mask("홍길동", MaskingLevel.NORMAL);
@@ -39,7 +39,7 @@ class NameMaskerTest {
     }
 
     @Test
-    @DisplayName("STRONG 레벨 - 전체 마스킹")
+    @DisplayName("STRONG level - mask all")
     void maskStrongLevel() {
         // when
         String result = masker.mask("홍길동", MaskingLevel.STRONG);
@@ -49,7 +49,7 @@ class NameMaskerTest {
     }
 
     @Test
-    @DisplayName("한 글자 이름 - WEAK")
+    @DisplayName("Single char name - WEAK")
     void maskSingleCharWeak() {
         // when
         String result = masker.mask("김", MaskingLevel.WEAK);
@@ -59,7 +59,7 @@ class NameMaskerTest {
     }
 
     @Test
-    @DisplayName("두 글자 이름 - NORMAL")
+    @DisplayName("Two chars name - NORMAL")
     void maskTwoCharsNormal() {
         // when
         String result = masker.mask("홍길", MaskingLevel.NORMAL);
@@ -69,7 +69,7 @@ class NameMaskerTest {
     }
 
     @Test
-    @DisplayName("긴 이름 - NORMAL")
+    @DisplayName("Long name - NORMAL")
     void maskLongNameNormal() {
         // when
         String result = masker.mask("홍길동길동", MaskingLevel.NORMAL);
@@ -79,7 +79,7 @@ class NameMaskerTest {
     }
 
     @Test
-    @DisplayName("영문 이름 - WEAK")
+    @DisplayName("English name - WEAK")
     void maskEnglishNameWeak() {
         // when
         String result = masker.mask("John", MaskingLevel.WEAK);
@@ -89,7 +89,7 @@ class NameMaskerTest {
     }
 
     @Test
-    @DisplayName("영문 이름 - NORMAL")
+    @DisplayName("English name - NORMAL")
     void maskEnglishNameNormal() {
         // when
         String result = masker.mask("John", MaskingLevel.NORMAL);
@@ -99,7 +99,7 @@ class NameMaskerTest {
     }
 
     @Test
-    @DisplayName("null 값 처리")
+    @DisplayName("Handle null value")
     void maskNullValue() {
         // when
         String result = masker.mask(null, MaskingLevel.NORMAL);
@@ -109,7 +109,7 @@ class NameMaskerTest {
     }
 
     @Test
-    @DisplayName("빈 문자열 처리")
+    @DisplayName("Handle empty string")
     void maskEmptyString() {
         // when
         String result = masker.mask("", MaskingLevel.NORMAL);
@@ -119,17 +119,17 @@ class NameMaskerTest {
     }
 
     @Test
-    @DisplayName("null 레벨 처리")
+    @DisplayName("Handle null level")
     void maskWithNullLevel() {
         // when
         String result = masker.mask("홍길동", null);
 
         // then
-        assertEquals("홍*동", result); // NORMAL 레벨 동작
+        assertEquals("홍*동", result); // NORMAL level behavior
     }
 
     @Test
-    @DisplayName("supports 메서드 - NAME 타입만 지원")
+    @DisplayName("supports method - only supports NAME type")
     void supportsNameType() {
         // then
         assertTrue(masker.supports(PiiType.NAME));

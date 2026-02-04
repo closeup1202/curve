@@ -8,7 +8,7 @@
 # 옵션:
 #   -d, --dir <경로>         백업 파일 디렉토리 (기본: ./dlq-backup)
 #   -t, --topic <토픽명>     재전송할 Kafka 토픽 (기본: event.audit.v1)
-#   -b, --broker <주소>      Kafka 브로커 주소 (기본: localhost:9094)
+#   -b, --broker <주소>      Kafka 브로커 주소 (기본: localhost:9092)
 #   -f, --file <파일명>      단일 파일만 재전송
 #   -l, --list               백업 파일 목록만 출력
 #   -h, --help               도움말 출력
@@ -18,7 +18,7 @@
 #   ./dlq-recovery.sh --list
 #
 #   # 모든 백업 파일을 event.audit.v1 토픽으로 재전송
-#   ./dlq-recovery.sh --topic event.audit.v1 --broker localhost:9094
+#   ./dlq-recovery.sh --topic event.audit.v1 --broker localhost:9092
 #
 #   # 특정 파일만 재전송
 #   ./dlq-recovery.sh --file 1234567890.json --topic event.audit.v1
@@ -29,7 +29,7 @@ set -euo pipefail
 # 기본 설정
 BACKUP_DIR="./dlq-backup"
 TOPIC="event.audit.v1"
-BROKER="localhost:9094"
+BROKER="localhost:9092"
 SPECIFIC_FILE=""
 LIST_ONLY=false
 

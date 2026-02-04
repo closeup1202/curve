@@ -1,7 +1,7 @@
 ---
-title: Failure Recovery - DLQ and Local Backup
-description: Learn how Curve handles failures with 3-tier recovery - main topic, DLQ, and local file backup.
-keywords: failure recovery, dead letter queue, dlq, kafka failure handling, event backup
+title: Failure Recovery - DLQ and Backup Strategies
+description: Learn how Curve handles failures with 3-tier recovery - main topic, DLQ, and backup strategies (S3, Local File).
+keywords: failure recovery, dead letter queue, dlq, kafka failure handling, event backup, s3 backup
 ---
 
 # Failure Recovery
@@ -16,18 +16,21 @@ graph LR
     B -->|Success| C[Done ✓]
     B -->|Failure| D{Publish to DLQ}
     D -->|Success| E[DLQ ✓]
-    D -->|Failure| F[Local File Backup 💾]
+    D -->|Failure| F{Backup Strategy}
+    F -->|S3| G[S3 Bucket ☁️]
+    F -->|Local| H[Local File 💾]
 
     style C fill:#00897b
     style E fill:#ff9800
-    style F fill:#f44336
+    style G fill:#2196f3
+    style H fill:#f44336
 ```
 
 ### Tiers
 
 1. **Main Topic** - Primary Kafka topic for events
 2. **DLQ (Dead Letter Queue)** - Fallback topic for failed events
-3. **Local File Backup** - Last resort when Kafka is unavailable
+3. **Backup Strategy** - Last resort when Kafka is unavailable (S3 or Local File)
 
 ---
 
@@ -38,6 +41,13 @@ curve:
   kafka:
     topic: event.audit.v1
     dlq-topic: event.audit.dlq.v1  # DLQ topic
+
+    # Backup Strategy Configuration
+    backup:
+      s3-enabled: true             # Enable S3 backup
+      s3-bucket: "my-event-backup" # S3 Bucket name
+      s3-prefix: "dlq-backup"      # S3 Key prefix
+      local-enabled: true          # Enable local file backup as fallback
 
   retry:
     enabled: true
@@ -82,7 +92,7 @@ Failed events are sent to a separate DLQ topic for analysis and reprocessing.
   "eventId": "7355889748156289024",
   "originalTopic": "event.audit.v1",
   "failureReason": "Kafka broker not available",
-  "failureTimestamp": "2025-02-03T10:30:00Z",
+  "failureTimestamp": "2026-02-03T10:30:00Z",
   "retryCount": 3,
   "originalEvent": {
     "eventType": "ORDER_CREATED",
@@ -118,7 +128,7 @@ curl http://localhost:8080/actuator/curve-metrics
       {
         "eventType": "ORDER_CREATED",
         "failureReason": "Timeout",
-        "timestamp": "2025-02-03T10:30:00Z"
+        "timestamp": "2026-02-03T10:30:00Z"
       }
     ]
   }
@@ -127,12 +137,26 @@ curl http://localhost:8080/actuator/curve-metrics
 
 ---
 
-## Tier 3: Local File Backup
+## Tier 3: Backup Strategies
 
-If Kafka is completely unavailable (broker down, network issue), events are saved to local disk.
+If Kafka is completely unavailable (broker down, network issue), events are saved using configured backup strategies.
 
-### Backup Location
+### 1. S3 Backup (Recommended for Cloud/K8s)
 
+Stores failed events in AWS S3 or MinIO. Ideal for containerized environments where local storage is ephemeral.
+
+**Requirements:**
+- `software.amazon.awssdk:s3` dependency
+- `S3Client` bean configured in Spring Context
+
+**S3 Key Structure:**
+`prefix/yyyy/MM/dd/{eventId}.json`
+
+### 2. Local File Backup
+
+Stores failed events to the local file system. Useful for bare-metal servers or development environments.
+
+**Backup Location:**
 ```
 /tmp/curve-backup/
   └── failed-events/
@@ -141,28 +165,21 @@ If Kafka is completely unavailable (broker down, network issue), events are save
       └── 1738587002000.json
 ```
 
+**Security:**
+- POSIX systems: Files created with `600` permissions (rw-------)
+- Windows: ACL restricted to current user only
+
 ### Backup File Format
 
 ```json title="1738587000000.json"
 {
   "eventId": "7355889748156289024",
   "eventType": "ORDER_CREATED",
-  "occurredAt": "2025-02-03T10:30:00Z",
+  "occurredAt": "2026-02-03T10:30:00Z",
   "backupReason": "Kafka broker unavailable",
-  "backupTimestamp": "2025-02-03T10:30:00.500Z",
+  "backupTimestamp": "2026-02-03T10:30:00.500Z",
   "payload": { ... }
 }
-```
-
-### Configuration
-
-```yaml
-curve:
-  backup:
-    enabled: true
-    directory: /var/lib/curve/backup  # Custom location
-    max-file-size-mb: 10
-    max-files: 1000
 ```
 
 ---
@@ -195,7 +212,7 @@ Curve provides a recovery script for republishing backed-up events:
 
 Planned for v0.1.0:
 
-- Automatic retry from local backup when Kafka recovers
+- Automatic retry from S3/Local backup when Kafka recovers
 - Configurable recovery schedule
 - Recovery metrics and alerts
 
@@ -215,9 +232,9 @@ curl http://localhost:8080/actuator/health/curve
   "details": {
     "kafkaProducerInitialized": true,
     "dlqEnabled": true,
-    "backupEnabled": true,
-    "backupDirectory": "/tmp/curve-backup",
-    "backupFileCount": 0
+    "backupStrategy": "CompositeBackupStrategy(S3, Local)",
+    "s3BackupEnabled": true,
+    "localBackupEnabled": true
   }
 }
 ```
@@ -265,6 +282,7 @@ Set up alerts for:
 
 ### :white_check_mark: DO
 
+- **Use S3 Backup in K8s** - Local files are lost on pod restart
 - **Monitor DLQ regularly** - Set up alerts for DLQ events
 - **Investigate failures** - Analyze failure reasons
 - **Test recovery** - Practice recovery procedures
@@ -275,44 +293,24 @@ Set up alerts for:
 
 - Ignore DLQ events - they indicate issues
 - Disable backup in production
-- Store backups on ephemeral storage (e.g., /tmp in containers)
+- Store backups on ephemeral storage without S3 backup
 - Delete backup files without analysis
 
 ---
 
 ## Production Recommendations
 
-### 1. Persistent Backup Storage
+### 1. S3 Backup for Kubernetes
 
-Use persistent volumes for backups in Kubernetes:
+Configure S3 backup to ensure data persistence across pod restarts:
 
-```yaml title="deployment.yaml"
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: curve-backup
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-
----
-apiVersion: apps/v1
-kind: Deployment
-spec:
-  template:
-    spec:
-      volumes:
-        - name: backup
-          persistentVolumeClaim:
-            claimName: curve-backup
-      containers:
-        - name: app
-          volumeMounts:
-            - name: backup
-              mountPath: /var/lib/curve/backup
+```yaml
+curve:
+  kafka:
+    backup:
+      s3-enabled: true
+      s3-bucket: "prod-event-backups"
+      local-enabled: false # Optional: disable local backup if S3 is reliable
 ```
 
 ### 2. Separate DLQ Consumer

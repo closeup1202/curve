@@ -2,77 +2,71 @@
 
 이 문서는 Curve 이벤트 발행 라이브러리의 상세한 설정 방법을 설명합니다.
 
-CONFIGURATION.en.md 파일의 한글 번역 버전입니다.
-자세한 내용은 영문 버전(CONFIGURATION.en.md)을 참조하세요.
+## 목차
 
-# Curve Configuration Guide
-
-This document describes the detailed configuration methods for the Curve event publishing library.
-
-## Table of Contents
-
-- [Basic Configuration](#basic-configuration)
-- [Configuration Validation](#configuration-validation)
-- [Worker ID Configuration](#worker-id-configuration)
-- [Kafka Transmission Mode Configuration](#kafka-transmission-mode-configuration)
-- [DLQ Configuration](#dlq-configuration)
-- [Retry Configuration](#retry-configuration)
-- [AOP Configuration](#aop-configuration)
-- [PII Protection Configuration](#pii-protection-configuration)
-- [Outbox Configuration](#outbox-configuration)
-- [Serialization Configuration](#serialization-configuration)
-- [Avro Serialization Configuration](#avro-serialization-configuration)
-- [Logging Configuration](#logging-configuration)
+- [기본 설정](#기본-설정)
+- [설정 유효성 검사](#설정-유효성-검사)
+- [Worker ID 설정](#worker-id-설정)
+- [Kafka 전송 모드 설정](#kafka-전송-모드-설정)
+- [DLQ 설정](#dlq-설정)
+- [백업 전략 설정](#백업-전략-설정)
+- [재시도 설정](#재시도-설정)
+- [AOP 설정](#aop-설정)
+- [PII 보호 설정](#pii-보호-설정)
+- [Outbox 설정](#outbox-설정)
+- [직렬화 설정](#직렬화-설정)
+- [Avro 직렬화 설정](#avro-직렬화-설정)
+- [로깅 설정](#로깅-설정)
 
 ---
 
-## Basic Configuration
+## 기본 설정
 
 ### application.yml
 
 ```yaml
 curve:
-  enabled: true  # Enable Curve (default: true)
+  enabled: true  # Curve 활성화 (기본값: true)
 
   kafka:
-    topic: event.audit.v1  # Main topic name
-    dlq-topic: event.audit.dlq.v1  # DLQ topic (optional)
+    topic: event.audit.v1  # 메인 토픽 이름
+    dlq-topic: event.audit.dlq.v1  # DLQ 토픽 (선택)
 
   id-generator:
     worker-id: 1  # Snowflake Worker ID (0~1023)
-    auto-generate: false  # Auto-generate based on MAC address
+    auto-generate: false  # MAC 주소 기반 자동 생성
 ```
 
 ---
 
-## Configuration Validation
+## 설정 유효성 검사
 
-Curve automatically validates configuration values at application startup using `@Validated`.
-If invalid configuration values are entered, the application will fail to start with a clear error message.
+Curve는 애플리케이션 시작 시 `@Validated`를 통해 설정값을 자동으로 검증합니다.
+잘못된 설정값이 입력되면 명확한 에러 메시지와 함께 애플리케이션 시작이 실패합니다.
 
-### Validation Rules
+### 검증 규칙
 
-| Configuration Item | Validation Rule | Error Message |
+| 설정 항목 | 검증 규칙 | 에러 메시지 |
 |----------|----------|------------|
-| `curve.kafka.topic` | Required (non-empty string) | "Kafka topic is required" |
-| `curve.kafka.retries` | 0 or greater | "retries must be 0 or greater" |
-| `curve.kafka.retry-backoff-ms` | Positive number | "retryBackoffMs must be positive" |
-| `curve.kafka.request-timeout-ms` | Positive number | "requestTimeoutMs must be positive" |
-| `curve.kafka.async-timeout-ms` | Positive number | "asyncTimeoutMs must be positive" |
-| `curve.kafka.sync-timeout-seconds` | Positive number | "syncTimeoutSeconds must be positive" |
-| `curve.kafka.dlq-executor-threads` | 1 or greater | "dlqExecutorThreads must be 1 or greater" |
+| `curve.kafka.topic` | 필수 (빈 문자열 불가) | "Kafka topic is required" |
+| `curve.kafka.retries` | 0 이상 | "retries must be 0 or greater" |
+| `curve.kafka.retry-backoff-ms` | 양수 | "retryBackoffMs must be positive" |
+| `curve.kafka.request-timeout-ms` | 양수 | "requestTimeoutMs must be positive" |
+| `curve.kafka.async-timeout-ms` | 양수 | "asyncTimeoutMs must be positive" |
+| `curve.kafka.sync-timeout-seconds` | 양수 | "syncTimeoutSeconds must be positive" |
+| `curve.kafka.dlq-executor-threads` | 1 이상 | "dlqExecutorThreads must be 1 or greater" |
 | `curve.id-generator.worker-id` | 0 ~ 1023 | "workerId must be between 0 and 1023" |
-| `curve.retry.max-attempts` | 1 or greater | "maxAttempts must be 1 or greater" |
-| `curve.retry.initial-interval` | Positive number | "initialInterval must be positive" |
-| `curve.retry.multiplier` | 1 or greater | "multiplier must be 1 or greater" |
-| `curve.retry.max-interval` | Positive number | "maxInterval must be positive" |
-| `curve.outbox.poll-interval-ms` | Positive number | "pollIntervalMs must be positive" |
+| `curve.retry.max-attempts` | 1 이상 | "maxAttempts must be 1 or greater" |
+| `curve.retry.initial-interval` | 양수 | "initialInterval must be positive" |
+| `curve.retry.multiplier` | 1 이상 | "multiplier must be 1 or greater" |
+| `curve.retry.max-interval` | 양수 | "maxInterval must be positive" |
+| `curve.outbox.poll-interval-ms` | 양수 | "pollIntervalMs must be positive" |
 | `curve.outbox.batch-size` | 1 ~ 1000 | "batchSize must be between 1 and 1000" |
-| `curve.outbox.max-retries` | 1 or greater | "maxRetries must be 1 or greater" |
-| `curve.outbox.send-timeout-seconds` | Positive number | "sendTimeoutSeconds must be positive" |
-| `curve.outbox.retention-days` | 1 or greater | "retentionDays must be 1 or greater" |
+| `curve.outbox.max-retries` | 1 이상 | "maxRetries must be 1 or greater" |
+| `curve.outbox.send-timeout-seconds` | 양수 | "sendTimeoutSeconds must be positive" |
+| `curve.outbox.retention-days` | 1 이상 | "retentionDays must be 1 or greater" |
 
-### Validation Error Example
+### 검증 실패 예시
 
 ```
 ***************************
@@ -91,22 +85,22 @@ Failed to bind properties under 'curve' to com.project.curve.autoconfigure.Curve
 
 ---
 
-## Worker ID Configuration
+## Worker ID 설정
 
-The Snowflake ID Generator uses a Worker ID to generate unique IDs in a distributed environment.
+Snowflake ID Generator는 분산 환경에서 고유한 ID를 생성하기 위해 Worker ID를 사용합니다.
 
-### Method 1: Explicit Worker ID Configuration (Recommended)
+### 방법 1: 명시적 Worker ID 설정 (권장)
 
-Assign a unique Worker ID to each instance.
+각 인스턴스에 고유한 Worker ID를 부여합니다.
 
 ```yaml
 curve:
   id-generator:
-    worker-id: 1  # Instance 1
+    worker-id: 1  # 인스턴스 1
     auto-generate: false
 ```
 
-**Kubernetes Environment Example:**
+**Kubernetes 환경 예시:**
 
 ```yaml
 # deployment.yaml
@@ -114,10 +108,10 @@ env:
   - name: CURVE_ID_GENERATOR_WORKER_ID
     valueFrom:
       fieldRef:
-        fieldPath: metadata.uid  # Use hashed Pod UID
+        fieldPath: metadata.uid  # Pod UID 해시값 사용
 ```
 
-**Docker Compose Example:**
+**Docker Compose 예시:**
 
 ```yaml
 # docker-compose.yml
@@ -130,9 +124,9 @@ services:
       - CURVE_ID_GENERATOR_WORKER_ID=2
 ```
 
-### Method 2: Auto-Generation (Caution)
+### 방법 2: 자동 생성 (주의)
 
-Auto-generate Worker ID based on MAC address.
+MAC 주소를 기반으로 Worker ID를 자동 생성합니다.
 
 ```yaml
 curve:
@@ -140,99 +134,99 @@ curve:
     auto-generate: true
 ```
 
-**⚠️ Caution:**
-- In virtual environments, MAC addresses may be identical, leading to conflicts
-- MAC addresses may change when containers restart
-- Explicit configuration is recommended for production environments
+**⚠️ 주의:**
+- 가상 환경에서는 MAC 주소가 동일할 수 있어 충돌 가능성이 있습니다.
+- 컨테이너 재시작 시 MAC 주소가 변경될 수 있습니다.
+- 프로덕션 환경에서는 명시적 설정을 권장합니다.
 
-### Worker ID Range
+### Worker ID 범위
 
-- **Minimum value:** 0
-- **Maximum value:** 1023
-- **Recommended:** Manage using environment variables or configuration management systems (Consul, etcd)
+- **최소값:** 0
+- **최대값:** 1023
+- **권장:** 환경 변수 또는 설정 관리 시스템(Consul, etcd)을 통해 관리
 
 ---
 
-## Kafka Transmission Mode Configuration
+## Kafka 전송 모드 설정
 
-Curve supports both synchronous and asynchronous transmission modes.
+Curve는 동기(Synchronous) 및 비동기(Asynchronous) 전송 모드를 모두 지원합니다.
 
-### Synchronous Transmission (Default)
-
-```yaml
-curve:
-  kafka:
-    async-mode: false  # Synchronous transmission
-    request-timeout-ms: 30000  # 30 seconds
-```
-
-**Characteristics:**
-- ✅ Guaranteed transmission (clear success/failure confirmation)
-- ✅ Easy error handling
-- ❌ Performance degradation (blocking)
-- ❌ Limited throughput
-
-**Suitable for:**
-- Financial transactions, payments, etc. where accuracy is critical
-- Cases where event loss is not acceptable
-- Low throughput (tens to hundreds of TPS)
-
-### Asynchronous Transmission
+### 동기 전송 (기본값)
 
 ```yaml
 curve:
   kafka:
-    async-mode: true  # Asynchronous transmission
-    async-timeout-ms: 5000  # 5 seconds timeout
+    async-mode: false  # 동기 전송
+    request-timeout-ms: 30000  # 30초
 ```
 
-**Characteristics:**
-- ✅ High performance (non-blocking)
-- ✅ High throughput capability
-- ⚠️ Callback-based error handling
-- ⚠️ Relies on DLQ in case of transmission failure
+**특징:**
+- ✅ 확실한 전송 보장 (성공/실패 여부 명확)
+- ✅ 에러 핸들링 용이
+- ❌ 성능 저하 (Blocking)
+- ❌ 처리량 제한적
 
-**Suitable for:**
-- Logs, analytics events, etc. where some loss is acceptable
-- High throughput required (thousands to tens of thousands of TPS)
-- Cases where latency is critical
+**적합한 경우:**
+- 금융 거래, 결제 등 정확성이 중요한 경우
+- 이벤트 유실이 절대 허용되지 않는 경우
+- 낮은 처리량 (수십 ~ 수백 TPS)
 
-### Performance Comparison
+### 비동기 전송
 
-| Item | Synchronous Transmission | Asynchronous Transmission |
+```yaml
+curve:
+  kafka:
+    async-mode: true  # 비동기 전송
+    async-timeout-ms: 5000  # 5초 타임아웃
+```
+
+**특징:**
+- ✅ 높은 성능 (Non-blocking)
+- ✅ 대량 처리 가능
+- ⚠️ 콜백 기반 에러 핸들링
+- ⚠️ 전송 실패 시 DLQ 의존
+
+**적합한 경우:**
+- 로그, 분석 이벤트 등 일부 유실이 허용되는 경우
+- 높은 처리량이 필요한 경우 (수천 ~ 수만 TPS)
+- Latency가 중요한 경우
+
+### 성능 비교
+
+| 항목 | 동기 전송 | 비동기 전송 |
 |------|-----------|-------------|
-| Throughput (TPS) | ~500 | ~10,000+ |
-| Latency | High (10-50ms) | Low (1-5ms) |
-| Transmission Guarantee | Strong | Moderate (DLQ dependent) |
-| Resource Usage | High | Low |
+| 처리량 (TPS) | ~500 | ~10,000+ |
+| Latency | 높음 (10-50ms) | 낮음 (1-5ms) |
+| 전송 보장 | 강력함 | 보통 (DLQ 의존) |
+| 리소스 사용 | 높음 | 낮음 |
 
 ---
 
-## DLQ Configuration
+## DLQ 설정
 
-The Dead Letter Queue stores events that fail to be transmitted.
+Dead Letter Queue는 전송에 실패한 이벤트를 저장합니다.
 
-### Enable DLQ
-
-```yaml
-curve:
-  kafka:
-    topic: event.audit.v1
-    dlq-topic: event.audit.dlq.v1  # Enable DLQ
-```
-
-### Disable DLQ
+### DLQ 활성화
 
 ```yaml
 curve:
   kafka:
     topic: event.audit.v1
-    dlq-topic:  # Empty value or not configured
+    dlq-topic: event.audit.dlq.v1  # DLQ 활성화
 ```
 
-⚠️ **Caution:** Disabling DLQ may result in event loss in case of transmission failure.
+### DLQ 비활성화
 
-### DLQ Message Structure
+```yaml
+curve:
+  kafka:
+    topic: event.audit.v1
+    dlq-topic:  # 빈 값 또는 설정 안 함
+```
+
+⚠️ **주의:** DLQ를 비활성화하면 전송 실패 시 이벤트가 유실될 수 있습니다.
+
+### DLQ 메시지 구조
 
 ```json
 {
@@ -247,32 +241,63 @@ curve:
 
 ---
 
-## Retry Configuration
+## 백업 전략 설정
 
-Automatic retry configuration in case of transmission failure.
+DLQ 전송마저 실패할 경우를 대비한 백업 전략을 설정합니다.
 
-### Basic Configuration
+### S3 백업 (클라우드 환경 권장)
+
+```yaml
+curve:
+  kafka:
+    backup:
+      s3-enabled: true
+      s3-bucket: "my-event-backup-bucket"
+      s3-prefix: "dlq-backup"
+```
+
+**요구사항:**
+- `software.amazon.awssdk:s3` 의존성 추가
+- Spring Context에 `S3Client` 빈 등록
+
+### 로컬 파일 백업
+
+```yaml
+curve:
+  kafka:
+    backup:
+      local-enabled: true
+    dlq-backup-path: "./dlq-backup"
+```
+
+---
+
+## 재시도 설정
+
+전송 실패 시 자동 재시도 설정입니다.
+
+### 기본 설정
 
 ```yaml
 curve:
   retry:
-    enabled: true  # Enable retry
-    max-attempts: 3  # Maximum 3 attempts
-    initial-interval: 1000  # Initial 1 second wait
-    multiplier: 2.0  # Increase by 2x (1s -> 2s -> 4s)
-    max-interval: 10000  # Maximum 10 seconds
+    enabled: true  # 재시도 활성화
+    max-attempts: 3  # 최대 3회 시도
+    initial-interval: 1000  # 초기 1초 대기
+    multiplier: 2.0  # 2배씩 증가 (1초 -> 2초 -> 4초)
+    max-interval: 10000  # 최대 10초
 ```
 
-### Exponential Backoff Example
+### Exponential Backoff 예시
 
-| Attempt | Wait Time |
+| 시도 횟수 | 대기 시간 |
 |------|-----------|
-| 1st | 0ms (immediate) |
-| 2nd | 1,000ms (1 second) |
-| 3rd | 2,000ms (2 seconds) |
-| 4th | 4,000ms (4 seconds) |
+| 1회차 | 0ms (즉시) |
+| 2회차 | 1,000ms (1초) |
+| 3회차 | 2,000ms (2초) |
+| 4회차 | 4,000ms (4초) |
 
-### Disable Retry
+### 재시도 비활성화
 
 ```yaml
 curve:
@@ -282,11 +307,11 @@ curve:
 
 ---
 
-## AOP Configuration
+## AOP 설정
 
-AOP configuration based on `@PublishEvent` annotation.
+`@PublishEvent` 어노테이션 기반 AOP 설정입니다.
 
-### Enable AOP (Default)
+### AOP 활성화 (기본값)
 
 ```yaml
 curve:
@@ -294,7 +319,7 @@ curve:
     enabled: true
 ```
 
-### Disable AOP
+### AOP 비활성화
 
 ```yaml
 curve:
@@ -304,33 +329,33 @@ curve:
 
 ---
 
-## PII Protection Configuration
+## PII 보호 설정
 
-Through PII (Personally Identifiable Information) protection features, sensitive data can be automatically masked, encrypted, or hashed.
+PII(개인정보) 보호 기능을 통해 민감한 데이터를 자동으로 마스킹, 암호화, 해싱할 수 있습니다.
 
-### Basic Configuration
+### 기본 설정
 
 ```yaml
 curve:
   pii:
-    enabled: true  # Enable PII protection (default: true)
+    enabled: true  # PII 보호 활성화 (기본값: true)
     crypto:
-      default-key: ${PII_ENCRYPTION_KEY}  # Encryption key (environment variable required)
-      salt: ${PII_HASH_SALT}              # Hashing salt (environment variable recommended)
+      default-key: ${PII_ENCRYPTION_KEY}  # 암호화 키 (환경변수 필수)
+      salt: ${PII_HASH_SALT}              # 해싱 솔트 (환경변수 권장)
 ```
 
-### Encryption Key Configuration (Required)
+### 암호화 키 설정 (필수)
 
-When using `@PiiField(strategy = PiiStrategy.ENCRYPT)`, an encryption key is mandatory.
+`@PiiField(strategy = PiiStrategy.ENCRYPT)` 사용 시 암호화 키가 반드시 필요합니다.
 
-**1. Generate Key**
+**1. 키 생성**
 ```bash
-# Generate 32-byte AES-256 key
+# 32바이트 AES-256 키 생성
 openssl rand -base64 32
-# Output example: K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=
+# 출력 예시: K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=
 ```
 
-**2. Set Environment Variable (Recommended)**
+**2. 환경 변수 설정 (권장)**
 ```bash
 # Linux/macOS
 export PII_ENCRYPTION_KEY=K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=
@@ -341,7 +366,7 @@ $env:PII_ENCRYPTION_KEY="K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols="
 $env:PII_HASH_SALT="your-random-salt-value"
 ```
 
-**3. application.yml Configuration**
+**3. application.yml 설정**
 ```yaml
 curve:
   pii:
@@ -350,29 +375,29 @@ curve:
       salt: ${PII_HASH_SALT}
 ```
 
-**⚠️ Caution:**
-- Do not hardcode the encryption key directly in application.yml
-- For production environments, use environment variables or external secret management systems (Vault, AWS Secrets Manager)
-- If the key is not configured, an exception will occur when using the ENCRYPT strategy
+**⚠️ 주의:**
+- 암호화 키를 application.yml에 직접 하드코딩하지 마세요.
+- 프로덕션 환경에서는 환경 변수 또는 외부 시크릿 관리 시스템(Vault, AWS Secrets Manager)을 사용하세요.
+- 키가 설정되지 않으면 ENCRYPT 전략 사용 시 예외가 발생합니다.
 
-### PII Strategies
+### PII 전략 종류
 
-| Strategy | Description | Reversible | Example |
+| 전략 | 설명 | 복호화 가능 여부 | 예시 |
 |------|------|----------|------|
-| `MASK` | Pattern-based masking | Not possible | `John Doe` → `John **` |
-| `ENCRYPT` | AES-256-GCM encryption | Possible (key required) | Encrypted Base64 string |
-| `HASH` | SHA-256 hashing | Not possible | Hashed Base64 string |
+| `MASK` | 패턴 기반 마스킹 | 불가능 | `홍길동` → `홍**` |
+| `ENCRYPT` | AES-256-GCM 암호화 | 가능 (키 필요) | 암호화된 Base64 문자열 |
+| `HASH` | SHA-256 해싱 | 불가능 | 해싱된 Base64 문자열 |
 
-### Masking Patterns by PII Type
+### PII 타입별 마스킹 패턴
 
-| Type | Masking Pattern | Example |
+| 타입 | 마스킹 패턴 | 예시 |
 |------|------------|------|
-| `NAME` | Keep first character, mask rest | `John Doe` → `J*** ***` |
-| `EMAIL` | Keep local part, mask domain | `user@example.com` → `user@***.com` |
-| `PHONE` | Keep first 3 and last 4 digits only | `010-1234-5678` → `010****5678` |
-| `DEFAULT` | Keep first 30%, mask rest | `Seoul Gangnam` → `Seou***` |
+| `NAME` | 첫 글자 유지, 나머지 마스킹 | `홍길동` → `홍**` |
+| `EMAIL` | 로컬 파트 유지, 도메인 마스킹 | `user@example.com` → `user@***.com` |
+| `PHONE` | 앞 3자리, 뒤 4자리만 유지 | `010-1234-5678` → `010****5678` |
+| `DEFAULT` | 앞 30% 유지, 나머지 마스킹 | `서울시 강남구` → `서울시***` |
 
-### Usage Example
+### 사용 예시
 
 ```java
 public class CustomerInfo {
@@ -386,11 +411,11 @@ public class CustomerInfo {
     private String phone;
 
     @PiiField(strategy = PiiStrategy.HASH)
-    private String ssn;  // Social Security Number
+    private String ssn;  // 주민등록번호
 }
 ```
 
-### Kubernetes Environment Configuration
+### Kubernetes 환경 설정
 
 ```yaml
 # deployment.yaml
@@ -408,7 +433,7 @@ env:
 ```
 
 ```bash
-# Create Secret
+# Secret 생성
 kubectl create secret generic curve-secrets \
   --from-literal=pii-encryption-key=$(openssl rand -base64 32) \
   --from-literal=pii-hash-salt=$(openssl rand -base64 16)
@@ -416,62 +441,62 @@ kubectl create secret generic curve-secrets \
 
 ---
 
-## Outbox Configuration
+## Outbox 설정
 
-Use the Transactional Outbox Pattern to ensure atomicity between DB transactions and event publishing.
+Transactional Outbox 패턴을 사용하여 DB 트랜잭션과 이벤트 발행 간의 원자성을 보장합니다.
 
-### Basic Configuration
+### 기본 설정
 
 ```yaml
 curve:
   outbox:
-    enabled: true  # Enable Outbox
-    poll-interval-ms: 1000  # Polling interval (1 second)
-    batch-size: 100  # Batch size
-    max-retries: 3  # Maximum retry count
-    send-timeout-seconds: 10  # Send timeout
-    cleanup-enabled: true  # Enable old event cleanup
-    retention-days: 7  # Retention period (7 days)
-    cleanup-cron: "0 0 2 * * *"  # Cleanup job execution time (2 AM daily)
-    initialize-schema: embedded  # Schema initialization mode (embedded, always, never)
+    enabled: true  # Outbox 활성화
+    poll-interval-ms: 1000  # 폴링 간격 (1초)
+    batch-size: 100  # 배치 크기
+    max-retries: 3  # 최대 재시도 횟수
+    send-timeout-seconds: 10  # 전송 타임아웃
+    cleanup-enabled: true  # 오래된 이벤트 정리 활성화
+    retention-days: 7  # 보관 기간 (7일)
+    cleanup-cron: "0 0 2 * * *"  # 정리 작업 실행 시간 (매일 새벽 2시)
+    initialize-schema: embedded  # 스키마 초기화 모드 (embedded, always, never)
 ```
 
-### Schema Initialization Modes
+### 스키마 초기화 모드
 
-- `embedded`: Automatically create tables only for embedded DBs like H2, HSQLDB (default)
-- `always`: Always attempt to create tables (if they don't exist)
-- `never`: No automatic creation (recommended when using Flyway/Liquibase)
+- `embedded`: H2, HSQLDB 등 임베디드 DB일 때만 테이블 자동 생성 (기본값)
+- `always`: 항상 테이블 생성 시도 (없을 경우)
+- `never`: 자동 생성 안 함 (Flyway/Liquibase 사용 시 권장)
 
 ---
 
-## Serialization Configuration
+## 직렬화 설정
 
-Configure the event payload serialization method.
+이벤트 페이로드 직렬화 방식을 설정합니다.
 
 ```yaml
 curve:
   serde:
-    type: JSON  # JSON (default), AVRO, PROTOBUF
+    type: JSON  # JSON (기본값), AVRO, PROTOBUF
 ```
 
 ---
 
-## Avro Serialization Configuration
+## Avro 직렬화 설정
 
-Additional configuration is required to serialize events using Avro.
+Avro를 사용하여 이벤트를 직렬화하려면 추가 설정이 필요합니다.
 
-### 1. Curve Configuration
+### 1. Curve 설정
 
 ```yaml
 curve:
   serde:
     type: AVRO
-    schema-registry-url: http://localhost:8081  # Schema Registry address
+    schema-registry-url: http://localhost:8081  # Schema Registry 주소
 ```
 
-### 2. Spring Kafka Configuration (Required)
+### 2. Spring Kafka 설정 (필수)
 
-You must explicitly specify the `value-serializer` in Spring Kafka's Producer configuration.
+Spring Kafka의 Producer 설정에서 `value-serializer`를 명시적으로 지정해야 합니다.
 
 ```yaml
 spring:
@@ -482,14 +507,14 @@ spring:
       schema.registry.url: http://localhost:8081
 ```
 
-**⚠️ Caution:**
-- When `curve.serde.type=AVRO` is configured, Curve internally creates a `GenericRecord` object and passes it to KafkaTemplate.
-- Therefore, you must use `KafkaAvroSerializer` so that KafkaTemplate can serialize `GenericRecord`.
-- `schema.registry.url` may need to be configured in both `curve.serde` and `spring.kafka.properties` (for Curve internal logic and Kafka Serializer).
+**⚠️ 주의:**
+- `curve.serde.type=AVRO` 설정 시, Curve는 내부적으로 `GenericRecord` 객체를 생성하여 KafkaTemplate에 전달합니다.
+- 따라서 KafkaTemplate이 `GenericRecord`를 직렬화할 수 있도록 반드시 `KafkaAvroSerializer`를 사용해야 합니다.
+- `schema.registry.url`은 `curve.serde`와 `spring.kafka.properties` 양쪽에 설정이 필요할 수 있습니다 (Curve 내부 로직용 및 Kafka Serializer용).
 
-### Avro Schema Structure
+### Avro 스키마 구조
 
-Curve internally uses the following fixed Avro schema. Some fields in `payload` and `metadata` are stored as JSON strings for flexibility.
+Curve는 내부적으로 다음과 같은 고정된 Avro 스키마를 사용합니다. `payload`와 `metadata`의 일부 필드는 유연성을 위해 JSON 문자열로 저장됩니다.
 
 ```json
 {
@@ -510,25 +535,31 @@ Curve internally uses the following fixed Avro schema. Some fields in `payload` 
 
 ---
 
-## Complete Configuration Examples
+## 전체 설정 예시
 
-### Production Environment (Stability-focused)
+### 프로덕션 환경 (안정성 중시)
 
 ```yaml
 curve:
   enabled: true
 
   id-generator:
-    worker-id: ${INSTANCE_ID}  # Injected from environment variable
+    worker-id: ${INSTANCE_ID}  # 환경 변수에서 주입
     auto-generate: false
 
   kafka:
     topic: event.audit.v1
     dlq-topic: event.audit.dlq.v1
-    async-mode: false  # Synchronous transmission
+    async-mode: false  # 동기 전송
     retries: 5
     retry-backoff-ms: 1000
     request-timeout-ms: 30000
+    
+    # 백업 전략
+    backup:
+      s3-enabled: true
+      s3-bucket: "prod-event-backups"
+      local-enabled: false
 
   retry:
     enabled: true
@@ -543,17 +574,17 @@ curve:
   pii:
     enabled: true
     crypto:
-      default-key: ${PII_ENCRYPTION_KEY}  # Environment variable required
+      default-key: ${PII_ENCRYPTION_KEY}  # 환경 변수 필수
       salt: ${PII_HASH_SALT}
 
   outbox:
     enabled: true
-    initialize-schema: never  # Use Flyway
+    initialize-schema: never  # Flyway 사용
     cleanup-enabled: true
     retention-days: 14
 ```
 
-### Development/Test Environment (Performance-focused)
+### 개발/테스트 환경 (성능 중시)
 
 ```yaml
 curve:
@@ -566,9 +597,12 @@ curve:
   kafka:
     topic: event.audit.dev.v1
     dlq-topic: event.audit.dlq.dev.v1
-    async-mode: true  # Asynchronous transmission
+    async-mode: true  # 비동기 전송
     async-timeout-ms: 3000
     retries: 3
+    
+    backup:
+      local-enabled: true
 
   retry:
     enabled: true
@@ -584,7 +618,7 @@ curve:
     initialize-schema: always
 ```
 
-### High-Performance Environment
+### 고성능 환경
 
 ```yaml
 curve:
@@ -597,12 +631,12 @@ curve:
   kafka:
     topic: event.audit.v1
     dlq-topic: event.audit.dlq.v1
-    async-mode: true  # Asynchronous transmission
+    async-mode: true  # 비동기 전송
     async-timeout-ms: 5000
-    retries: 1  # Minimum retry
+    retries: 1  # 최소 재시도
 
   retry:
-    enabled: false  # Disable retry (performance priority)
+    enabled: false  # 재시도 비활성화 (성능 우선)
 
   aop:
     enabled: true
@@ -610,119 +644,122 @@ curve:
 
 ---
 
-## Environment-specific Configuration Recommendations
+## 환경별 권장 설정
 
-### Local Development
+### 로컬 개발
 
-- Worker ID: 1 (fixed)
-- Transmission Mode: Synchronous (debugging convenience)
-- DLQ: Enabled
-- Retry: Minimum (fast failure)
-- Outbox: Enabled (auto schema generation)
+- Worker ID: 1 (고정)
+- 전송 모드: 동기 (디버깅 편의성)
+- DLQ: 활성화
+- 재시도: 최소화 (빠른 실패)
+- Outbox: 활성화 (스키마 자동 생성)
+- 백업: 로컬 파일
 
-### Staging
+### 스테이징
 
-- Worker ID: Environment variable
-- Transmission Mode: Asynchronous
-- DLQ: Enabled
-- Retry: Medium level
-- Outbox: Enabled
+- Worker ID: 환경 변수
+- 전송 모드: 비동기
+- DLQ: 활성화
+- 재시도: 중간 수준
+- Outbox: 활성화
+- 백업: S3 (가능한 경우) 또는 로컬
 
-### Production
+### 프로덕션
 
-- Worker ID: Centrally managed (Consul/etcd)
-- Transmission Mode: Based on business requirements
-- DLQ: Mandatory enabled
-- Retry: High level
-- Outbox: Mandatory enabled (data consistency)
+- Worker ID: 중앙 관리 (Consul/etcd)
+- 전송 모드: 비즈니스 요건에 따라 결정
+- DLQ: 필수 활성화
+- 재시도: 높은 수준
+- Outbox: 필수 활성화 (데이터 정합성)
+- 백업: S3 (K8s 환경 필수)
 
 ---
 
-## Troubleshooting
+## 트러블슈팅
 
-### Worker ID Conflict
+### Worker ID 충돌
 
-**Symptom:** Identical IDs are being generated
+**증상:** 동일한 ID가 생성됨
 
-**Solution:**
+**해결:**
 ```yaml
 curve:
   id-generator:
     worker-id: ${UNIQUE_INSTANCE_ID}
 ```
 
-### Transmission Timeout
+### 전송 타임아웃
 
-**Symptom:** `TimeoutException` occurs
+**증상:** `TimeoutException` 발생
 
-**Solution:**
+**해결:**
 ```yaml
 curve:
   kafka:
-    request-timeout-ms: 60000  # Increase timeout
+    request-timeout-ms: 60000  # 타임아웃 증가
 ```
 
-### High Latency
+### 높은 Latency
 
-**Symptom:** Event publishing is slow
+**증상:** 이벤트 발행 속도가 느림
 
-**Solution:**
+**해결:**
 ```yaml
 curve:
   kafka:
-    async-mode: true  # Switch to asynchronous mode
+    async-mode: true  # 비동기 모드로 전환
 ```
 
-### PII Encryption Key Not Configured
+### PII 암호화 키 미설정
 
-**Symptom:**
+**증상:**
 ```
 ERROR: PII encryption key is not configured!
 ERROR: An exception will occur when using @PiiField(strategy = PiiStrategy.ENCRYPT).
 ```
 
-**Solution:**
+**해결:**
 ```bash
-# 1. Generate key
+# 1. 키 생성
 openssl rand -base64 32
 
-# 2. Set environment variable
+# 2. 환경 변수 설정
 export PII_ENCRYPTION_KEY=generated_key_value
 
-# 3. Configure application.yml
+# 3. application.yml 설정
 curve:
   pii:
     crypto:
       default-key: ${PII_ENCRYPTION_KEY}
 ```
 
-### Configuration Validation Failure
+### 설정 유효성 검사 실패
 
-**Symptom:**
+**증상:**
 ```
 APPLICATION FAILED TO START
 Reason: workerId must be 1023 or less
 ```
 
-**Solution:**
-- Check if configuration values meet validation rules
-- Refer to validation rules in the [Configuration Validation](#configuration-validation) section
+**해결:**
+- 설정값이 검증 규칙에 맞는지 확인
+- [설정 유효성 검사](#설정-유효성-검사) 섹션의 규칙 참조
 
 ---
 
-## Logging Configuration
+## 로깅 설정
 
-By default, Curve outputs minimal logs. To see detailed configuration information or internal operations, enable the DEBUG level.
+Curve는 기본적으로 최소한의 로그만 출력합니다. 상세한 설정 정보나 내부 동작을 확인하려면 DEBUG 레벨을 활성화하세요.
 
-### Basic Logging (INFO)
+### 기본 로깅 (INFO)
 
-In the default configuration, only the following log is output:
+기본 설정에서는 다음과 같은 로그만 출력됩니다:
 
 ```
 INFO  c.p.c.a.CurveAutoConfiguration : Curve auto-configuration enabled (disable with curve.enabled=false)
 ```
 
-### Enable DEBUG Logging
+### DEBUG 로깅 활성화
 
 ```yaml
 logging:
@@ -730,41 +767,41 @@ logging:
     com.project.curve: DEBUG
 ```
 
-### Information Available at DEBUG Level
+### DEBUG 레벨에서 확인 가능한 정보
 
-| Item | Description |
+| 항목 | 설명 |
 |------|------|
-| Kafka Producer Configuration | Detailed configuration such as retries, timeout, async-mode |
-| RetryTemplate Configuration | max-attempts, detailed backoff policy |
-| SnowflakeIdGenerator | Worker ID and initialization information |
-| DLQ ExecutorService | Thread pool size, shutdown timeout |
-| PII Module | Encryption/salt configuration status, module registration |
-| Event Transmission | Transmission details per event (eventId, topic, partition, offset) |
-| Outbox Publisher | Polling, publishing, cleanup job logs |
+| Kafka Producer 설정 | retries, timeout, async-mode 등 상세 설정값 |
+| RetryTemplate 설정 | max-attempts, backoff 정책 상세 |
+| SnowflakeIdGenerator | Worker ID 및 초기화 정보 |
+| DLQ ExecutorService | 스레드 풀 크기, 종료 타임아웃 |
+| PII 모듈 | 암호화/솔트 설정 상태, 모듈 등록 여부 |
+| 이벤트 전송 | 이벤트별 전송 내역 (eventId, topic, partition, offset) |
+| Outbox Publisher | 폴링, 발행, 정리 작업 로그 |
 
-### Enable DEBUG for Specific Modules Only
+### 특정 모듈만 DEBUG 활성화
 
 ```yaml
 logging:
   level:
-    # DEBUG for Kafka transmission only
+    # Kafka 전송 관련만 DEBUG
     com.project.curve.kafka: DEBUG
 
-    # DEBUG for Auto-Configuration only
+    # Auto-Configuration 관련만 DEBUG
     com.project.curve.autoconfigure: DEBUG
 
-    # DEBUG for PII processing only
+    # PII 처리 관련만 DEBUG
     com.project.curve.spring.pii: DEBUG
 
-    # DEBUG for Outbox only
+    # Outbox 관련만 DEBUG
     com.project.curve.spring.outbox: DEBUG
 ```
 
 ---
 
-## Additional Information
+## 추가 정보
 
-- [Snowflake ID Algorithm](https://en.wikipedia.org/wiki/Snowflake_ID)
-- [Kafka Producer Configuration](https://kafka.apache.org/documentation/#producerconfigs)
+- [Snowflake ID 알고리즘](https://en.wikipedia.org/wiki/Snowflake_ID)
+- [Kafka Producer 설정](https://kafka.apache.org/documentation/#producerconfigs)
 - [Spring Retry](https://docs.spring.io/spring-retry/docs/current/reference/html/)
-- [Transactional Outbox Pattern](https://microservices.io/patterns/data/transactional-outbox.html)
+- [Transactional Outbox 패턴](https://microservices.io/patterns/data/transactional-outbox.html)

@@ -139,7 +139,7 @@ spring:
     version: 1.0.0
 
   kafka:
-    bootstrap-servers: localhost:9094
+    bootstrap-servers: localhost:9092
 
   jpa:
     hibernate:
@@ -264,7 +264,7 @@ curl -X POST http://localhost:8080/api/users \
 Check the Kafka topic:
 
 ```bash
-kafka-console-consumer --bootstrap-server localhost:9094 \
+kafka-console-consumer --bootstrap-server localhost:9092 \
     --topic event.audit.v1 --from-beginning
 ```
 
@@ -274,8 +274,8 @@ kafka-console-consumer --bootstrap-server localhost:9094 \
 {
   "eventId": "7355889748156289024",
   "eventType": "USER_REGISTERED",
-  "occurredAt": "2025-02-03T10:30:00Z",
-  "publishedAt": "2025-02-03T10:30:00.123Z",
+  "occurredAt": "2026-02-03T10:30:00Z",
+  "publishedAt": "2026-02-03T10:30:00.123Z",
   "severity": "INFO",
   "metadata": {
     "source": {
@@ -292,7 +292,7 @@ kafka-console-consumer --bootstrap-server localhost:9094 \
     "email": "j***@ex***.com",  // ← Masked!
     "firstName": "5a4b3c...",    // ← Hashed!
     "lastName": "7f8e9d...",     // ← Hashed!
-    "registeredAt": "2025-02-03T10:30:00Z"
+    "registeredAt": "2026-02-03T10:30:00Z"
   }
 }
 ```

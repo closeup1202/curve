@@ -3,13 +3,15 @@
 ## 1. Start Kafka
 
 From the root directory:
+
 ```bash
 docker-compose up -d
 ```
 
 **Verify**:
+
 - Kafka UI: http://localhost:8080
-- Kafka broker: localhost:9094
+- Kafka broker: localhost:9092
 
 ## 2. Set Environment Variables (for PII Encryption)
 
@@ -36,11 +38,13 @@ cd sample
 ```
 
 Or from root:
+
 ```bash
 ./gradlew :sample:bootRun
 ```
 
 **Verify startup**:
+
 ```
 2024-01-17 10:30:00 - Curve has been automatically activated!
 2024-01-17 10:30:00 - DLQ ExecutorService created with 2 threads
@@ -51,6 +55,7 @@ Or from root:
 ## 4. Test APIs
 
 ### Create Order
+
 ```bash
 curl -X POST http://localhost:8081/api/orders \
   -H "Content-Type: application/json" \
@@ -67,6 +72,7 @@ curl -X POST http://localhost:8081/api/orders \
 ```
 
 **Response example**:
+
 ```json
 {
   "orderId": "a1b2c3d4-...",
@@ -82,12 +88,14 @@ curl -X POST http://localhost:8081/api/orders \
 ```
 
 ### Get Order
+
 ```bash
 # Use the orderId from the response above
 curl http://localhost:8081/api/orders/a1b2c3d4-...
 ```
 
 ### Cancel Order
+
 ```bash
 curl -X POST http://localhost:8081/api/orders/a1b2c3d4-.../cancel \
   -H "Content-Type: application/json" \
@@ -97,16 +105,22 @@ curl -X POST http://localhost:8081/api/orders/a1b2c3d4-.../cancel \
 ## 5. Verify Kafka Events
 
 ### Check in Kafka UI
+
 1. Go to http://localhost:8080
 2. Select `event.audit.v1` topic
 3. Click **Messages** tab
 4. View the latest messages
 
 ### Event Structure
+
 ```json
 {
-  "eventId": {"value": "123456789012345678"},
-  "eventType": {"value": "ORDER_CREATED"},
+  "eventId": {
+    "value": "123456789012345678"
+  },
+  "eventType": {
+    "value": "ORDER_CREATED"
+  },
   "severity": "INFO",
   "metadata": {
     "source": {
@@ -144,6 +158,7 @@ curl -X POST http://localhost:8081/api/orders/a1b2c3d4-.../cancel \
 ## 6. Verify PII Protection
 
 ### Original Data
+
 ```json
 {
   "name": "John Doe",
@@ -154,6 +169,7 @@ curl -X POST http://localhost:8081/api/orders/a1b2c3d4-.../cancel \
 ```
 
 ### Data Stored in Kafka
+
 ```json
 {
   "name": "Joh**",                    ← PiiType.NAME, PiiStrategy.MASK
@@ -166,6 +182,7 @@ curl -X POST http://localhost:8081/api/orders/a1b2c3d4-.../cancel \
 ## 7. Check Logs
 
 ### Event Publishing Success
+
 ```
 INFO  : Creating order: customer=cust-001, product=MacBook Pro, quantity=1, amount=3500000
 DEBUG : Event published: eventType=ORDER_CREATED, severity=INFO
@@ -175,6 +192,7 @@ DEBUG : Event sent successfully: eventId=123456789012345678, topic=event.audit.v
 ```
 
 ### Event Publishing Failure (when Kafka is down)
+
 ```
 ERROR : All retry attempts exhausted for event: eventId=123456789012345678
 WARN  : Sending failed event to DLQ (async): eventId=123456789012345678, dlqTopic=event.audit.dlq.v1
@@ -184,16 +202,18 @@ INFO  : Event sent to DLQ successfully (async): eventId=123456789012345678, dlqT
 ## 8. Code Explanation
 
 ### @PublishEvent Annotation
+
 ```java
+
 @PublishEvent(
-    eventType = "ORDER_CREATED",           // Kafka event type
-    severity = EventSeverity.INFO,         // Event severity
-    phase = PublishEvent.Phase.AFTER_RETURNING,  // Method execution timing
-    payloadIndex = -1,                     // -1: use return value
-    failOnError = false,                   // Continue business logic even if event publish fails
-    outbox = true,                         // Use Transactional Outbox
-    aggregateType = "Order",               // Aggregate type
-    aggregateId = "#result.orderId"        // Aggregate ID (SpEL)
+        eventType = "ORDER_CREATED",           // Kafka event type
+        severity = EventSeverity.INFO,         // Event severity
+        phase = PublishEvent.Phase.AFTER_RETURNING,  // Method execution timing
+        payloadIndex = -1,                     // -1: use return value
+        failOnError = false,                   // Continue business logic even if event publish fails
+        outbox = true,                         // Use Transactional Outbox
+        aggregateType = "Order",               // Aggregate type
+        aggregateId = "#result.orderId"        // Aggregate ID (SpEL)
 )
 public OrderCreatedPayload createOrder(...) {
     // Just write business logic
@@ -202,6 +222,7 @@ public OrderCreatedPayload createOrder(...) {
 ```
 
 ### PII Field Protection
+
 ```java
 public class Customer {
     @PiiField(type = PiiType.NAME, strategy = PiiStrategy.MASK)
@@ -221,12 +242,14 @@ public class Customer {
 ## 9. Next Steps
 
 ### Customization
+
 - **Change async/sync mode**: Set `curve.kafka.async-mode` in `application.yml`
 - **Adjust retry count**: Set `curve.retry.max-attempts`
 - **Adjust DLQ thread count**: Set `curve.kafka.dlq-executor-threads`
 - **Outbox settings**: Set `curve.outbox.enabled=true`
 
 ### Spring Security Integration
+
 ```yaml
 spring:
   security:
@@ -238,6 +261,7 @@ spring:
 After this, `userId` and `role` information will be automatically included in EventActor.
 
 ### Distributed Tracing (Sleuth)
+
 ```yaml
 spring:
   sleuth:
@@ -249,35 +273,46 @@ After this, `traceId` and `spanId` information will be automatically included in
 ## 10. Troubleshooting
 
 ### Kafka Connection Failure
+
 ```
 ERROR: Failed to send event to Kafka
 ```
+
 **Solution**: Verify Kafka is running with `docker-compose ps`
 
 ### Port Conflict
+
 ```
 ERROR: Port 8081 is already in use
 ```
+
 **Solution**: Change `server.port` in `application.yml`
 
 ### Events Not Being Published
+
 **Checklist**:
+
 - Verify `curve.aop.enabled=true`
 - Verify method is `public`
 - Verify `@PublishEvent` annotation is correctly applied
 
 ### PII Encryption Key Not Set
+
 ```
 ERROR: PII encryption key is not configured!
 ```
+
 **Solution**: See [2. Set Environment Variables](#2-set-environment-variables-for-pii-encryption)
 
 ### Configuration Validation Failure
+
 ```
 APPLICATION FAILED TO START
 Reason: workerId must be 1023 or less
 ```
+
 **Solution**: Verify configuration values meet validation rules
+
 - `curve.id-generator.worker-id`: 0 ~ 1023
 - `curve.kafka.topic`: Cannot be empty
 - Details: [CONFIGURATION.md](../docs/CONFIGURATION.en.md#configuration-validation)
