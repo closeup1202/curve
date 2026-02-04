@@ -265,7 +265,7 @@ graph TB
 
 ```mermaid
 graph LR
-    User[User Service] -->|@PublishEvent| Curve[Curve Library]
+   User[User Service] -->|"@PublishEvent"| Curve[Curve Library]
     
     subgraph Curve Library
         Context[Context Extractor]
