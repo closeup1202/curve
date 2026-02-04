@@ -1,4 +1,4 @@
-name: Update Docs & Changelog
+name: Update Docs Version
 
 on:
   push:
@@ -49,26 +49,9 @@ jobs:
           chmod +x scripts/update-docs-version.sh
           ./scripts/update-docs-version.sh ${{ env.PREV_VERSION }} ${{ env.NEW_VERSION }}
 
-      - name: Install git-cliff
-        run: |
-          wget https://github.com/orhun/git-cliff/releases/download/v2.4.0/git-cliff-2.4.0-x86_64-unknown-linux-gnu.tar.gz
-          tar -xf git-cliff-2.4.0-x86_64-unknown-linux-gnu.tar.gz
-          # Find git-cliff binary and move it to /usr/local/bin
-          find . -name "git-cliff" -type f -exec sudo mv {} /usr/local/bin/ \;
-          sudo chmod +x /usr/local/bin/git-cliff
-          git-cliff --version
-
-      - name: Generate Changelog
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-             git-cliff --config cliff.toml --output CHANGELOG.md --verbose --tag ${{ env.NEW_VERSION }}
-          else
-             git-cliff --config cliff.toml --output CHANGELOG.md --verbose
-          fi
-
       - name: Commit & Push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "docs: Update version to ${{ env.NEW_VERSION }} and changelog [skip ci]"
+          commit_message: "docs: Update version to ${{ env.NEW_VERSION }} [skip ci]"
           branch: main
-          file_pattern: "README.md README.ko.md docs/**/*.md CHANGELOG.md sample/build.gradle"
+          file_pattern: "README.md README.ko.md docs/**/*.md sample/build.gradle"
