@@ -67,11 +67,10 @@ Event severity level for filtering and alerting.
 
 **Available values:**
 
-- `DEBUG` - Development/debugging
 - `INFO` - Normal operations (default)
 - `WARN` - Warnings
 - `ERROR` - Errors requiring attention
-- `FATAL` - Critical failures
+- `CRITICAL` - Critical failures requiring immediate action
 
 ---
 
@@ -128,26 +127,92 @@ public Order submitOrder(OrderSubmission submission) { ... }
 
 ---
 
-#### `tags` (Map<String, String>)
+#### `payloadIndex` (int)
 
-Add custom metadata tags to events.
+Specify which method parameter to use as the event payload.
 
 ```java
 @PublishEvent(
-    eventType = "ORDER_CREATED",
-    tags = {
-        @Tag(key = "region", value = "US-WEST"),
-        @Tag(key = "channel", value = "mobile")
-    }
+    eventType = "ORDER_SUBMITTED",
+    payloadIndex = 0  // Use first parameter (0-indexed)
 )
+public Order submitOrder(OrderSubmission submission) {
+    // submission will be used as payload
+    return orderRepository.save(submission.toOrder());
+}
 ```
 
-Tags are useful for:
+**Values:**
+- `-1` (default): Use method return value as payload
+- `0` or greater: Use the parameter at this index as payload
 
-- Filtering events downstream
-- Regional routing
-- A/B testing markers
-- Feature flags
+**Note**: The `payload` SpEL expression overrides this setting if specified.
+
+---
+
+#### `phase` (PublishEvent.Phase)
+
+Control when the event is published relative to method execution.
+
+```java
+@PublishEvent(
+    eventType = "VALIDATION_PERFORMED",
+    phase = PublishEvent.Phase.BEFORE  // Publish before method runs
+)
+public void validateOrder(Order order) {
+    // Event published first, then validation runs
+    validator.validate(order);
+}
+```
+
+**Available phases:**
+
+| Phase | When Published | Use Case |
+|-------|---------------|----------|
+| `BEFORE` | Before method execution | Pre-validation events, audit trails |
+| `AFTER_RETURNING` | After successful return (default) | Success events, state changes |
+| `AFTER` | After method execution (even on exception) | Audit trails regardless of outcome |
+
+**Example scenarios:**
+
+```java
+// Success-only events
+@PublishEvent(
+    eventType = "ORDER_CREATED",
+    phase = PublishEvent.Phase.AFTER_RETURNING
+)
+public Order createOrder(OrderRequest req) { ... }
+
+// Always publish, even on failure
+@PublishEvent(
+    eventType = "ORDER_CREATION_ATTEMPTED",
+    phase = PublishEvent.Phase.AFTER
+)
+public Order createOrder(OrderRequest req) { ... }
+```
+
+---
+
+#### `failOnError` (boolean)
+
+Control whether event publishing failures should fail the business logic.
+
+```java
+@PublishEvent(
+    eventType = "CRITICAL_OPERATION",
+    failOnError = true  // Throw exception if event publishing fails
+)
+public void performCriticalOperation() {
+    // If event publishing fails, this method will throw exception
+    // and rollback any transaction
+}
+```
+
+**Values:**
+- `false` (default): Log error but continue business logic
+- `true`: Throw exception and fail the method if event publishing fails
+
+**Recommendation**: Use `false` (default) for most cases to prevent event publishing issues from breaking business logic. Only use `true` for critical audit requirements where event loss is unacceptable.
 
 ---
 
@@ -215,14 +280,15 @@ Override global settings per method:
 @Service
 public class CriticalService {
 
-    // High-priority event with custom severity
+    // High-priority event with custom severity and error handling
     @PublishEvent(
         eventType = "FRAUD_DETECTED",
-        severity = EventSeverity.FATAL,
-        tags = {@Tag(key = "priority", value = "critical")}
+        severity = EventSeverity.CRITICAL,
+        failOnError = true  // Fail method if event cannot be published
     )
     public FraudAlert detectFraud(Transaction tx) {
-        // ...
+        // Critical audit event - must be published
+        return fraudDetectionService.analyze(tx);
     }
 }
 ```

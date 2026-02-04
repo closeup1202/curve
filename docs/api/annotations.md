@@ -22,13 +22,15 @@ io.github.closeup1202.curve.spring.audit.annotation.PublishEvent
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `eventType` | String | Yes | - | Unique event type identifier |
+| `eventType` | String | No | "" | Unique event type identifier (auto-generated from method name if empty) |
 | `severity` | EventSeverity | No | INFO | Event severity level |
-| `payload` | String (SpEL) | No | "#result" | Payload extraction expression |
-| `tags` | Tag[] | No | {} | Custom metadata tags |
-| `outbox` | boolean | No | false | Enable transactional outbox |
-| `aggregateType` | String | No | "" | Entity type for outbox |
-| `aggregateId` | String (SpEL) | No | "" | Entity ID for outbox |
+| `payloadIndex` | int | No | -1 | Parameter index for payload (-1: use return value, 0+: use parameter) |
+| `payload` | String (SpEL) | No | "" | Payload extraction SpEL expression (overrides payloadIndex) |
+| `phase` | Phase | No | AFTER_RETURNING | When to publish (BEFORE, AFTER_RETURNING, AFTER) |
+| `failOnError` | boolean | No | false | Throw exception if event publishing fails |
+| `outbox` | boolean | No | false | Enable transactional outbox pattern |
+| `aggregateType` | String | No | "" | Entity type for outbox (required if outbox=true) |
+| `aggregateId` | String (SpEL) | No | "" | Entity ID SpEL expression for outbox (required if outbox=true) |
 
 ### Example
 
@@ -37,10 +39,8 @@ io.github.closeup1202.curve.spring.audit.annotation.PublishEvent
     eventType = "ORDER_CREATED",
     severity = EventSeverity.INFO,
     payload = "#result.toDto()",
-    tags = {
-        @Tag(key = "region", value = "US"),
-        @Tag(key = "channel", value = "web")
-    },
+    phase = PublishEvent.Phase.AFTER_RETURNING,
+    failOnError = false,
     outbox = true,
     aggregateType = "Order",
     aggregateId = "#result.id"
@@ -48,6 +48,45 @@ io.github.closeup1202.curve.spring.audit.annotation.PublishEvent
 public Order createOrder(OrderRequest request) {
     return orderRepository.save(new Order(request));
 }
+```
+
+### Phase Options
+
+```java
+public enum Phase {
+    BEFORE,          // Publish before method execution
+    AFTER_RETURNING, // Publish after successful execution (default)
+    AFTER            // Publish after execution (even if method throws exception)
+}
+```
+
+### Payload Extraction Examples
+
+```java
+// Use return value (default when payloadIndex=-1 and payload="")
+@PublishEvent(eventType = "ORDER_CREATED")
+public Order createOrder(OrderRequest req) { ... }
+
+// Use specific parameter by index
+@PublishEvent(
+    eventType = "ORDER_SUBMITTED",
+    payloadIndex = 0  // Use first parameter
+)
+public Order submitOrder(OrderSubmission submission) { ... }
+
+// Use SpEL expression (overrides payloadIndex)
+@PublishEvent(
+    eventType = "USER_UPDATED",
+    payload = "#args[0].toEventDto()"
+)
+public User updateUser(UserUpdateRequest request) { ... }
+
+// Complex SpEL with return value
+@PublishEvent(
+    eventType = "ORDER_COMPLETED",
+    payload = "new OrderCompletedDto(#result.id, #result.status, #args[0].reason)"
+)
+public Order completeOrder(String reason) { ... }
 ```
 
 ---
@@ -105,49 +144,16 @@ public class UserPayload implements DomainEventPayload {
 
 ---
 
-## @Tag
-
-Adds custom metadata tag to events (used within @PublishEvent).
-
-### Package
-
-```java
-io.github.closeup1202.curve.spring.audit.annotation.Tag
-```
-
-### Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `key` | String | Yes | Tag key |
-| `value` | String | Yes | Tag value |
-
-### Example
-
-```java
-@PublishEvent(
-    eventType = "ORDER_CREATED",
-    tags = {
-        @Tag(key = "region", value = "US-WEST"),
-        @Tag(key = "channel", value = "mobile"),
-        @Tag(key = "version", value = "v2")
-    }
-)
-```
-
----
-
 ## Enums
 
 ### EventSeverity
 
 ```java
 public enum EventSeverity {
-    DEBUG,   // Development/debugging
-    INFO,    // Normal operations
-    WARN,    // Warnings
-    ERROR,   // Errors
-    FATAL    // Critical failures
+    INFO,     // Normal operations (default)
+    WARN,     // Warnings
+    ERROR,    // Errors requiring attention
+    CRITICAL  // Critical failures requiring immediate action
 }
 ```
 
@@ -187,10 +193,12 @@ Available in SpEL expressions:
 ## Best Practices
 
 1. **Event Type Naming**: Use SCREAMING_SNAKE_CASE (e.g., `ORDER_CREATED`)
-2. **Severity Levels**: Choose appropriate severity for filtering
+2. **Severity Levels**: Choose appropriate severity for filtering (INFO, WARN, ERROR, CRITICAL)
 3. **SpEL Expressions**: Keep simple for maintainability
 4. **PII Protection**: Apply to all sensitive fields
-5. **Tags**: Use for filtering and routing downstream
+5. **Phase Selection**: Use AFTER_RETURNING for normal cases, BEFORE for pre-validation events
+6. **Error Handling**: Set `failOnError=false` (default) to prevent business logic failure from event publishing issues
+7. **Transactional Outbox**: Enable for critical events requiring guaranteed delivery
 
 ---
 

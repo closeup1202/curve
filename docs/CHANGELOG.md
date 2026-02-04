@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Dependabot Configuration**: Added automated dependency updates for Gradle, GitHub Actions, and Docker
+  - Weekly dependency checks every Monday at 09:00 KST
+  - Grouped updates for Spring Framework, AWS SDK, Kafka, and testing dependencies
+  - Automatic PR creation for security and version updates
+
+### Changed
+- **AWS SDK Update**: Upgraded AWS SDK for Java from 2.21.1 to 2.41.21
+  - Includes latest security patches and performance improvements
+  - Maintains backward compatibility with existing S3 backup functionality
+
 ---
 
 ## [0.0.4] - 2026-02-04

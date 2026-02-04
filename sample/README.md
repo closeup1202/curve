@@ -215,8 +215,8 @@ DEBUG: Event sent successfully: eventId=123456789012345678, topic=event.audit.v1
 
 ```java
 @PublishEvent(
-    eventType = "ORDER_CREATED",           // Event type (required)
-    severity = EventSeverity.INFO,         // Event severity (INFO, WARNING, ERROR, CRITICAL)
+    eventType = "ORDER_CREATED",           // Event type (optional, auto-generated if empty)
+    severity = EventSeverity.INFO,         // Event severity (INFO, WARN, ERROR, CRITICAL)
     phase = PublishEvent.Phase.AFTER_RETURNING,  // Execution timing
     payloadIndex = -1,                     // -1: return value, 0~N: parameter index
     failOnError = false                    // Whether to throw exception on publish failure
