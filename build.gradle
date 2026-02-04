@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'jacoco'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'org.springframework.boot' version '3.5.9' apply false
+    id 'org.springframework.boot' version '4.0.2' apply false
     id 'me.champeau.jmh' version '0.7.2' apply false
     id 'org.sonarqube' version '4.4.1.3373'
     id 'net.researchgate.release' version '3.0.2'
@@ -62,7 +62,7 @@ subprojects {
 
     dependencyManagement {
         imports {
-            mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.9"
+            mavenBom "org.springframework.boot:spring-boot-dependencies:4.0.2"
         }
     }
 
