@@ -50,7 +50,7 @@ jobs:
           ./scripts/update-docs-version.sh ${{ env.PREV_VERSION }} ${{ env.NEW_VERSION }}
 
       - name: Commit & Push changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "docs: Update version to ${{ env.NEW_VERSION }} [skip ci]"
           branch: main
