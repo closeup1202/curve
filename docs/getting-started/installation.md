@@ -27,7 +27,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'io.github.closeup1202:curve:0.0.3'
+    implementation 'io.github.closeup1202:curve:0.0.4'
 }
 ```
 
@@ -40,7 +40,7 @@ Add to your `pom.xml`:
     <dependency>
         <groupId>io.github.closeup1202</groupId>
         <artifactId>curve</artifactId>
-        <version>0.0.3</version>
+        <version>0.0.4</version>
     </dependency>
 </dependencies>
 ```
@@ -106,7 +106,7 @@ runtimeOnly 'org.postgresql:postgresql'
 
 | Curve Version | Spring Boot | Kafka Client | Java |
 |---------------|-------------|--------------|------|
-| 0.0.3         | 3.5.x | 3.8.x | 17+ |
+| 0.0.4         | 3.5.x | 3.8.x | 17+ |
 | 0.0.2         | 3.5.x | 3.8.x | 17+ |
 | 0.0.1         | 3.4.x | 3.7.x | 17+ |
 
@@ -166,7 +166,7 @@ Expected response:
 
 ### Dependency Resolution Fails
 
-!!! failure "Error: Could not find io.github.closeup1202:curve:0.0.3"
+!!! failure "Error: Could not find io.github.closeup1202:curve:0.0.4"
 
     **Solution**: Ensure Maven Central is in your repositories:
 
@@ -204,7 +204,7 @@ Expected response:
 
     ```gradle
     dependencies {
-        implementation('io.github.closeup1202:curve:0.0.3') {
+        implementation('io.github.closeup1202:curve:0.0.4') {
             exclude group: 'org.apache.kafka'
         }
         implementation 'org.apache.kafka:kafka-clients:3.8.0'
