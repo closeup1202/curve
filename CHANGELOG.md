@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.3] - 2026-02-03
+
+### Added
+- **S3 Backup Strategy**: Added support for backing up failed events to AWS S3 or MinIO.
+  - Ideal for Kubernetes/Cloud environments where local storage is ephemeral.
+  - Configurable via `curve.kafka.backup.s3-enabled=true`.
+- **Composite Backup Strategy**: Support for multiple backup strategies (e.g., try S3 first, then fallback to local file).
+
+### Changed
+- **Refactored Backup Logic**: Extracted backup logic into `EventBackupStrategy` interface for better extensibility.
+- **Documentation Update**:
+  - Updated all documentation to use standard Kafka port `9092` instead of `9094`.
+  - Added detailed configuration guide for S3 backup.
+  - Translated Javadoc and test display names to English for better internationalization.
+
+---
+
 ## [0.0.2] - 2026-02-03
 
 ### Changed
@@ -88,6 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date       | Description |
 |---------|------------|-------------|
+| 0.0.3 | 2026-02-03 | Add S3 Backup Strategy & Doc Updates |
 | 0.0.2 | 2026-02-03 | Make Avro dependencies optional |
 | 0.0.1 | 2026-02-03 | Initial release |
 
@@ -117,6 +135,7 @@ When contributing, please update this changelog:
 
 ---
 
-[Unreleased]: https://github.com/closeup1202/curve/compare/v0.0.2...HEAD
+[Unreleased]: https://github.com/closeup1202/curve/compare/v0.0.3...HEAD
+[0.0.3]: https://github.com/closeup1202/curve/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/closeup1202/curve/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/closeup1202/curve/releases/tag/v0.0.1

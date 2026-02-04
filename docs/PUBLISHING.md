@@ -234,14 +234,14 @@ Users can add your library:
 **Gradle (Kotlin DSL)**:
 ```kotlin
 dependencies {
-    implementation("io.github.closeup1202:curve:0.0.2")
+    implementation("io.github.closeup1202:curve:0.0.3")
 }
 ```
 
 **Gradle (Groovy)**:
 ```groovy
 dependencies {
-    implementation 'io.github.closeup1202:curve:0.0.2'
+    implementation 'io.github.closeup1202:curve:0.0.3'
 }
 ```
 
@@ -250,7 +250,7 @@ dependencies {
 <dependency>
     <groupId>io.github.closeup1202</groupId>
     <artifactId>curve</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.3</version>
 </dependency>
 ```
 
