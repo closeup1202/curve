@@ -134,6 +134,7 @@ subprojects {
                         '*Properties',
                         // Kafka
                         '*KafkaEventProducer',
+                        '*BackupStrategy*', // Exclude Backup Strategies from coverage check
                         // Spring Serializers (verified through integration tests)
                         '*EventSerializer',
                         // Spring Context Providers (requires Spring integration)
