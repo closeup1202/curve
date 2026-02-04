@@ -1,0 +1,50 @@
+name: Update Docs & Changelog
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Extract version info
+        id: version
+        run: |
+          NEW_VERSION=${GITHUB_REF#refs/tags/v}
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          
+          PREV_TAG=$(git describe --tags --abbrev=0 "${GITHUB_REF}^" 2>/dev/null || echo "v0.0.0")
+          PREV_VERSION=${PREV_TAG#v}
+          echo "PREV_VERSION=$PREV_VERSION" >> $GITHUB_ENV
+          
+          echo "Updating from $PREV_VERSION to $NEW_VERSION"
+
+      - name: Update Documentation Version
+        run: |
+          chmod +x scripts/update-docs-version.sh
+          ./scripts/update-docs-version.sh ${{ env.PREV_VERSION }} ${{ env.NEW_VERSION }}
+
+      - name: Generate Changelog
+        uses: orhun/git-cliff-action@v3
+        with:
+          config: cliff.toml
+          args: --verbose
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - name: Commit & Push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: Update version to ${{ env.NEW_VERSION }} and changelog [skip ci]"
+          branch: main
+          file_pattern: "README.md README.ko.md docs/**/*.md CHANGELOG.md sample/build.gradle"

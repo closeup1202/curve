@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.0.3] - 2026-02-03
+## [0.0.3] - 2026-02-04
 
 ### Added
 - **S3 Backup Strategy**: Added support for backing up failed events to AWS S3 or MinIO.
@@ -105,7 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date       | Description |
 |---------|------------|-------------|
-| 0.0.3 | 2026-02-03 | Add S3 Backup Strategy & Doc Updates |
+| 0.0.3 | 2026-02-04 | Add S3 Backup Strategy & Doc Updates |
 | 0.0.2 | 2026-02-03 | Make Avro dependencies optional |
 | 0.0.1 | 2026-02-03 | Initial release |
 
