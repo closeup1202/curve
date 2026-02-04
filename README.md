@@ -249,23 +249,36 @@ Done! 🎉
 
 ### Hexagonal Architecture (Ports & Adapters)
 
+```mermaid
+graph TB
+    A[Domain Layer Core] --> B[Spring Adapter]
+    A --> C[Kafka Adapter]
+    B --> D[AOP / Context]
+    C --> E[Producer / DLQ]
+
+    style A fill:#4051b5
+    style B fill:#00897b
+    style C fill:#00897b
 ```
-┌─────────────────────────────────────┐
-│         Domain Layer (Core)         │
-│  • EventEnvelope, EventMetadata     │
-│  • Validation, Exception            │
-│  • Framework-independent            │
-└───────────────┬─────────────────────┘
-                │
-        ┌───────┴────────┐
-        │                │
-        ▼                ▼
-┌───────────┐      ┌────────────┐
-│  Spring   │      │   Kafka    │
-│ (Adapter) │      │ (Adapter)  │
-│  • AOP    │      │ • Producer │
-│  • Context│      │ • DLQ      │
-└───────────┘      └────────────┘
+
+### System Context
+
+```mermaid
+graph LR
+    User[User Service] -->|@PublishEvent| Curve[Curve Library]
+    
+    subgraph Curve Library
+        Context[Context Extractor]
+        PII[PII Masking]
+        Outbox[Outbox Saver]
+        Producer[Kafka Producer]
+    end
+
+    Curve -->|Sync/Async| Kafka[Kafka Topic]
+    Curve -->|Transaction| DB[(Database)]
+    
+    DB -->|Polling| Producer
+    Producer -->|Retry/DLQ| Kafka
 ```
 
 ### Module Structure

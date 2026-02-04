@@ -56,20 +56,26 @@ public Order createOrder(OrderRequest request) {
 
 ```mermaid
 sequenceDiagram
-    participant App
-    participant DB
-    participant Outbox
-    participant Kafka
+    participant App as Application
+    participant DB as Database (Outbox)
+    participant Kafka as Kafka Broker
+    participant Poller as Outbox Publisher
 
-    App->>DB: 1. Save Order
-    App->>Outbox: 2. Save Event (same TX)
+    Note over App, DB: Transaction Start
+    App->>DB: 1. Save Business Entity (Order)
+    App->>DB: 2. Save Outbox Event (PENDING)
     DB-->>App: TX Committed ✓
 
-    Note over Outbox: Background Poller
-
-    Outbox->>Kafka: 3. Publish Event
-    Kafka-->>Outbox: Success
-    Outbox->>Outbox: 4. Mark as Sent
+    loop Every 1s (Polling)
+        Poller->>DB: 3. Fetch PENDING Events
+        Poller->>Kafka: 4. Publish to Kafka
+        alt Success
+            Kafka-->>Poller: Ack
+            Poller->>DB: 5. Update Status to PUBLISHED
+        else Failure
+            Poller->>DB: 5. Increment Retry Count
+        end
+    end
 ```
 
 **Steps:**

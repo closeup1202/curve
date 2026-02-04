@@ -28,6 +28,28 @@ public class UserPayload implements DomainEventPayload {
 }
 ```
 
+## How It Works
+
+```mermaid
+flowchart LR
+    Obj[Java Object] -->|Jackson Serialize| PII[PII Processor]
+    PII -->|Strategy: MASK| Masked["j***@doe.com"]
+    PII -->|Strategy: ENCRYPT| Encrypted["ENC(a8f9...)"]
+    PII -->|Strategy: HASH| Hashed["sha256(...)"]
+    Masked --> Json[JSON Output]
+    Encrypted --> Json
+    Hashed --> Json
+```
+
+**Process:**
+
+1. **Serialization Interception**: Curve intercepts Jackson serialization process.
+2. **Annotation Detection**: Scans for `@PiiField` annotations on fields.
+3. **Strategy Execution**: Applies the configured strategy (MASK, ENCRYPT, HASH).
+4. **Output Generation**: Replaces the original value with the protected value in the JSON output.
+
+---
+
 ## Protection Strategies
 
 ### 1. MASK - Pattern-Based Masking

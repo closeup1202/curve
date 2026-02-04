@@ -249,24 +249,38 @@ docker-compose up -d
 
 ### Hexagonal Architecture (Ports & Adapters)
 
+```mermaid
+graph TB
+    A[Domain Layer Core] --> B[Spring Adapter]
+    A --> C[Kafka Adapter]
+    B --> D[AOP / Context]
+    C --> E[Producer / DLQ]
+
+    style A fill:#4051b5
+    style B fill:#00897b
+    style C fill:#00897b
 ```
-┌─────────────────────────────────────┐
-│      도메인 계층 (Core)              │
-│  • EventEnvelope, EventMetadata     │
-│  • Validation, Exception            │
-│  • 프레임워크 독립적                  │
-└───────────────┬─────────────────────┘
-                │
-        ┌───────┴────────┐
-        │                │
-        ▼                ▼
-┌───────────┐      ┌────────────┐
-│  Spring   │      │   Kafka    │
-│ (어댑터)   │      │  (어댑터)   │
-│  • AOP    │      │ • Producer │
-│  • Context│      │ • DLQ      │
-└───────────┘      └────────────┘
+
+### System Context
+
+```mermaid
+graph LR
+    User[User Service] -->|@PublishEvent| Curve[Curve Library]
+    
+    subgraph Curve Library
+        Context[Context Extractor]
+        PII[PII Masking]
+        Outbox[Outbox Saver]
+        Producer[Kafka Producer]
+    end
+
+    Curve -->|Sync/Async| Kafka[Kafka Topic]
+    Curve -->|Transaction| DB[(Database)]
+    
+    DB -->|Polling| Producer
+    Producer -->|Retry/DLQ| Kafka
 ```
+
 
 ### 모듈 구조
 
@@ -606,7 +620,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 ./scripts/dlq-recovery.sh --list
 
 # 모든 파일 복구
-./scripts/dlq-recovery.sh --topic event.audit.v1 --broker localhost:9092
+./scripts/dlq-recovery.sh --topic event.audit.v1 --broker localhost:9094
 
 # 특정 파일 복구
 ./scripts/dlq-recovery.sh --file 1234567890.json --topic event.audit.v1
