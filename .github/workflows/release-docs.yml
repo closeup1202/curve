@@ -4,6 +4,16 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      prev_version:
+        description: 'Previous Version (e.g. 0.0.3)'
+        required: true
+        default: '0.0.3'
+      new_version:
+        description: 'New Version (e.g. 0.0.4)'
+        required: true
+        default: '0.0.4'
 
 jobs:
   update-docs:
@@ -20,27 +30,39 @@ jobs:
       - name: Extract version info
         id: version
         run: |
-          NEW_VERSION=${GITHUB_REF#refs/tags/v}
-          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "NEW_VERSION=${{ github.event.inputs.new_version }}" >> $GITHUB_ENV
+            echo "PREV_VERSION=${{ github.event.inputs.prev_version }}" >> $GITHUB_ENV
+          else
+            NEW_VERSION=${GITHUB_REF#refs/tags/v}
+            echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+            
+            PREV_TAG=$(git describe --tags --abbrev=0 "${GITHUB_REF}^" 2>/dev/null || echo "v0.0.0")
+            PREV_VERSION=${PREV_TAG#v}
+            echo "PREV_VERSION=$PREV_VERSION" >> $GITHUB_ENV
+          fi
           
-          PREV_TAG=$(git describe --tags --abbrev=0 "${GITHUB_REF}^" 2>/dev/null || echo "v0.0.0")
-          PREV_VERSION=${PREV_TAG#v}
-          echo "PREV_VERSION=$PREV_VERSION" >> $GITHUB_ENV
-          
-          echo "Updating from $PREV_VERSION to $NEW_VERSION"
+          echo "Updating from ${{ env.PREV_VERSION }} to ${{ env.NEW_VERSION }}"
 
       - name: Update Documentation Version
         run: |
           chmod +x scripts/update-docs-version.sh
           ./scripts/update-docs-version.sh ${{ env.PREV_VERSION }} ${{ env.NEW_VERSION }}
 
+      - name: Install git-cliff
+        run: |
+          wget https://github.com/orhun/git-cliff/releases/download/v2.4.0/git-cliff-2.4.0-x86_64-unknown-linux-gnu.tar.gz
+          tar -xf git-cliff-2.4.0-x86_64-unknown-linux-gnu.tar.gz
+          sudo mv git-cliff-2.4.0-x86_64-unknown-linux-gnu/git-cliff /usr/local/bin/
+
       - name: Generate Changelog
-        uses: orhun/git-cliff-action@v3
-        with:
-          config: cliff.toml
-          args: --verbose
-        env:
-          OUTPUT: CHANGELOG.md
+        run: |
+          # 태그가 없는 상태(수동 실행)에서도 동작하도록 최신 태그를 기준으로 생성
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+             git-cliff --config cliff.toml --output CHANGELOG.md --verbose --tag ${{ env.NEW_VERSION }}
+          else
+             git-cliff --config cliff.toml --output CHANGELOG.md --verbose
+          fi
 
       - name: Commit & Push changes
         uses: stefanzweifel/git-auto-commit-action@v5
