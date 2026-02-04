@@ -19,20 +19,26 @@
 <a id=__codelineno-1-9 name=__codelineno-1-9 href=#__codelineno-1-9></a><span class=w>    </span><span class=k>return</span><span class=w> </span><span class=n>orderRepository</span><span class=p>.</span><span class=na>save</span><span class=p>(</span><span class=k>new</span><span class=w> </span><span class=n>Order</span><span class=p>(</span><span class=n>request</span><span class=p>));</span>
 <a id=__codelineno-1-10 name=__codelineno-1-10 href=#__codelineno-1-10></a><span class=p>}</span>
 </code></pre></div> <hr> <h2 id=how-it-works>How It Works<a class=headerlink href=#how-it-works title="Permanent link">&para;</a></h2> <div class=highlight><pre><span></span><code><a id=__codelineno-2-1 name=__codelineno-2-1 href=#__codelineno-2-1></a>sequenceDiagram
-<a id=__codelineno-2-2 name=__codelineno-2-2 href=#__codelineno-2-2></a>    participant App
-<a id=__codelineno-2-3 name=__codelineno-2-3 href=#__codelineno-2-3></a>    participant DB
-<a id=__codelineno-2-4 name=__codelineno-2-4 href=#__codelineno-2-4></a>    participant Outbox
-<a id=__codelineno-2-5 name=__codelineno-2-5 href=#__codelineno-2-5></a>    participant Kafka
+<a id=__codelineno-2-2 name=__codelineno-2-2 href=#__codelineno-2-2></a>    participant App as Application
+<a id=__codelineno-2-3 name=__codelineno-2-3 href=#__codelineno-2-3></a>    participant DB as Database (Outbox)
+<a id=__codelineno-2-4 name=__codelineno-2-4 href=#__codelineno-2-4></a>    participant Kafka as Kafka Broker
+<a id=__codelineno-2-5 name=__codelineno-2-5 href=#__codelineno-2-5></a>    participant Poller as Outbox Publisher
 <a id=__codelineno-2-6 name=__codelineno-2-6 href=#__codelineno-2-6></a>
-<a id=__codelineno-2-7 name=__codelineno-2-7 href=#__codelineno-2-7></a>    App-&gt;&gt;DB: 1. Save Order
-<a id=__codelineno-2-8 name=__codelineno-2-8 href=#__codelineno-2-8></a>    App-&gt;&gt;Outbox: 2. Save Event (same TX)
-<a id=__codelineno-2-9 name=__codelineno-2-9 href=#__codelineno-2-9></a>    DB--&gt;&gt;App: TX Committed ✓
-<a id=__codelineno-2-10 name=__codelineno-2-10 href=#__codelineno-2-10></a>
-<a id=__codelineno-2-11 name=__codelineno-2-11 href=#__codelineno-2-11></a>    Note over Outbox: Background Poller
-<a id=__codelineno-2-12 name=__codelineno-2-12 href=#__codelineno-2-12></a>
-<a id=__codelineno-2-13 name=__codelineno-2-13 href=#__codelineno-2-13></a>    Outbox-&gt;&gt;Kafka: 3. Publish Event
-<a id=__codelineno-2-14 name=__codelineno-2-14 href=#__codelineno-2-14></a>    Kafka--&gt;&gt;Outbox: Success
-<a id=__codelineno-2-15 name=__codelineno-2-15 href=#__codelineno-2-15></a>    Outbox-&gt;&gt;Outbox: 4. Mark as Sent
+<a id=__codelineno-2-7 name=__codelineno-2-7 href=#__codelineno-2-7></a>    Note over App, DB: Transaction Start
+<a id=__codelineno-2-8 name=__codelineno-2-8 href=#__codelineno-2-8></a>    App-&gt;&gt;DB: 1. Save Business Entity (Order)
+<a id=__codelineno-2-9 name=__codelineno-2-9 href=#__codelineno-2-9></a>    App-&gt;&gt;DB: 2. Save Outbox Event (PENDING)
+<a id=__codelineno-2-10 name=__codelineno-2-10 href=#__codelineno-2-10></a>    DB--&gt;&gt;App: TX Committed ✓
+<a id=__codelineno-2-11 name=__codelineno-2-11 href=#__codelineno-2-11></a>
+<a id=__codelineno-2-12 name=__codelineno-2-12 href=#__codelineno-2-12></a>    loop Every 1s (Polling)
+<a id=__codelineno-2-13 name=__codelineno-2-13 href=#__codelineno-2-13></a>        Poller-&gt;&gt;DB: 3. Fetch PENDING Events
+<a id=__codelineno-2-14 name=__codelineno-2-14 href=#__codelineno-2-14></a>        Poller-&gt;&gt;Kafka: 4. Publish to Kafka
+<a id=__codelineno-2-15 name=__codelineno-2-15 href=#__codelineno-2-15></a>        alt Success
+<a id=__codelineno-2-16 name=__codelineno-2-16 href=#__codelineno-2-16></a>            Kafka--&gt;&gt;Poller: Ack
+<a id=__codelineno-2-17 name=__codelineno-2-17 href=#__codelineno-2-17></a>            Poller-&gt;&gt;DB: 5. Update Status to PUBLISHED
+<a id=__codelineno-2-18 name=__codelineno-2-18 href=#__codelineno-2-18></a>        else Failure
+<a id=__codelineno-2-19 name=__codelineno-2-19 href=#__codelineno-2-19></a>            Poller-&gt;&gt;DB: 5. Increment Retry Count
+<a id=__codelineno-2-20 name=__codelineno-2-20 href=#__codelineno-2-20></a>        end
+<a id=__codelineno-2-21 name=__codelineno-2-21 href=#__codelineno-2-21></a>    end
 </code></pre></div> <p><strong>Steps:</strong></p> <ol> <li><strong>Save entity and event in same transaction</strong> - Atomicity guaranteed</li> <li><strong>Background poller</strong> - Periodically checks for unsent events</li> <li><strong>Publish to Kafka</strong> - Events sent asynchronously</li> <li><strong>Mark as sent</strong> - Successful events marked complete</li> </ol> <hr> <h2 id=configuration>Configuration<a class=headerlink href=#configuration title="Permanent link">&para;</a></h2> <h3 id=enable-outbox>Enable Outbox<a class=headerlink href=#enable-outbox title="Permanent link">&para;</a></h3> <div class=highlight><span class=filename>application.yml</span><pre><span></span><code><a id=__codelineno-3-1 name=__codelineno-3-1 href=#__codelineno-3-1></a><span class=nt>spring</span><span class=p>:</span>
 <a id=__codelineno-3-2 name=__codelineno-3-2 href=#__codelineno-3-2></a><span class=w>  </span><span class=nt>datasource</span><span class=p>:</span>
 <a id=__codelineno-3-3 name=__codelineno-3-3 href=#__codelineno-3-3></a><span class=w>    </span><span class=nt>url</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">jdbc:postgresql://localhost:5432/mydb</span>
