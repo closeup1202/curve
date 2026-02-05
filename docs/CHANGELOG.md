@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **deps**: Bump TestContainers from 1.20.4 to 1.21.4 (#6)
 - **deps**: Bump Release Plugin from 3.0.2 to 3.1.0 (#10)
 
+### Security
+- Replace `StandardEvaluationContext` with `SimpleEvaluationContext` in SpEL evaluation
+    - Blocks type references, constructor calls, and static method access
+    - Applies least-privilege principle with `forReadOnlyDataBinding().withInstanceMethods()`
+
 ### CI
 - Bump actions/checkout from 4 to 6 (#5)
 - Bump actions/upload-artifact from 4 to 6 (#3)

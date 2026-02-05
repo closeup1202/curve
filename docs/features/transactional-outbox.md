@@ -166,7 +166,7 @@ public Order createOrder(OrderRequest request) {
     outbox = true,
     aggregateType = "User",
     aggregateId = "#result.userId",
-    payload = "new UserRegisteredPayload(#result)"
+    payload = "#result.toRegisteredPayload()"
 )
 public User registerUser(UserRequest request) {
     User user = userRepository.save(new User(request));

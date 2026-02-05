@@ -81,10 +81,10 @@ public Order submitOrder(OrderSubmission submission) { ... }
 )
 public User updateUser(UserUpdateRequest request) { ... }
 
-// Complex SpEL with return value
+// SpEL with return value method call
 @PublishEvent(
     eventType = "ORDER_COMPLETED",
-    payload = "new OrderCompletedDto(#result.id, #result.status, #args[0].reason)"
+    payload = "#result.toCompletedDto()"
 )
 public Order completeOrder(String reason) { ... }
 ```
@@ -182,9 +182,9 @@ Available in SpEL expressions:
 // Call method on return value
 @PublishEvent(payload = "#result.getId()")
 
-// Complex expression
+// Call method on parameter
 @PublishEvent(
-    payload = "new PayloadDto(#args[0], #result)"
+    payload = "#args[0].toPayloadDto()"
 )
 ```
 

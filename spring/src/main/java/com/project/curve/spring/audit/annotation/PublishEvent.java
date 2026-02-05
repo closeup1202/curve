@@ -117,8 +117,11 @@ public @interface PublishEvent {
      * // Extract specific fields from request object
      * payload = "#args[0].toEventDto()"
      *
-     * // Combine return value and parameters
-     * payload = "new com.example.Event(#result.id, #args[0].name)"
+     * // Use return value directly
+     * payload = "#result"
+     *
+     * // Access nested property
+     * payload = "#result.toEventDto()"
      * </pre>
      *
      * @return the SpEL expression

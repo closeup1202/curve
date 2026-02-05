@@ -12,7 +12,7 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -100,7 +100,10 @@ public class OutboxEventSaver {
      */
     private String extractAggregateId(String expression, JoinPoint joinPoint, Object returnValue) {
         try {
-            StandardEvaluationContext context = new StandardEvaluationContext();
+            SimpleEvaluationContext context = SimpleEvaluationContext
+                    .forReadOnlyDataBinding()
+                    .withInstanceMethods()
+                    .build();
             context.setVariable("result", returnValue);
             context.setVariable("args", joinPoint.getArgs());
 

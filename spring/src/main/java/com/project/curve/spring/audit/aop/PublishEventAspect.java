@@ -14,7 +14,7 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
@@ -164,13 +164,17 @@ public class PublishEventAspect {
 
     private Object extractPayloadUsingSpel(JoinPoint joinPoint, String expression, Object returnValue) {
         try {
-            StandardEvaluationContext context = new StandardEvaluationContext();
-            context.setVariable("result", returnValue);
-            context.setVariable("args", joinPoint.getArgs());
+            SimpleEvaluationContext.Builder contextBuilder = SimpleEvaluationContext
+                    .forReadOnlyDataBinding()
+                    .withInstanceMethods();
 
             MethodSignature signature = (MethodSignature) joinPoint.getSignature();
             String[] parameterNames = signature.getParameterNames();
             Object[] args = joinPoint.getArgs();
+
+            SimpleEvaluationContext context = contextBuilder.build();
+            context.setVariable("result", returnValue);
+            context.setVariable("args", args);
 
             if (parameterNames != null) {
                 for (int i = 0; i < parameterNames.length; i++) {

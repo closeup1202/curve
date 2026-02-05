@@ -252,7 +252,7 @@ public Order createOrder(OrderRequest request) {
 ```java
 @PublishEvent(
     eventType = "ORDER_SHIPPED",
-    payload = "new ShipmentPayload(#args[0], #args[1], #result)"
+    payload = "#result.toShipmentPayload()"
 )
 public Shipment shipOrder(Long orderId, Address address) {
     // ...
