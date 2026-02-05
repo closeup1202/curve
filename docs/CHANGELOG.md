@@ -7,16 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **Dependabot Configuration**: Added automated dependency updates for Gradle, GitHub Actions, and Docker
-  - Weekly dependency checks every Monday at 09:00 KST
-  - Grouped updates for Spring Framework, AWS SDK, Kafka, and testing dependencies
-  - Automatic PR creation for security and version updates
-
 ### Changed
-- **AWS SDK Update**: Upgraded AWS SDK for Java from 2.21.1 to 2.41.21
-  - Includes latest security patches and performance improvements
-  - Maintains backward compatibility with existing S3 backup functionality
+- **deps**: Bump SonarQube Gradle plugin from 4.4.1.3373 to 7.2.2.6593 (#14)
+    - Resolves deprecation warning for compile task dependency
+    - Adds Gradle 9 and configuration-cache support
+- **deps**: Bump AWS SDK BOM from 2.21.1 to 2.41.21 (#2)
+    - Fixes version mismatch between `kafka` and `spring-boot-autoconfigure` modules
+    - Includes 20+ months of security patches and performance improvements
+- **deps**: Bump Confluent Kafka Avro Serializer from 7.5.0 to 8.1.1 (#11)
+- **deps**: Bump TestContainers from 1.20.4 to 1.21.4 (#6)
+- **deps**: Bump Release Plugin from 3.0.2 to 3.1.0 (#10)
+
+### CI
+- Bump actions/checkout from 4 to 6 (#5)
+- Bump actions/upload-artifact from 4 to 6 (#3)
+- Bump codecov/codecov-action from 4 to 5 (#4)
+- Bump softprops/action-gh-release from 1 to 2 (#7)
+- Bump stefanzweifel/git-auto-commit-action from 5 to 7 (#1)
 
 ---
 
