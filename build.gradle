@@ -162,6 +162,7 @@ subprojects {
                         // KMS providers (requires external KMS service)
                         '*AwsKmsProvider',
                         '*VaultKeyProvider',
+                        '*KeyResponse',
                         // Default types
                         '*DefaultEventType',
                         // Metrics (requires Micrometer integration)

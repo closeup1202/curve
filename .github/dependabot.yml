@@ -56,6 +56,11 @@ updates:
       # Pin to Java 17 for LTS support
       - dependency-name: "java"
         update-types: ["version-update:semver-major"]
+      # Pin to Spring Boot 3.x (4.x requires Jakarta EE 11, Java 21+, major migration)
+      - dependency-name: "org.springframework.boot"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.springframework.cloud"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
