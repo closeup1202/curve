@@ -18,6 +18,13 @@ class SchemaContextProviderTest {
         }
     }
 
+    static class OtherPayload implements DomainEventPayload {
+        @Override
+        public EventType getEventType() {
+            return () -> "OTHER_EVENT";
+        }
+    }
+
     @Test
     @DisplayName("Default implementation test - getSchema invocation")
     void testGetSchema() {
@@ -104,7 +111,7 @@ class SchemaContextProviderTest {
                 if (payload instanceof TestPayload) {
                     return testSchema;
                 }
-                if (payload.getClass().getSimpleName().equals("OtherPayload")) {
+                if (payload instanceof OtherPayload) {
                     return otherSchema;
                 }
                 return getSchema();
@@ -113,11 +120,13 @@ class SchemaContextProviderTest {
 
         // when
         EventSchema schema1 = provider.getSchemaFor(new TestPayload());
-        EventSchema schema2 = provider.getSchema();
+        EventSchema schema2 = provider.getSchemaFor(new OtherPayload());
+        EventSchema schema3 = provider.getSchema();
 
         // then
         assertEquals(testSchema, schema1);
-        assertEquals(defaultSchema, schema2);
+        assertEquals(otherSchema, schema2);
+        assertEquals(defaultSchema, schema3);
     }
 
     @Test
@@ -168,11 +177,11 @@ class SchemaContextProviderTest {
             @Override
             public EventSchema getSchemaFor(DomainEventPayload payload) {
                 callCount++;
-                switch (callCount) {
-                    case 1: return v1;
-                    case 2: return v2;
-                    default: return v3;
-                }
+                return switch (callCount) {
+                    case 1 -> v1;
+                    case 2 -> v2;
+                    default -> v3;
+                };
             }
         };
 
