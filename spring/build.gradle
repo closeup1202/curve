@@ -8,7 +8,7 @@ dependencies {
     implementation 'io.micrometer:micrometer-core'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     // Optional: Only needed for Avro serialization
-    compileOnly 'org.apache.avro:avro:1.11.4'
+    compileOnly 'org.apache.avro:avro:1.12.1'
     compileOnly 'io.confluent:kafka-avro-serializer:8.1.1'
     implementation project(':core')
 }
