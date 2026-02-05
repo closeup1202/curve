@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("FailedEventRecord 테스트")
+@DisplayName("FailedEventRecord test")
 class FailedEventRecordTest {
 
     @Test
-    @DisplayName("정상적인 FailedEventRecord 생성")
+    @DisplayName("Create FailedEventRecord with valid parameters")
     void createValidFailedEventRecord() {
         // given
         String eventId = "evt-123";
@@ -40,7 +40,7 @@ class FailedEventRecordTest {
     }
 
     @Test
-    @DisplayName("null 값을 포함한 FailedEventRecord 생성")
+    @DisplayName("Create FailedEventRecord with null values")
     void createFailedEventRecordWithNullValues() {
         // given
         String eventId = "evt-123";
@@ -71,7 +71,7 @@ class FailedEventRecordTest {
     }
 
     @Test
-    @DisplayName("빈 문자열을 포함한 FailedEventRecord 생성")
+    @DisplayName("Create FailedEventRecord with empty strings")
     void createFailedEventRecordWithEmptyStrings() {
         // given
         String eventId = "";
@@ -102,7 +102,7 @@ class FailedEventRecordTest {
     }
 
     @Test
-    @DisplayName("FailedEventRecord toString 테스트")
+    @DisplayName("FailedEventRecord toString test")
     void testToString() {
         // given
         FailedEventRecord record = new FailedEventRecord(
@@ -124,7 +124,7 @@ class FailedEventRecordTest {
     }
 
     @Test
-    @DisplayName("FailedEventRecord equals 및 hashCode 테스트")
+    @DisplayName("FailedEventRecord equals and hashCode test")
     void testEqualsAndHashCode() {
         // given
         FailedEventRecord record1 = new FailedEventRecord(
@@ -161,7 +161,7 @@ class FailedEventRecordTest {
     }
 
     @Test
-    @DisplayName("FailedEventRecord - 긴 페이로드 처리")
+    @DisplayName("FailedEventRecord - long payload handling")
     void testWithLongPayload() {
         // given
         String longPayload = "x".repeat(10000);
@@ -180,7 +180,7 @@ class FailedEventRecordTest {
     }
 
     @Test
-    @DisplayName("FailedEventRecord - 특수 문자 처리")
+    @DisplayName("FailedEventRecord - special character handling")
     void testWithSpecialCharacters() {
         // given
         String payload = "{\"message\":\"Hello\\nWorld\\t\\\"Test\\\"\"}";

@@ -5,14 +5,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("SchemaVersion 테스트")
+@DisplayName("SchemaVersion test")
 class SchemaVersionTest {
 
     static class TestPayloadV1 {}
     static class TestPayloadV2 {}
 
     @Test
-    @DisplayName("정상적인 SchemaVersion 생성")
+    @DisplayName("Create SchemaVersion with valid parameters")
     void createValidSchemaVersion() {
         // given
         String name = "OrderCreated";
@@ -30,7 +30,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("name이 null이면 예외 발생")
+    @DisplayName("Throws exception when name is null")
     void createSchemaVersionWithNullName_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -41,7 +41,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("name이 빈 문자열이면 예외 발생")
+    @DisplayName("Throws exception when name is empty string")
     void createSchemaVersionWithEmptyName_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -52,7 +52,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("name이 공백만 있으면 예외 발생")
+    @DisplayName("Throws exception when name is blank")
     void createSchemaVersionWithBlankName_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -63,7 +63,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("version이 0이면 예외 발생")
+    @DisplayName("Throws exception when version is 0")
     void createSchemaVersionWithZeroVersion_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -74,7 +74,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("version이 음수면 예외 발생")
+    @DisplayName("Throws exception when version is negative")
     void createSchemaVersionWithNegativeVersion_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -85,7 +85,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("payloadClass가 null이면 예외 발생")
+    @DisplayName("Throws exception when payloadClass is null")
     void createSchemaVersionWithNullPayloadClass_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -96,7 +96,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("getKey 메서드 테스트")
+    @DisplayName("getKey method test")
     void testGetKey() {
         // given
         SchemaVersion schemaVersion = new SchemaVersion("OrderCreated", 1, TestPayloadV1.class);
@@ -109,7 +109,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("getKey 메서드 테스트 - 버전 2")
+    @DisplayName("getKey method test - version 2")
     void testGetKey_version2() {
         // given
         SchemaVersion schemaVersion = new SchemaVersion("OrderCreated", 2, TestPayloadV2.class);
@@ -122,7 +122,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("compareVersion 테스트 - 같은 버전")
+    @DisplayName("compareVersion test - same version")
     void testCompareVersion_equal() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, TestPayloadV1.class);
@@ -136,7 +136,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("compareVersion 테스트 - 더 큰 버전")
+    @DisplayName("compareVersion test - greater version")
     void testCompareVersion_greater() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 2, TestPayloadV2.class);
@@ -150,7 +150,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("compareVersion 테스트 - 더 작은 버전")
+    @DisplayName("compareVersion test - lesser version")
     void testCompareVersion_less() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, TestPayloadV1.class);
@@ -164,7 +164,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("compareVersion 테스트 - 다른 스키마 이름이면 예외 발생")
+    @DisplayName("compareVersion test - throws exception for different schema name")
     void testCompareVersion_differentSchemaName_shouldThrowException() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, TestPayloadV1.class);
@@ -179,7 +179,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("isNewerThan 테스트 - 더 최신 버전")
+    @DisplayName("isNewerThan test - newer version")
     void testIsNewerThan_true() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 2, TestPayloadV2.class);
@@ -193,7 +193,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("isNewerThan 테스트 - 같은 버전")
+    @DisplayName("isNewerThan test - same version")
     void testIsNewerThan_false_equal() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, TestPayloadV1.class);
@@ -207,7 +207,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("isNewerThan 테스트 - 더 오래된 버전")
+    @DisplayName("isNewerThan test - older version")
     void testIsNewerThan_false_older() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, TestPayloadV1.class);
@@ -221,7 +221,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("isCompatibleWith 테스트 - 같은 스키마 이름")
+    @DisplayName("isCompatibleWith test - same schema name")
     void testIsCompatibleWith_true() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, TestPayloadV1.class);
@@ -235,7 +235,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("isCompatibleWith 테스트 - 다른 스키마 이름")
+    @DisplayName("isCompatibleWith test - different schema name")
     void testIsCompatibleWith_false() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, TestPayloadV1.class);
@@ -249,7 +249,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("equals 및 hashCode 테스트")
+    @DisplayName("equals and hashCode test")
     void testEqualsAndHashCode() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, TestPayloadV1.class);
@@ -263,7 +263,7 @@ class SchemaVersionTest {
     }
 
     @Test
-    @DisplayName("toString 테스트")
+    @DisplayName("toString test")
     void testToString() {
         // given
         SchemaVersion schemaVersion = new SchemaVersion("OrderCreated", 1, TestPayloadV1.class);

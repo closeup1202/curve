@@ -42,7 +42,7 @@ allprojects {
 }
 
 // Modules to publish to Maven Central
-def publishableProjects = ['core', 'spring', 'kafka', 'spring-boot-autoconfigure']
+def publishableProjects = ['core', 'spring', 'kafka', 'spring-boot-autoconfigure', 'kms']
 
 subprojects {
 
@@ -159,6 +159,9 @@ subprojects {
                         '*MockEventProducer',
                         // Validators (requires SPEL integration)
                         '*SpelExpressionValidator',
+                        // KMS providers (requires external KMS service)
+                        '*AwsKmsProvider',
+                        '*VaultKeyProvider',
                         // Default types
                         '*DefaultEventType',
                         // Metrics (requires Micrometer integration)
@@ -264,7 +267,8 @@ sonar {
             "${rootProject.projectDir}/core/build/reports/jacoco/test/jacocoTestReport.xml",
             "${rootProject.projectDir}/spring/build/reports/jacoco/test/jacocoTestReport.xml",
             "${rootProject.projectDir}/kafka/build/reports/jacoco/test/jacocoTestReport.xml",
-            "${rootProject.projectDir}/spring-boot-autoconfigure/build/reports/jacoco/test/jacocoTestReport.xml"
+            "${rootProject.projectDir}/spring-boot-autoconfigure/build/reports/jacoco/test/jacocoTestReport.xml",
+            "${rootProject.projectDir}/kms/build/reports/jacoco/test/jacocoTestReport.xml"
         ].join(',')
         property "sonar.exclusions", [
             "**/*Application.java",

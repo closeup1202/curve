@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("SchemaContextProvider 테스트")
+@DisplayName("SchemaContextProvider test")
 class SchemaContextProviderTest {
 
     static class TestPayload implements DomainEventPayload {
@@ -19,7 +19,7 @@ class SchemaContextProviderTest {
     }
 
     @Test
-    @DisplayName("기본 구현 테스트 - getSchema 호출")
+    @DisplayName("Default implementation test - getSchema invocation")
     void testGetSchema() {
         // given
         EventSchema defaultSchema = EventSchema.of("DefaultSchema", 1);
@@ -36,7 +36,7 @@ class SchemaContextProviderTest {
     }
 
     @Test
-    @DisplayName("기본 구현 테스트 - getSchemaFor는 getSchema 호출")
+    @DisplayName("Default implementation test - getSchemaFor delegates to getSchema")
     void testGetSchemaFor_usesDefaultImplementation() {
         // given
         EventSchema defaultSchema = EventSchema.of("DefaultSchema", 1);
@@ -52,7 +52,7 @@ class SchemaContextProviderTest {
     }
 
     @Test
-    @DisplayName("커스텀 구현 테스트 - getSchemaFor 오버라이드")
+    @DisplayName("Custom implementation test - getSchemaFor override")
     void testGetSchemaFor_customImplementation() {
         // given
         EventSchema defaultSchema = EventSchema.of("DefaultSchema", 1);
@@ -86,7 +86,7 @@ class SchemaContextProviderTest {
     }
 
     @Test
-    @DisplayName("여러 페이로드 타입에 따른 스키마 반환")
+    @DisplayName("Return schema based on different payload types")
     void testGetSchemaFor_multiplePayloadTypes() {
         // given
         EventSchema defaultSchema = EventSchema.of("DefaultSchema", 1);
@@ -121,7 +121,7 @@ class SchemaContextProviderTest {
     }
 
     @Test
-    @DisplayName("null 페이로드로 getSchemaFor 호출")
+    @DisplayName("Invoke getSchemaFor with null payload")
     void testGetSchemaFor_withNullPayload() {
         // given
         EventSchema defaultSchema = EventSchema.of("DefaultSchema", 1);
@@ -150,7 +150,7 @@ class SchemaContextProviderTest {
     }
 
     @Test
-    @DisplayName("버전이 다른 스키마 반환 테스트")
+    @DisplayName("Return schema with different versions")
     void testGetSchemaFor_differentVersions() {
         // given
         EventSchema v1 = EventSchema.of("Schema", 1);
@@ -188,7 +188,7 @@ class SchemaContextProviderTest {
     }
 
     @Test
-    @DisplayName("동적 스키마 이름 생성 테스트")
+    @DisplayName("Dynamic schema name generation test")
     void testGetSchemaFor_dynamicSchemaName() {
         // given
         SchemaContextProvider provider = new SchemaContextProvider() {
@@ -212,7 +212,7 @@ class SchemaContextProviderTest {
     }
 
     @Test
-    @DisplayName("람다로 구현한 SchemaContextProvider")
+    @DisplayName("SchemaContextProvider implemented with lambda")
     void testLambdaImplementation() {
         // given
         SchemaContextProvider provider = () -> EventSchema.of("LambdaSchema", 1);
@@ -227,7 +227,7 @@ class SchemaContextProviderTest {
     }
 
     @Test
-    @DisplayName("상태를 가진 SchemaContextProvider")
+    @DisplayName("Stateful SchemaContextProvider")
     void testStatefulProvider() {
         // given
         SchemaContextProvider provider = new SchemaContextProvider() {

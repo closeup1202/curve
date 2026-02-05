@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("EventSeverity 테스트")
+@DisplayName("EventSeverity test")
 class EventSeverityTest {
 
     @Test
-    @DisplayName("EventSeverity - 모든 값 존재 확인")
+    @DisplayName("EventSeverity - verify all values exist")
     void allSeverityValuesExist() {
         // when
         EventSeverity[] severities = EventSeverity.values();
@@ -23,7 +23,7 @@ class EventSeverityTest {
     }
 
     @Test
-    @DisplayName("EventSeverity - valueOf()로 값 가져오기")
+    @DisplayName("EventSeverity - get value using valueOf()")
     void getValueByName() {
         // when & then
         assertEquals(EventSeverity.INFO, EventSeverity.valueOf("INFO"));
@@ -33,7 +33,7 @@ class EventSeverityTest {
     }
 
     @Test
-    @DisplayName("EventSeverity - valueOf() 잘못된 값으로 IllegalArgumentException")
+    @DisplayName("EventSeverity - valueOf() throws IllegalArgumentException for invalid value")
     void getValueByInvalidName_shouldThrowException() {
         // when & then
         assertThrows(

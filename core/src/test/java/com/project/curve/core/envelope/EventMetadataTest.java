@@ -8,11 +8,11 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("EventMetadata 테스트")
+@DisplayName("EventMetadata test")
 class EventMetadataTest {
 
     @Test
-    @DisplayName("정상적인 EventMetadata 생성")
+    @DisplayName("Create EventMetadata with valid parameters")
     void createValidEventMetadata() {
         // given
         EventSource source = createValidSource();
@@ -36,7 +36,7 @@ class EventMetadataTest {
     }
 
     @Test
-    @DisplayName("EventMetadata 생성 실패 - source가 null")
+    @DisplayName("EventMetadata creation fails when source is null")
     void createMetadataWithNullSource_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -47,7 +47,7 @@ class EventMetadataTest {
     }
 
     @Test
-    @DisplayName("EventMetadata 생성 실패 - actor가 null")
+    @DisplayName("EventMetadata creation fails when actor is null")
     void createMetadataWithNullActor_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -58,7 +58,7 @@ class EventMetadataTest {
     }
 
     @Test
-    @DisplayName("EventMetadata 생성 실패 - trace가 null")
+    @DisplayName("EventMetadata creation fails when trace is null")
     void createMetadataWithNullTrace_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -69,7 +69,7 @@ class EventMetadataTest {
     }
 
     @Test
-    @DisplayName("EventMetadata 생성 실패 - schema가 null")
+    @DisplayName("EventMetadata creation fails when schema is null")
     void createMetadataWithNullSchema_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -80,7 +80,7 @@ class EventMetadataTest {
     }
 
     @Test
-    @DisplayName("EventMetadata - tags가 null이면 빈 맵으로 초기화")
+    @DisplayName("EventMetadata - tags initialized as empty map when null")
     void createMetadataWithNullTags_shouldInitializeEmptyMap() {
         // when
         EventMetadata metadata = new EventMetadata(
@@ -97,7 +97,7 @@ class EventMetadataTest {
     }
 
     @Test
-    @DisplayName("EventMetadata - tags 불변성 보장 (외부 수정 방지)")
+    @DisplayName("EventMetadata - tags immutability guaranteed (prevent external modification)")
     void metadataTags_shouldBeImmutable() {
         // given
         Map<String, String> mutableTags = new HashMap<>();
@@ -111,17 +111,17 @@ class EventMetadataTest {
                 mutableTags
         );
 
-        // when - 원본 맵 수정
+        // when - modify original map
         mutableTags.put("key2", "value2");
 
-        // then - metadata의 tags는 영향받지 않음
+        // then - metadata tags are not affected
         assertEquals(1, metadata.tags().size());
         assertTrue(metadata.tags().containsKey("key1"));
         assertFalse(metadata.tags().containsKey("key2"));
     }
 
     @Test
-    @DisplayName("EventMetadata - tags 반환 맵 수정 불가 (Unmodifiable)")
+    @DisplayName("EventMetadata - returned tags map is unmodifiable")
     void metadataTagsMap_shouldBeUnmodifiable() {
         // given
         EventMetadata metadata = new EventMetadata(

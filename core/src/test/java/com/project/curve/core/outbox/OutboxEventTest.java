@@ -7,11 +7,11 @@ import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("OutboxEvent 테스트")
+@DisplayName("OutboxEvent test")
 class OutboxEventTest {
 
     @Test
-    @DisplayName("정상적인 OutboxEvent 생성")
+    @DisplayName("Create OutboxEvent with valid parameters")
     void createValidOutboxEvent() {
         // given
         String eventId = "evt-123";
@@ -42,7 +42,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("eventId가 null이면 예외 발생")
+    @DisplayName("Throws exception when eventId is null")
     void createOutboxEventWithNullEventId_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -54,7 +54,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("eventId가 빈 문자열이면 예외 발생")
+    @DisplayName("Throws exception when eventId is empty string")
     void createOutboxEventWithBlankEventId_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -66,7 +66,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("aggregateType이 null이면 예외 발생")
+    @DisplayName("Throws exception when aggregateType is null")
     void createOutboxEventWithNullAggregateType_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -78,7 +78,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("aggregateId가 null이면 예외 발생")
+    @DisplayName("Throws exception when aggregateId is null")
     void createOutboxEventWithNullAggregateId_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -90,7 +90,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("eventType이 null이면 예외 발생")
+    @DisplayName("Throws exception when eventType is null")
     void createOutboxEventWithNullEventType_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -102,7 +102,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("payload가 null이면 예외 발생")
+    @DisplayName("Throws exception when payload is null")
     void createOutboxEventWithNullPayload_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -114,7 +114,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("occurredAt이 null이면 예외 발생")
+    @DisplayName("Throws exception when occurredAt is null")
     void createOutboxEventWithNullOccurredAt_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -126,7 +126,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("markAsPublished 테스트")
+    @DisplayName("markAsPublished test")
     void testMarkAsPublished() {
         // given
         OutboxEvent event = new OutboxEvent(
@@ -145,7 +145,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("markAsFailed 테스트")
+    @DisplayName("markAsFailed test")
     void testMarkAsFailed() {
         // given
         OutboxEvent event = new OutboxEvent(
@@ -164,7 +164,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("scheduleNextRetry 테스트")
+    @DisplayName("scheduleNextRetry test")
     void testScheduleNextRetry() {
         // given
         OutboxEvent event = new OutboxEvent(
@@ -184,7 +184,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("scheduleNextRetry 여러 번 호출 테스트")
+    @DisplayName("scheduleNextRetry multiple invocations test")
     void testScheduleNextRetryMultipleTimes() {
         // given
         OutboxEvent event = new OutboxEvent(
@@ -203,7 +203,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("exceededMaxRetries 테스트 - 초과하지 않음")
+    @DisplayName("exceededMaxRetries test - not exceeded")
     void testExceededMaxRetries_notExceeded() {
         // given
         OutboxEvent event = new OutboxEvent(
@@ -221,7 +221,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("exceededMaxRetries 테스트 - 초과함")
+    @DisplayName("exceededMaxRetries test - exceeded")
     void testExceededMaxRetries_exceeded() {
         // given
         OutboxEvent event = new OutboxEvent(
@@ -240,7 +240,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("canPublish 테스트 - PENDING 상태")
+    @DisplayName("canPublish test - PENDING status")
     void testCanPublish_pending() {
         // given
         OutboxEvent event = new OutboxEvent(
@@ -256,7 +256,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("canPublish 테스트 - PUBLISHED 상태")
+    @DisplayName("canPublish test - PUBLISHED status")
     void testCanPublish_published() {
         // given
         OutboxEvent event = new OutboxEvent(
@@ -273,7 +273,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("canPublish 테스트 - FAILED 상태")
+    @DisplayName("canPublish test - FAILED status")
     void testCanPublish_failed() {
         // given
         OutboxEvent event = new OutboxEvent(
@@ -290,7 +290,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("restore 메서드 테스트")
+    @DisplayName("restore method test")
     void testRestore() {
         // given
         String eventId = "evt-123";
@@ -326,7 +326,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("restore 메서드 테스트 - nextRetryAt이 null")
+    @DisplayName("restore method test - nextRetryAt is null")
     void testRestore_withNullNextRetryAt() {
         // given
         Instant occurredAt = Instant.now();
@@ -342,7 +342,7 @@ class OutboxEventTest {
     }
 
     @Test
-    @DisplayName("toString 테스트")
+    @DisplayName("toString test")
     void testToString() {
         // given
         OutboxEvent event = new OutboxEvent(

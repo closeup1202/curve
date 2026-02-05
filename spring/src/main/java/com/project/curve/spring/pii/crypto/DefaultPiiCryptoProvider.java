@@ -1,15 +1,13 @@
 package com.project.curve.spring.pii.crypto;
 
 import com.project.curve.spring.exception.PiiCryptoException;
+import com.project.curve.spring.pii.crypto.util.AesUtil;
 import lombok.Getter;
 
-import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
@@ -29,14 +27,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
 
-    private static final String AES_ALGORITHM = "AES/GCM/NoPadding";
-    private static final int GCM_IV_LENGTH = 12;
-    private static final int GCM_TAG_LENGTH = 128;
-
     private final SecretKey defaultKey;
     private final Map<String, SecretKey> keyStore;
     private final String salt;
-    private final SecureRandom secureRandom;
     @Getter
     private final boolean encryptionEnabled;
 
@@ -51,7 +44,6 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
         this.defaultKey = encryptionEnabled ? createKey(defaultKeyBase64) : null;
         this.keyStore = new ConcurrentHashMap<>();
         this.salt = salt != null ? salt : "";
-        this.secureRandom = new SecureRandom();
     }
 
     /**
@@ -72,8 +64,8 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
         if (keyBase64 == null || keyBase64.isBlank()) {
             throw new IllegalArgumentException(
                     "PII encryption key is not configured. " +
-                    "curve.pii.crypto.default-key configuration is required. " +
-                    "Using PII_ENCRYPTION_KEY environment variable is recommended."
+                            "curve.pii.crypto.default-key configuration is required. " +
+                            "Using PII_ENCRYPTION_KEY environment variable is recommended."
             );
         }
 
@@ -112,30 +104,9 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
                     "Environment variable: PII_ENCRYPTION_KEY"
             );
         }
-
-        try {
-            SecretKey key = resolveKey(keyAlias);
-            Cipher cipher = Cipher.getInstance(AES_ALGORITHM);
-
-            byte[] iv = new byte[GCM_IV_LENGTH];
-            secureRandom.nextBytes(iv);
-
-            GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
-            cipher.init(Cipher.ENCRYPT_MODE, key, parameterSpec);
-
-            byte[] encryptedBytes = cipher.doFinal(value.getBytes(StandardCharsets.UTF_8));
-
-            // Combine IV + ciphertext and return
-            byte[] combined = new byte[iv.length + encryptedBytes.length];
-            System.arraycopy(iv, 0, combined, 0, iv.length);
-            System.arraycopy(encryptedBytes, 0, combined, iv.length, encryptedBytes.length);
-
-            return Base64.getEncoder().encodeToString(combined);
-        } catch (PiiCryptoException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new PiiCryptoException("Encryption failed: " + e.getMessage(), e);
-        }
+        SecretKey key = resolveKey(keyAlias);
+        byte[] encrypted = AesUtil.encryptWithKey(value, key);
+        return Base64.getEncoder().encodeToString(encrypted);
     }
 
     /**
@@ -156,20 +127,10 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
                     "Set curve.pii.crypto.default-key."
             );
         }
-
         try {
             SecretKey key = resolveKey(keyAlias);
             byte[] combined = Base64.getDecoder().decode(encryptedValue);
-
-            byte[] iv = Arrays.copyOfRange(combined, 0, GCM_IV_LENGTH);
-            byte[] encryptedBytes = Arrays.copyOfRange(combined, GCM_IV_LENGTH, combined.length);
-
-            Cipher cipher = Cipher.getInstance(AES_ALGORITHM);
-            GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
-            cipher.init(Cipher.DECRYPT_MODE, key, parameterSpec);
-
-            byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
-            return new String(decryptedBytes, StandardCharsets.UTF_8);
+            return AesUtil.decryptWithKey(combined, key);
         } catch (PiiCryptoException e) {
             throw e;
         } catch (Exception e) {

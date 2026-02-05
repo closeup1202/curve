@@ -7,16 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.0.5] - 2026-02-05
+
+### Added
+- **KMS Module**: New `kms` module for external key management service integration
+    - `KeyProvider` interface in core with envelope encryption support (`generateDataKey`, `decryptDataKey`, `supportsEnvelopeEncryption`)
+    - `EnvelopeDataKey` record for carrying both plaintext and encrypted DEK
+    - `KeyProviderException` domain exception for KMS-related errors
+- **AWS KMS Provider**: `AwsKmsProvider` with full envelope encryption
+    - Generates DEK via KMS `GenerateDataKey` and stores encrypted DEK alongside ciphertext
+    - TTL-based dual cache (generate + decrypt) with configurable max size and oldest-entry eviction
+    - `invalidateAll()` for key rotation support
+- **HashiCorp Vault Provider**: `VaultKeyProvider` for Vault K/V secret engine
+    - Fetches pre-existing encryption keys from Vault paths
+- **KMS PII Crypto Provider**: `KmsPiiCryptoProvider` supporting both modes
+    - Envelope encryption mode (AWS KMS): ciphertext format `Base64([2-byte encDEK len][encDEK][IV + AES-GCM ciphertext])`
+    - Static key mode (Vault K/V): fetches key and encrypts locally
+- **KMS Auto-Configuration**: `CurveKmsAutoConfiguration` with conditional beans
+    - `AwsKmsConfiguration` (`@ConditionalOnClass(KmsClient.class)`, `@ConditionalOnProperty(type=aws)`)
+    - `VaultConfiguration` (`@ConditionalOnClass(VaultTemplate.class)`, `@ConditionalOnProperty(type=vault)`)
+    - `KmsProperties` with separate `Aws` and `Vault` configuration sections
+- **AES Utility**: Extracted `AesUtil` from `DefaultPiiCryptoProvider` for shared AES-256-GCM logic
+    - `encryptWithKey`/`decryptWithKey` methods accepting `SecretKey` directly (eliminates Base64 roundtrip)
+    - `encryptToBytes`/`decryptFromBytes` for envelope encryption byte packing
+- **Comprehensive Tests**: Full test coverage for all new components
+    - `AwsKmsProviderTest` (9 tests): envelope encryption, caching, TTL expiry, eviction, invalidation
+    - `KmsPiiCryptoProviderTest` (12 tests): static key mode, envelope mode, hash operations
+    - `AesUtilTest` (21 tests): round-trip, null safety, Unicode/emoji, key handling
+    - `KeyProviderTest`, `KeyProviderExceptionTest`, `EnvelopeDataKeyTest` in core
+
 ### Changed
 - **deps**: Bump SonarQube Gradle plugin from 4.4.1.3373 to 7.2.2.6593 (#14)
     - Resolves deprecation warning for compile task dependency
     - Adds Gradle 9 and configuration-cache support
-- **deps**: Bump AWS SDK BOM from 2.21.1 to 2.41.21 (#2)
-    - Fixes version mismatch between `kafka` and `spring-boot-autoconfigure` modules
+- **deps**: Unify AWS SDK BOM to 2.41.21 across all modules (#2)
+    - Fixes version mismatch between `kafka`, `kms`, and `spring-boot-autoconfigure` modules
     - Includes 20+ months of security patches and performance improvements
 - **deps**: Bump Confluent Kafka Avro Serializer from 7.5.0 to 8.1.1 (#11)
 - **deps**: Bump TestContainers from 1.20.4 to 1.21.4 (#6)
 - **deps**: Bump Release Plugin from 3.0.2 to 3.1.0 (#10)
+- **deps**: Bump Spring Cloud from 2023.0.0 to 2024.0.1 (Spring Boot 3.5.x compatibility)
+- **DefaultPiiCryptoProvider**: Refactored to use `AesUtil` with direct `SecretKey` methods, eliminating `SecretKey → Base64 → SecretKey` conversion overhead
+- **CurveProperties**: Simplified `Pii.Kms` to only `enabled` and `type` fields; provider-specific settings moved to `KmsProperties` in kms module
+- **Build**: Added `kms` module to `publishableProjects`, SonarQube coverage paths, and JaCoCo configuration
+- **Tests**: Translated all test `@DisplayName` annotations from Korean to English across core, kafka, and autoconfigure modules
 
 ### Security
 - Replace `StandardEvaluationContext` with `SimpleEvaluationContext` in SpEL evaluation
@@ -138,6 +174,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date       | Description |
 |---------|------------|-------------|
+| 0.0.5   | 2026-02-05 | Add KMS module (AWS KMS / HashiCorp Vault) with envelope encryption |
 | 0.0.4   | 2026-02-04 | Add workflow_dispatch to release-docs for manual execution |
 | 0.0.3   | 2026-02-04 | Add S3 Backup Strategy & Doc Updates |
 | 0.0.2   | 2026-02-03 | Make Avro dependencies optional |
@@ -169,7 +206,8 @@ When contributing, please update this changelog:
 
 ---
 
-[Unreleased]: https://github.com/closeup1202/curve/compare/v0.0.3...HEAD
+[Unreleased]: https://github.com/closeup1202/curve/compare/v0.0.5...HEAD
+[0.0.5]: https://github.com/closeup1202/curve/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/closeup1202/curve/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/closeup1202/curve/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/closeup1202/curve/compare/v0.0.1...v0.0.2

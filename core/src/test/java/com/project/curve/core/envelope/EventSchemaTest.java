@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("EventSchema 테스트")
+@DisplayName("EventSchema test")
 class EventSchemaTest {
 
     @Test
-    @DisplayName("정상적인 EventSchema 생성 - of() 팩토리 메서드")
+    @DisplayName("Create EventSchema with of() factory method")
     void createEventSchemaUsingFactory() {
         // given
         String name = "OrderCreatedEvent";
@@ -26,7 +26,7 @@ class EventSchemaTest {
     }
 
     @Test
-    @DisplayName("정상적인 EventSchema 생성 - 생성자로 schemaId 포함")
+    @DisplayName("Create EventSchema with constructor including schemaId")
     void createEventSchemaWithSchemaId() {
         // given
         String name = "OrderCreatedEvent";
@@ -44,7 +44,7 @@ class EventSchemaTest {
     }
 
     @Test
-    @DisplayName("EventSchema 생성 실패 - name이 null")
+    @DisplayName("EventSchema creation fails when name is null")
     void createEventSchemaWithNullName_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -55,7 +55,7 @@ class EventSchemaTest {
     }
 
     @Test
-    @DisplayName("EventSchema 생성 실패 - name이 빈 문자열")
+    @DisplayName("EventSchema creation fails when name is empty string")
     void createEventSchemaWithEmptyName_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -66,7 +66,7 @@ class EventSchemaTest {
     }
 
     @Test
-    @DisplayName("EventSchema 생성 실패 - version이 0")
+    @DisplayName("EventSchema creation fails when version is 0")
     void createEventSchemaWithZeroVersion_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -77,7 +77,7 @@ class EventSchemaTest {
     }
 
     @Test
-    @DisplayName("EventSchema 생성 실패 - version이 음수")
+    @DisplayName("EventSchema creation fails when version is negative")
     void createEventSchemaWithNegativeVersion_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(

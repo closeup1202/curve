@@ -14,13 +14,13 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("EventEnvelope 테스트")
+@DisplayName("EventEnvelope test")
 class EventEnvelopeTest {
 
     EventValidator eventValidator = new DefaultEventValidator();
 
     @Test
-    @DisplayName("정상적인 EventEnvelope 생성 - 모든 필드가 유효한 경우")
+    @DisplayName("Create EventEnvelope with all valid fields")
     void createValidEventEnvelope() {
         // given
         EventId eventId = EventId.of("test-event-123");
@@ -54,7 +54,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventValidator - 유효한 envelope 검증 성공")
+    @DisplayName("EventValidator - valid envelope passes validation")
     void validateValidEnvelope_shouldNotThrowException() {
         // given
         EventEnvelope<TestPayload> envelope = createValidEnvelope();
@@ -65,7 +65,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventValidator - null envelope 검증 실패")
+    @DisplayName("EventValidator - null envelope fails validation")
     void validateNullEnvelope_shouldThrowException() {
         // when & then
         InvalidEventException exception = assertThrows(
@@ -76,7 +76,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventEnvelope - eventId가 null인 경우 생성 실패")
+    @DisplayName("EventEnvelope - creation fails when eventId is null")
     void createEnvelopeWithNullEventId_shouldThrowNullPointerException() {
         // when & then
         assertThrows(
@@ -94,7 +94,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventEnvelope - eventType이 null인 경우 생성 실패")
+    @DisplayName("EventEnvelope - creation fails when eventType is null")
     void createEnvelopeWithNullEventType_shouldThrowNullPointerException() {
         // when & then
         assertThrows(
@@ -112,7 +112,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventEnvelope - metadata가 null인 경우 생성 실패")
+    @DisplayName("EventEnvelope - creation fails when metadata is null")
     void createEnvelopeWithNullMetadata_shouldThrowNullPointerException() {
         // when & then
         assertThrows(
@@ -130,7 +130,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventEnvelope - payload가 null인 경우 생성 실패")
+    @DisplayName("EventEnvelope - creation fails when payload is null")
     void createEnvelopeWithNullPayload_shouldThrowNullPointerException() {
         // when & then
         assertThrows(
@@ -148,7 +148,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventEnvelope - occurredAt이 null인 경우 생성 실패")
+    @DisplayName("EventEnvelope - creation fails when occurredAt is null")
     void createEnvelopeWithNullOccurredAt_shouldThrowNullPointerException() {
         // when & then
         assertThrows(
@@ -166,7 +166,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventEnvelope - publishedAt이 null인 경우 생성 실패")
+    @DisplayName("EventEnvelope - creation fails when publishedAt is null")
     void createEnvelopeWithNullPublishedAt_shouldThrowNullPointerException() {
         // when & then
         assertThrows(
@@ -184,7 +184,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventValidator - occurredAt이 publishedAt보다 이후인 경우 검증 실패")
+    @DisplayName("EventValidator - validation fails when occurredAt is after publishedAt")
     void validateEnvelopeWithOccurredAtAfterPublishedAt_shouldThrowException() {
         // given
         Instant publishedAt = Instant.now();
@@ -209,7 +209,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventValidator - occurredAt과 publishedAt이 동일한 경우 검증 성공")
+    @DisplayName("EventValidator - validation succeeds when occurredAt equals publishedAt")
     void validateEnvelopeWithSameTimestamps_shouldNotThrowException() {
         // given
         Instant timestamp = Instant.now();
@@ -229,7 +229,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventEnvelope - 다양한 Severity 레벨 테스트")
+    @DisplayName("EventEnvelope - various Severity level test")
     void createEnvelopeWithDifferentSeverityLevels() {
         // given
         EventSeverity[] severities = {
@@ -249,7 +249,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventMetadata - tags가 null인 경우 빈 맵으로 초기화")
+    @DisplayName("EventMetadata - tags initialized as empty map when null")
     void createMetadataWithNullTags_shouldInitializeEmptyMap() {
         // given & when
         EventMetadata metadata = new EventMetadata(
@@ -266,7 +266,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("EventMetadata - tags 불변성 테스트")
+    @DisplayName("EventMetadata - tags immutability test")
     void metadataTags_shouldBeImmutable() {
         // given
         Map<String, String> mutableTags = new java.util.HashMap<>();

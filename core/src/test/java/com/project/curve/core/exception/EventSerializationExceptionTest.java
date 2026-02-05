@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("EventSerializationException 테스트")
+@DisplayName("EventSerializationException test")
 class EventSerializationExceptionTest {
 
     @Test
-    @DisplayName("메시지로 EventSerializationException 생성")
+    @DisplayName("Create EventSerializationException with message")
     void createExceptionWithMessage() {
         // given
         String message = "Failed to serialize event";
@@ -24,7 +24,7 @@ class EventSerializationExceptionTest {
     }
 
     @Test
-    @DisplayName("메시지와 cause로 EventSerializationException 생성")
+    @DisplayName("Create EventSerializationException with message and cause")
     void createExceptionWithMessageAndCause() {
         // given
         String message = "Failed to serialize event";
@@ -42,7 +42,7 @@ class EventSerializationExceptionTest {
     }
 
     @Test
-    @DisplayName("RuntimeException 상속 확인")
+    @DisplayName("Verify RuntimeException inheritance")
     void testIsRuntimeException() {
         // given
         EventSerializationException exception = new EventSerializationException(
@@ -54,7 +54,7 @@ class EventSerializationExceptionTest {
     }
 
     @Test
-    @DisplayName("중첩된 예외 처리 테스트")
+    @DisplayName("Nested exception handling test")
     void testNestedExceptions() {
         // given
         Throwable rootCause = new IllegalArgumentException("Invalid field");
@@ -74,7 +74,7 @@ class EventSerializationExceptionTest {
     }
 
     @Test
-    @DisplayName("null 메시지로 예외 생성")
+    @DisplayName("Create exception with null message")
     void createExceptionWithNullMessage() {
         // when
         EventSerializationException exception = new EventSerializationException(null);
@@ -85,7 +85,7 @@ class EventSerializationExceptionTest {
     }
 
     @Test
-    @DisplayName("빈 메시지로 예외 생성")
+    @DisplayName("Create exception with empty message")
     void createExceptionWithEmptyMessage() {
         // given
         String message = "";
@@ -99,7 +99,7 @@ class EventSerializationExceptionTest {
     }
 
     @Test
-    @DisplayName("긴 메시지로 예외 생성")
+    @DisplayName("Create exception with long message")
     void createExceptionWithLongMessage() {
         // given
         String message = "Failed to serialize event: " + "x".repeat(1000);
@@ -114,7 +114,7 @@ class EventSerializationExceptionTest {
     }
 
     @Test
-    @DisplayName("특수 문자를 포함한 메시지로 예외 생성")
+    @DisplayName("Create exception with special characters in message")
     void createExceptionWithSpecialCharactersMessage() {
         // given
         String message = "Failed to serialize: \\n\\t\\r\"quotes\"";

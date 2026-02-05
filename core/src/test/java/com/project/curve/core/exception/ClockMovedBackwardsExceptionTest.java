@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("ClockMovedBackwardsException 테스트")
+@DisplayName("ClockMovedBackwardsException test")
 class ClockMovedBackwardsExceptionTest {
 
     @Test
-    @DisplayName("타임스탬프로 ClockMovedBackwardsException 생성")
+    @DisplayName("Create ClockMovedBackwardsException with timestamps")
     void createExceptionWithTimestamps() {
         // given
         long lastTimestamp = 1000L;
@@ -30,7 +30,7 @@ class ClockMovedBackwardsExceptionTest {
     }
 
     @Test
-    @DisplayName("getDifferenceMs 테스트")
+    @DisplayName("getDifferenceMs test")
     void testGetDifferenceMs() {
         // given
         long lastTimestamp = 1000L;
@@ -47,7 +47,7 @@ class ClockMovedBackwardsExceptionTest {
     }
 
     @Test
-    @DisplayName("메시지로 ClockMovedBackwardsException 생성")
+    @DisplayName("Create ClockMovedBackwardsException with message")
     void createExceptionWithMessage() {
         // given
         String message = "Custom error message";
@@ -64,7 +64,7 @@ class ClockMovedBackwardsExceptionTest {
     }
 
     @Test
-    @DisplayName("메시지와 cause로 ClockMovedBackwardsException 생성")
+    @DisplayName("Create ClockMovedBackwardsException with message and cause")
     void createExceptionWithMessageAndCause() {
         // given
         String message = "Custom error message";
@@ -85,11 +85,11 @@ class ClockMovedBackwardsExceptionTest {
     }
 
     @Test
-    @DisplayName("큰 타임스탬프 차이 테스트")
+    @DisplayName("Large timestamp difference test")
     void testLargeTimestampDifference() {
         // given
         long lastTimestamp = System.currentTimeMillis();
-        long currentTimestamp = lastTimestamp - 60000L; // 1분 차이
+        long currentTimestamp = lastTimestamp - 60000L; // 1 minute difference
 
         // when
         ClockMovedBackwardsException exception = new ClockMovedBackwardsException(
@@ -102,7 +102,7 @@ class ClockMovedBackwardsExceptionTest {
     }
 
     @Test
-    @DisplayName("예외 메시지 형식 테스트")
+    @DisplayName("Exception message format test")
     void testExceptionMessageFormat() {
         // given
         long lastTimestamp = 2000L;
@@ -123,7 +123,7 @@ class ClockMovedBackwardsExceptionTest {
     }
 
     @Test
-    @DisplayName("RuntimeException 상속 확인")
+    @DisplayName("Verify RuntimeException inheritance")
     void testIsRuntimeException() {
         // given
         ClockMovedBackwardsException exception = new ClockMovedBackwardsException(
@@ -135,7 +135,7 @@ class ClockMovedBackwardsExceptionTest {
     }
 
     @Test
-    @DisplayName("타임스탬프가 같을 때 getDifferenceMs")
+    @DisplayName("getDifferenceMs when timestamps are equal")
     void testGetDifferenceMs_sameTimestamp() {
         // given
         long timestamp = 1000L;

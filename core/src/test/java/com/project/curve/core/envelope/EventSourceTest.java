@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("EventSource 테스트")
+@DisplayName("EventSource test")
 class EventSourceTest {
 
     @Test
-    @DisplayName("정상적인 EventSource 생성 - 모든 필드 유효")
+    @DisplayName("Create EventSource with all valid fields")
     void createValidEventSource() {
         // given
         String service = "order-service";
@@ -31,7 +31,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("EventSource 생성 실패 - service가 null")
+    @DisplayName("EventSource creation fails when service is null")
     void createEventSourceWithNullService_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -42,7 +42,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("EventSource 생성 실패 - service가 빈 문자열")
+    @DisplayName("EventSource creation fails when service is empty string")
     void createEventSourceWithEmptyService_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -53,7 +53,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("EventSource 생성 실패 - service가 공백만 있는 문자열")
+    @DisplayName("EventSource creation fails when service is blank string")
     void createEventSourceWithBlankService_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -64,7 +64,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("Event Chain이 있는 EventSource 생성")
+    @DisplayName("Create EventSource with Event Chain")
     void createEventSourceWithEventChain() {
         // given
         String service = "order-service";
@@ -90,7 +90,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("hasEventChain 테스트 - Event Chain이 있음")
+    @DisplayName("hasEventChain test - Event Chain exists")
     void testHasEventChain_true() {
         // given
         EventSource eventSource = new EventSource(
@@ -106,7 +106,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("hasEventChain 테스트 - Event Chain이 없음 (null)")
+    @DisplayName("hasEventChain test - Event Chain is absent (null)")
     void testHasEventChain_false_null() {
         // given
         EventSource eventSource = new EventSource(
@@ -121,7 +121,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("hasEventChain 테스트 - Event Chain이 없음 (빈 문자열)")
+    @DisplayName("hasEventChain test - Event Chain is absent (empty string)")
     void testHasEventChain_false_empty() {
         // given
         EventSource eventSource = new EventSource(
@@ -137,7 +137,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("hasEventChain 테스트 - Event Chain이 없음 (공백)")
+    @DisplayName("hasEventChain test - Event Chain is absent (blank)")
     void testHasEventChain_false_blank() {
         // given
         EventSource eventSource = new EventSource(
@@ -153,7 +153,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("isRootEvent 테스트 - Root Event (causationId가 null)")
+    @DisplayName("isRootEvent test - Root Event (causationId is null)")
     void testIsRootEvent_true_nullCausation() {
         // given
         EventSource eventSource = new EventSource(
@@ -169,7 +169,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("isRootEvent 테스트 - Root Event (causationId가 빈 문자열)")
+    @DisplayName("isRootEvent test - Root Event (causationId is empty string)")
     void testIsRootEvent_true_emptyCausation() {
         // given
         EventSource eventSource = new EventSource(
@@ -185,7 +185,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("isRootEvent 테스트 - Root Event (causationId가 공백)")
+    @DisplayName("isRootEvent test - Root Event (causationId is blank)")
     void testIsRootEvent_true_blankCausation() {
         // given
         EventSource eventSource = new EventSource(
@@ -201,7 +201,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("isRootEvent 테스트 - Root Event가 아님")
+    @DisplayName("isRootEvent test - not a Root Event")
     void testIsRootEvent_false() {
         // given
         EventSource eventSource = new EventSource(
@@ -217,7 +217,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("estimateChainDepth 테스트 - Event Chain이 없음")
+    @DisplayName("estimateChainDepth test - no Event Chain")
     void testEstimateChainDepth_noChain() {
         // given
         EventSource eventSource = new EventSource(
@@ -232,7 +232,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("estimateChainDepth 테스트 - Root Event")
+    @DisplayName("estimateChainDepth test - Root Event")
     void testEstimateChainDepth_rootEvent() {
         // given
         EventSource eventSource = new EventSource(
@@ -248,7 +248,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("estimateChainDepth 테스트 - Child Event")
+    @DisplayName("estimateChainDepth test - Child Event")
     void testEstimateChainDepth_childEvent() {
         // given
         EventSource eventSource = new EventSource(
@@ -264,7 +264,7 @@ class EventSourceTest {
     }
 
     @Test
-    @DisplayName("EventSource 5개 파라미터 생성자 테스트")
+    @DisplayName("EventSource 5-parameter constructor test")
     void testFiveParameterConstructor() {
         // given & when
         EventSource eventSource = new EventSource(

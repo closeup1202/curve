@@ -265,6 +265,11 @@ public class CurveProperties {
          */
         private final Crypto crypto = new Crypto();
 
+        /**
+         * KMS configuration.
+         */
+        private final Kms kms = new Kms();
+
         @Data
         public static class Crypto {
             /**
@@ -282,6 +287,22 @@ public class CurveProperties {
              * Hashes without salt if not set.
              */
             private String salt;
+        }
+
+        @Data
+        public static class Kms {
+            /**
+             * Whether to enable KMS for PII encryption keys (default: false).
+             * <p>
+             * When enabled, configure type and provider-specific settings in
+             * {@code curve.pii.kms.*} properties (handled by kms module's KmsProperties).
+             */
+            private boolean enabled = false;
+
+            /**
+             * KMS type: "aws" or "vault".
+             */
+            private String type;
         }
     }
 

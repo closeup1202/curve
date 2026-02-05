@@ -1,0 +1,22 @@
+dependencies {
+    compileOnly platform('software.amazon.awssdk:bom:2.41.21')
+    compileOnly 'software.amazon.awssdk:kms'
+
+    implementation platform('org.springframework.cloud:spring-cloud-dependencies:2024.0.1')
+    compileOnly 'org.springframework.cloud:spring-cloud-starter-vault-config'
+
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+
+    compileOnly 'org.springframework.boot:spring-boot-configuration-processor'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure-processor'
+    annotationProcessor 'org.springframework.boot:spring-boot-autoconfigure-processor'
+
+    implementation project(':core')
+
+    testImplementation platform('software.amazon.awssdk:bom:2.41.21')
+    testImplementation 'software.amazon.awssdk:kms'
+
+    testImplementation 'org.springframework.boot:spring-boot-test'
+    testImplementation 'org.springframework.boot:spring-boot-test-autoconfigure'
+}

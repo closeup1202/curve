@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("EventId 테스트")
+@DisplayName("EventId test")
 class EventIdTest {
 
     @Test
-    @DisplayName("정상적인 EventId 생성 - 유효한 value")
+    @DisplayName("Create EventId with valid value")
     void createValidEventId() {
         // given
         String value = "event-12345";
@@ -23,7 +23,7 @@ class EventIdTest {
     }
 
     @Test
-    @DisplayName("EventId 생성 실패 - null value")
+    @DisplayName("EventId creation fails with null value")
     void createEventIdWithNullValue_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -34,7 +34,7 @@ class EventIdTest {
     }
 
     @Test
-    @DisplayName("EventId 생성 실패 - 빈 문자열")
+    @DisplayName("EventId creation fails with empty string")
     void createEventIdWithEmptyValue_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -45,7 +45,7 @@ class EventIdTest {
     }
 
     @Test
-    @DisplayName("EventId 생성 실패 - 공백만 있는 문자열")
+    @DisplayName("EventId creation fails with blank string")
     void createEventIdWithBlankValue_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -56,7 +56,7 @@ class EventIdTest {
     }
 
     @Test
-    @DisplayName("EventId 동등성 테스트 - 같은 value면 동일한 객체")
+    @DisplayName("EventId equality test - same value means equal objects")
     void eventIdEquality() {
         // given
         String value = "event-123";

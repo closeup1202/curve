@@ -17,14 +17,14 @@ import org.springframework.retry.support.RetryTemplate;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * CurveAutoConfiguration 통합 테스트.
+ * CurveAutoConfiguration Integration test.
  *
- * Spring Boot Auto-Configuration이 올바르게 동작하는지 검증합니다.
+ * Verifies that Spring Boot Auto-Configuration works correctly.
  */
-@DisplayName("CurveAutoConfiguration 테스트")
+@DisplayName("CurveAutoConfiguration test")
 class CurveAutoConfigurationTest {
 
-    // 기본 컨텍스트 러너
+    // Default context runner
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(
                     CurveAutoConfiguration.class,
@@ -43,11 +43,11 @@ class CurveAutoConfigurationTest {
             );
 
     @Nested
-    @DisplayName("기본 설정 테스트")
+    @DisplayName("Default configuration test")
     class DefaultConfigurationTest {
 
         @Test
-        @DisplayName("curve.enabled=true일 때 모든 빈이 등록되어야 한다")
+        @DisplayName("All beans should be registered when curve.enabled=true")
         void shouldRegisterAllBeansWhenEnabled() {
             contextRunner
                     .withPropertyValues("curve.enabled=true")
@@ -60,7 +60,7 @@ class CurveAutoConfigurationTest {
         }
 
         @Test
-        @DisplayName("curve.enabled 미설정 시 기본값 true로 빈이 등록되어야 한다")
+        @DisplayName("Beans should be registered with default value true when curve.enabled is not set")
         void shouldRegisterBeansWhenEnabledPropertyMissing() {
             contextRunner
                     .run(context -> {
@@ -70,7 +70,7 @@ class CurveAutoConfigurationTest {
         }
 
         @Test
-        @DisplayName("curve.enabled=false일 때 주요 빈이 등록되지 않아야 한다")
+        @DisplayName("Main beans should not be registered when curve.enabled=false")
         void shouldNotRegisterBeansWhenDisabled() {
             contextRunner
                     .withPropertyValues("curve.enabled=false")
@@ -78,19 +78,19 @@ class CurveAutoConfigurationTest {
                         assertThat(context).doesNotHaveBean(EventEnvelopeFactory.class);
                         assertThat(context).doesNotHaveBean(EventProducer.class);
                         assertThat(context).doesNotHaveBean(RetryTemplate.class);
-                        // CurveProperties는 @EnableConfigurationProperties로 등록되므로
-                        // CurveAutoConfiguration이 로드되지 않으면 등록되지 않아야 함
+                        // Since CurveProperties is registered via @EnableConfigurationProperties,
+                        // it should not be registered if CurveAutoConfiguration is not loaded
                         assertThat(context).doesNotHaveBean(CurveProperties.class);
                     });
         }
     }
 
     @Nested
-    @DisplayName("Retry 설정 테스트")
+    @DisplayName("Retry configuration test")
     class RetryConfigurationTest {
 
         @Test
-        @DisplayName("curve.retry.enabled=true일 때 RetryTemplate이 등록되어야 한다")
+        @DisplayName("RetryTemplate should be registered when curve.retry.enabled=true")
         void shouldRegisterRetryTemplateWhenEnabled() {
             contextRunner
                     .withPropertyValues("curve.retry.enabled=true")
@@ -100,7 +100,7 @@ class CurveAutoConfigurationTest {
         }
 
         @Test
-        @DisplayName("curve.retry.enabled=false일 때 RetryTemplate이 등록되지 않아야 한다")
+        @DisplayName("RetryTemplate should not be registered when curve.retry.enabled=false")
         void shouldNotRegisterRetryTemplateWhenDisabled() {
             contextRunner
                     .withPropertyValues("curve.retry.enabled=false")
@@ -111,11 +111,11 @@ class CurveAutoConfigurationTest {
     }
 
     @Nested
-    @DisplayName("Kafka 설정 테스트")
+    @DisplayName("Kafka configuration test")
     class KafkaConfigurationTest {
 
         @Test
-        @DisplayName("Kafka 설정이 있을 때 EventProducer가 등록되어야 한다")
+        @DisplayName("EventProducer should be registered when Kafka configuration exists")
         void shouldRegisterEventProducerWithKafkaConfig() {
             contextRunner
                     .withPropertyValues(
@@ -128,7 +128,7 @@ class CurveAutoConfigurationTest {
         }
 
         @Test
-        @DisplayName("DLQ 토픽이 설정되면 DLQ 기능이 활성화되어야 한다")
+        @DisplayName("DLQ feature should be activated when DLQ topic is configured")
         void shouldEnableDlqWhenDlqTopicConfigured() {
             contextRunner
                     .withPropertyValues(
@@ -143,11 +143,11 @@ class CurveAutoConfigurationTest {
     }
 
     @Nested
-    @DisplayName("Properties 바인딩 테스트")
+    @DisplayName("Properties binding test")
     class PropertiesBindingTest {
 
         @Test
-        @DisplayName("커스텀 설정값이 올바르게 바인딩되어야 한다")
+        @DisplayName("Custom configuration values should be bound correctly")
         void shouldBindCustomProperties() {
             contextRunner
                     .withPropertyValues(
@@ -178,7 +178,7 @@ class CurveAutoConfigurationTest {
         }
 
         @Test
-        @DisplayName("기본 설정값이 올바르게 적용되어야 한다")
+        @DisplayName("Default configuration values should be applied correctly")
         void shouldApplyDefaultValues() {
             contextRunner
                     .run(context -> {
@@ -201,11 +201,11 @@ class CurveAutoConfigurationTest {
     }
 
     @Nested
-    @DisplayName("AOP 설정 테스트")
+    @DisplayName("AOP configuration test")
     class AopConfigurationTest {
 
         @Test
-        @DisplayName("curve.aop.enabled=false일 때 Aspect가 등록되지 않아야 한다")
+        @DisplayName("Aspect should not be registered when curve.aop.enabled=false")
         void shouldNotRegisterAspectWhenDisabled() {
             contextRunner
                     .withPropertyValues("curve.aop.enabled=false")
@@ -217,7 +217,7 @@ class CurveAutoConfigurationTest {
         }
 
         @Test
-        @DisplayName("curve.aop.enabled=true일 때 Aspect가 등록되어야 한다")
+        @DisplayName("Aspect should be registered when curve.aop.enabled=true")
         void shouldRegisterAspectWhenEnabled() {
             contextRunner
                     .withPropertyValues("curve.aop.enabled=true")
@@ -230,11 +230,11 @@ class CurveAutoConfigurationTest {
     }
 
     @Nested
-    @DisplayName("PII 설정 테스트")
+    @DisplayName("PII configuration test")
     class PiiConfigurationTest {
 
         @Test
-        @DisplayName("PII 암호화 키가 설정되면 올바르게 바인딩되어야 한다")
+        @DisplayName("PII encryption key should be bound correctly when configured")
         void shouldBindPiiCryptoKey() {
             contextRunner
                     .withPropertyValues(
@@ -254,7 +254,7 @@ class CurveAutoConfigurationTest {
         }
 
         @Test
-        @DisplayName("curve.pii.enabled=false일 때 PII 모듈이 비활성화되어야 한다")
+        @DisplayName("PII module should be deactivated when curve.pii.enabled=false")
         void shouldDisablePiiModuleWhenDisabled() {
             contextRunner
                     .withPropertyValues("curve.pii.enabled=false")
@@ -266,11 +266,11 @@ class CurveAutoConfigurationTest {
     }
 
     @Nested
-    @DisplayName("Security 설정 테스트")
+    @DisplayName("Security configuration test")
     class SecurityConfigurationTest {
 
         @Test
-        @DisplayName("useForwardedHeaders 설정이 올바르게 바인딩되어야 한다")
+        @DisplayName("useForwardedHeaders setting should be bound correctly")
         void shouldBindSecurityProperties() {
             contextRunner
                     .withPropertyValues("curve.security.use-forwarded-headers=true")
@@ -281,7 +281,7 @@ class CurveAutoConfigurationTest {
         }
 
         @Test
-        @DisplayName("기본값으로 useForwardedHeaders=false여야 한다")
+        @DisplayName("useForwardedHeaders should default to false")
         void shouldDefaultToFalseForUseForwardedHeaders() {
             contextRunner
                     .run(context -> {

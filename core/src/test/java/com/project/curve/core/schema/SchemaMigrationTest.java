@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("SchemaMigration 테스트")
+@DisplayName("SchemaMigration test")
 class SchemaMigrationTest {
 
     static class PayloadV1 {
@@ -20,7 +20,7 @@ class SchemaMigrationTest {
     }
 
     @Test
-    @DisplayName("SchemaMigration 구현 테스트")
+    @DisplayName("SchemaMigration implementation test")
     void testSchemaMigrationImplementation() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -32,7 +32,7 @@ class SchemaMigrationTest {
                 PayloadV2 target = new PayloadV2();
                 target.orderId = source.orderId;
                 target.amount = source.amount;
-                target.status = "PENDING"; // 기본값
+                target.status = "PENDING"; // default value
                 return target;
             }
 
@@ -64,7 +64,7 @@ class SchemaMigrationTest {
     }
 
     @Test
-    @DisplayName("isApplicable 테스트 - 적용 가능")
+    @DisplayName("isApplicable test - applicable")
     void testIsApplicable_true() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -80,7 +80,7 @@ class SchemaMigrationTest {
     }
 
     @Test
-    @DisplayName("isApplicable 테스트 - 적용 불가능 (다른 from 버전)")
+    @DisplayName("isApplicable test - not applicable (different from version)")
     void testIsApplicable_false_differentFrom() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -97,7 +97,7 @@ class SchemaMigrationTest {
     }
 
     @Test
-    @DisplayName("isApplicable 테스트 - 적용 불가능 (다른 to 버전)")
+    @DisplayName("isApplicable test - not applicable (different to version)")
     void testIsApplicable_false_differentTo() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -114,7 +114,7 @@ class SchemaMigrationTest {
     }
 
     @Test
-    @DisplayName("복잡한 마이그레이션 테스트")
+    @DisplayName("Complex migration test")
     void testComplexMigration() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -125,7 +125,7 @@ class SchemaMigrationTest {
             public PayloadV2 migrate(PayloadV1 source) {
                 PayloadV2 target = new PayloadV2();
                 target.orderId = source.orderId;
-                target.amount = source.amount * 2; // 비즈니스 로직 적용
+                target.amount = source.amount * 2; // apply business logic
                 target.status = source.amount > 500 ? "HIGH_VALUE" : "NORMAL";
                 return target;
             }
@@ -155,7 +155,7 @@ class SchemaMigrationTest {
     }
 
     @Test
-    @DisplayName("null 소스로 마이그레이션 테스트")
+    @DisplayName("Migration test with null source")
     void testMigrationWithNullSource() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);

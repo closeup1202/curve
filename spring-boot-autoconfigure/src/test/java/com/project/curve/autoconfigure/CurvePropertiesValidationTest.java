@@ -14,11 +14,11 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * CurveProperties 검증 테스트.
+ * CurveProperties validation test.
  *
- * @Validated 어노테이션과 검증 제약조건이 올바르게 동작하는지 검증합니다.
+ * Verifies that @Validated annotation and validation constraints work correctly.
  */
-@DisplayName("CurveProperties 검증 테스트")
+@DisplayName("CurveProperties validation test")
 class CurvePropertiesValidationTest {
 
     private Validator validator;
@@ -31,11 +31,11 @@ class CurvePropertiesValidationTest {
     }
 
     @Nested
-    @DisplayName("Kafka 설정 검증")
+    @DisplayName("Kafka configuration validation")
     class KafkaValidationTest {
 
         @Test
-        @DisplayName("topic이 빈 문자열이면 검증 실패해야 한다")
+        @DisplayName("Validation should fail when topic is empty string")
         void shouldFailWhenTopicIsBlank() {
             CurveProperties properties = new CurveProperties();
             properties.getKafka().setTopic("");
@@ -48,7 +48,7 @@ class CurvePropertiesValidationTest {
         }
 
         @Test
-        @DisplayName("topic이 null이면 검증 실패해야 한다")
+        @DisplayName("Validation should fail when topic is null")
         void shouldFailWhenTopicIsNull() {
             CurveProperties properties = new CurveProperties();
             properties.getKafka().setTopic(null);
@@ -61,7 +61,7 @@ class CurvePropertiesValidationTest {
         }
 
         @Test
-        @DisplayName("retries가 음수이면 검증 실패해야 한다")
+        @DisplayName("Validation should fail when retries is negative")
         void shouldFailWhenRetriesIsNegative() {
             CurveProperties properties = new CurveProperties();
             properties.getKafka().setRetries(-1);
@@ -74,7 +74,7 @@ class CurvePropertiesValidationTest {
         }
 
         @Test
-        @DisplayName("retryBackoffMs가 0이면 검증 실패해야 한다")
+        @DisplayName("Validation should fail when retryBackoffMs is 0")
         void shouldFailWhenRetryBackoffMsIsZero() {
             CurveProperties properties = new CurveProperties();
             properties.getKafka().setRetryBackoffMs(0);
@@ -87,7 +87,7 @@ class CurvePropertiesValidationTest {
         }
 
         @Test
-        @DisplayName("asyncTimeoutMs가 음수이면 검증 실패해야 한다")
+        @DisplayName("Validation should fail when asyncTimeoutMs is negative")
         void shouldFailWhenAsyncTimeoutMsIsNegative() {
             CurveProperties properties = new CurveProperties();
             properties.getKafka().setAsyncTimeoutMs(-1);
@@ -100,7 +100,7 @@ class CurvePropertiesValidationTest {
         }
 
         @Test
-        @DisplayName("dlqExecutorThreads가 0이면 검증 실패해야 한다")
+        @DisplayName("Validation should fail when dlqExecutorThreads is 0")
         void shouldFailWhenDlqExecutorThreadsIsZero() {
             CurveProperties properties = new CurveProperties();
             properties.getKafka().setDlqExecutorThreads(0);
@@ -114,11 +114,11 @@ class CurvePropertiesValidationTest {
     }
 
     @Nested
-    @DisplayName("IdGenerator 설정 검증")
+    @DisplayName("IdGenerator configuration validation")
     class IdGeneratorValidationTest {
 
         @Test
-        @DisplayName("workerId가 음수이면 검증 실패해야 한다")
+        @DisplayName("Validation should fail when workerId is negative")
         void shouldFailWhenWorkerIdIsNegative() {
             CurveProperties properties = new CurveProperties();
             properties.getIdGenerator().setWorkerId(-1);
@@ -131,7 +131,7 @@ class CurvePropertiesValidationTest {
         }
 
         @Test
-        @DisplayName("workerId가 1023을 초과하면 검증 실패해야 한다")
+        @DisplayName("Validation should fail when workerId exceeds 1023")
         void shouldFailWhenWorkerIdExceeds1023() {
             CurveProperties properties = new CurveProperties();
             properties.getIdGenerator().setWorkerId(1024);
@@ -144,7 +144,7 @@ class CurvePropertiesValidationTest {
         }
 
         @Test
-        @DisplayName("workerId가 0이면 검증 성공해야 한다")
+        @DisplayName("Validation should succeed when workerId is 0")
         void shouldPassWhenWorkerIdIsZero() {
             CurveProperties properties = new CurveProperties();
             properties.getIdGenerator().setWorkerId(0);
@@ -156,7 +156,7 @@ class CurvePropertiesValidationTest {
         }
 
         @Test
-        @DisplayName("workerId가 1023이면 검증 성공해야 한다")
+        @DisplayName("Validation should succeed when workerId is 1023")
         void shouldPassWhenWorkerIdIs1023() {
             CurveProperties properties = new CurveProperties();
             properties.getIdGenerator().setWorkerId(1023);
@@ -169,11 +169,11 @@ class CurvePropertiesValidationTest {
     }
 
     @Nested
-    @DisplayName("Retry 설정 검증")
+    @DisplayName("Retry configuration validation")
     class RetryValidationTest {
 
         @Test
-        @DisplayName("maxAttempts가 0이면 검증 실패해야 한다")
+        @DisplayName("Validation should fail when maxAttempts is 0")
         void shouldFailWhenMaxAttemptsIsZero() {
             CurveProperties properties = new CurveProperties();
             properties.getRetry().setMaxAttempts(0);
@@ -186,7 +186,7 @@ class CurvePropertiesValidationTest {
         }
 
         @Test
-        @DisplayName("initialInterval이 0이면 검증 실패해야 한다")
+        @DisplayName("Validation should fail when initialInterval is 0")
         void shouldFailWhenInitialIntervalIsZero() {
             CurveProperties properties = new CurveProperties();
             properties.getRetry().setInitialInterval(0);
@@ -199,7 +199,7 @@ class CurvePropertiesValidationTest {
         }
 
         @Test
-        @DisplayName("multiplier가 1 미만이면 검증 실패해야 한다")
+        @DisplayName("Validation should fail when multiplier is less than 1")
         void shouldFailWhenMultiplierIsLessThanOne() {
             CurveProperties properties = new CurveProperties();
             properties.getRetry().setMultiplier(0.5);
@@ -212,7 +212,7 @@ class CurvePropertiesValidationTest {
         }
 
         @Test
-        @DisplayName("maxInterval이 0이면 검증 실패해야 한다")
+        @DisplayName("Validation should fail when maxInterval is 0")
         void shouldFailWhenMaxIntervalIsZero() {
             CurveProperties properties = new CurveProperties();
             properties.getRetry().setMaxInterval(0);
@@ -226,11 +226,11 @@ class CurvePropertiesValidationTest {
     }
 
     @Nested
-    @DisplayName("기본값 검증")
+    @DisplayName("Default values validation")
     class DefaultValueValidationTest {
 
         @Test
-        @DisplayName("기본값으로 생성된 Properties는 검증을 통과해야 한다")
+        @DisplayName("Properties created with default values should pass validation")
         void shouldPassValidationWithDefaultValues() {
             CurveProperties properties = new CurveProperties();
 
@@ -240,7 +240,7 @@ class CurvePropertiesValidationTest {
         }
 
         @Test
-        @DisplayName("모든 기본값이 올바르게 설정되어야 한다")
+        @DisplayName("All default values should be set correctly")
         void shouldHaveCorrectDefaultValues() {
             CurveProperties properties = new CurveProperties();
 

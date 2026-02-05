@@ -10,7 +10,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("SchemaRegistry 테스트")
+@DisplayName("SchemaRegistry test")
 class SchemaRegistryTest {
 
     static class PayloadV1 {}
@@ -25,7 +25,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("스키마 등록 테스트")
+    @DisplayName("Schema registration test")
     void testRegister() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -40,7 +40,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("null 스키마 등록 시 예외 발생")
+    @DisplayName("Throws exception when registering null schema")
     void testRegister_withNull_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -51,7 +51,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("같은 버전 다른 클래스로 재등록 시 예외 발생")
+    @DisplayName("Throws exception when re-registering same version with different class")
     void testRegister_samVersionDifferentClass_shouldThrowException() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -67,7 +67,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("같은 버전 같은 클래스로 재등록은 허용")
+    @DisplayName("Re-registering same version with same class is allowed")
     void testRegister_sameVersionSameClass() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -78,7 +78,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("마이그레이션 등록 테스트")
+    @DisplayName("Migration registration test")
     void testRegisterMigration() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -113,7 +113,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("null 마이그레이션 등록 시 예외 발생")
+    @DisplayName("Throws exception when registering null migration")
     void testRegisterMigration_withNull_shouldThrowException() {
         // when & then
         IllegalArgumentException exception = assertThrows(
@@ -124,12 +124,12 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("등록되지 않은 소스 버전으로 마이그레이션 등록 시 예외 발생")
+    @DisplayName("Throws exception when registering migration with unregistered source version")
     void testRegisterMigration_sourceNotRegistered_shouldThrowException() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
         SchemaVersion v2 = new SchemaVersion("OrderCreated", 2, PayloadV2.class);
-        registry.register(v2); // v1은 등록하지 않음
+        registry.register(v2); // do not register v1
 
         SchemaMigration<PayloadV1, PayloadV2> migration = new SchemaMigration<>() {
             @Override
@@ -157,12 +157,12 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("등록되지 않은 타겟 버전으로 마이그레이션 등록 시 예외 발생")
+    @DisplayName("Throws exception when registering migration with unregistered target version")
     void testRegisterMigration_targetNotRegistered_shouldThrowException() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
         SchemaVersion v2 = new SchemaVersion("OrderCreated", 2, PayloadV2.class);
-        registry.register(v1); // v2는 등록하지 않음
+        registry.register(v1); // do not register v2
 
         SchemaMigration<PayloadV1, PayloadV2> migration = new SchemaMigration<>() {
             @Override
@@ -190,7 +190,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("getLatestVersion 테스트")
+    @DisplayName("getLatestVersion test")
     void testGetLatestVersion() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -209,7 +209,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 스키마의 getLatestVersion")
+    @DisplayName("getLatestVersion for non-existent schema")
     void testGetLatestVersion_notExists() {
         // when
         Optional<SchemaVersion> latest = registry.getLatestVersion("NonExistent");
@@ -219,7 +219,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("getAllVersions 테스트")
+    @DisplayName("getAllVersions test")
     void testGetAllVersions() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -234,13 +234,13 @@ class SchemaRegistryTest {
 
         // then
         assertEquals(3, versions.size());
-        assertEquals(v1, versions.get(0)); // 정렬된 순서
+        assertEquals(v1, versions.get(0)); // sorted order
         assertEquals(v2, versions.get(1));
         assertEquals(v3, versions.get(2));
     }
 
     @Test
-    @DisplayName("존재하지 않는 스키마의 getAllVersions")
+    @DisplayName("getAllVersions for non-existent schema")
     void testGetAllVersions_notExists() {
         // when
         List<SchemaVersion> versions = registry.getAllVersions("NonExistent");
@@ -250,7 +250,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("isCompatible 테스트 - 같은 버전")
+    @DisplayName("isCompatible test - same version")
     void testIsCompatible_sameVersion() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -264,7 +264,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("isCompatible 테스트 - 마이그레이션 경로 있음")
+    @DisplayName("isCompatible test - migration path exists")
     void testIsCompatible_withMigrationPath() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -283,14 +283,14 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("isCompatible 테스트 - 마이그레이션 경로 없음")
+    @DisplayName("isCompatible test - no migration path")
     void testIsCompatible_noMigrationPath() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
         SchemaVersion v2 = new SchemaVersion("OrderCreated", 2, PayloadV2.class);
         registry.register(v1);
         registry.register(v2);
-        // 마이그레이션 등록하지 않음
+        // do not register migration
 
         // when
         boolean compatible = registry.isCompatible("OrderCreated", 1, 2);
@@ -300,7 +300,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("isCompatible 테스트 - 버전이 존재하지 않음")
+    @DisplayName("isCompatible test - version does not exist")
     void testIsCompatible_versionNotExists() {
         // when
         boolean compatible = registry.isCompatible("OrderCreated", 1, 2);
@@ -310,7 +310,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("findMigrationPath 테스트 - 같은 버전")
+    @DisplayName("findMigrationPath test - same version")
     void testFindMigrationPath_sameVersion() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -325,7 +325,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("findMigrationPath 테스트 - 직접 마이그레이션")
+    @DisplayName("findMigrationPath test - direct migration")
     void testFindMigrationPath_directMigration() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -346,7 +346,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("findMigrationPath 테스트 - 다단계 마이그레이션")
+    @DisplayName("findMigrationPath test - multi-step migration")
     void testFindMigrationPath_multiStep() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -372,14 +372,14 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("findMigrationPath 테스트 - 경로 없음")
+    @DisplayName("findMigrationPath test - no path")
     void testFindMigrationPath_noPath() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
         SchemaVersion v2 = new SchemaVersion("OrderCreated", 2, PayloadV2.class);
         registry.register(v1);
         registry.register(v2);
-        // 마이그레이션 등록하지 않음
+        // do not register migration
 
         // when
         Optional<List<SchemaMigration<?, ?>>> path = registry.findMigrationPath(v1, v2);
@@ -389,7 +389,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("isVersionRegistered 테스트")
+    @DisplayName("isVersionRegistered test")
     void testIsVersionRegistered() {
         // given
         SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
@@ -402,7 +402,7 @@ class SchemaRegistryTest {
     }
 
     @Test
-    @DisplayName("getAllSchemaNames 테스트")
+    @DisplayName("getAllSchemaNames test")
     void testGetAllSchemaNames() {
         // given
         registry.register(new SchemaVersion("OrderCreated", 1, PayloadV1.class));

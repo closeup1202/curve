@@ -2,12 +2,15 @@ package com.project.curve.autoconfigure.pii;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.curve.autoconfigure.CurveProperties;
+import com.project.curve.core.key.KeyProvider;
 import com.project.curve.spring.pii.crypto.DefaultPiiCryptoProvider;
+import com.project.curve.spring.pii.crypto.KmsPiiCryptoProvider;
 import com.project.curve.spring.pii.crypto.PiiCryptoProvider;
 import com.project.curve.spring.pii.jackson.PiiModule;
 import com.project.curve.spring.pii.mask.*;
 import com.project.curve.spring.pii.processor.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -31,11 +34,21 @@ public class CurvePiiAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public PiiCryptoProvider piiCryptoProvider(CurveProperties properties) {
+    public PiiCryptoProvider piiCryptoProvider(
+            CurveProperties properties,
+            ObjectProvider<KeyProvider> keyProvider
+    ) {
         CurveProperties.Pii.Crypto crypto = properties.getPii().getCrypto();
-        String defaultKey = resolveEncryptionKey(crypto.getDefaultKey());
         String salt = resolveSalt(crypto.getSalt());
 
+        // Check if KMS is enabled and KeyProvider bean is available
+        if (properties.getPii().getKms().isEnabled() && keyProvider.getIfAvailable() != null) {
+            log.info("KMS mode enabled for PII encryption.");
+            return new KmsPiiCryptoProvider(keyProvider.getIfAvailable(), salt);
+        }
+
+        // Fallback to local key mode
+        String defaultKey = resolveEncryptionKey(crypto.getDefaultKey());
         boolean keyConfigured = defaultKey != null && !defaultKey.isBlank();
         boolean saltConfigured = salt != null && !salt.isBlank();
 
@@ -49,7 +62,7 @@ public class CurvePiiAutoConfiguration {
                     "Set PII_HASH_SALT env var or curve.pii.crypto.salt for enhanced security.");
         }
 
-        log.debug("PII crypto provider initialized - encryption: {}, salt: {}",
+        log.debug("PII crypto provider initialized (Local Mode) - encryption: {}, salt: {}",
                 keyConfigured ? "enabled" : "disabled",
                 saltConfigured ? "configured" : "not configured");
 

@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("OutboxStatus 테스트")
+@DisplayName("OutboxStatus test")
 class OutboxStatusTest {
 
     @Test
-    @DisplayName("OutboxStatus enum 값 확인")
+    @DisplayName("OutboxStatus enum values verification")
     void testOutboxStatusValues() {
         // when
         OutboxStatus[] statuses = OutboxStatus.values();
@@ -22,7 +22,7 @@ class OutboxStatusTest {
     }
 
     @Test
-    @DisplayName("OutboxStatus valueOf 테스트")
+    @DisplayName("OutboxStatus valueOf test")
     void testValueOf() {
         // when & then
         assertEquals(OutboxStatus.PENDING, OutboxStatus.valueOf("PENDING"));
@@ -31,7 +31,7 @@ class OutboxStatusTest {
     }
 
     @Test
-    @DisplayName("OutboxStatus 비교 테스트")
+    @DisplayName("OutboxStatus comparison test")
     void testComparison() {
         // given
         OutboxStatus pending = OutboxStatus.PENDING;
@@ -46,7 +46,7 @@ class OutboxStatusTest {
     }
 
     @Test
-    @DisplayName("OutboxStatus toString 테스트")
+    @DisplayName("OutboxStatus toString test")
     void testToString() {
         // then
         assertEquals("PENDING", OutboxStatus.PENDING.toString());
@@ -55,7 +55,7 @@ class OutboxStatusTest {
     }
 
     @Test
-    @DisplayName("OutboxStatus name 메서드 테스트")
+    @DisplayName("OutboxStatus name method test")
     void testName() {
         // then
         assertEquals("PENDING", OutboxStatus.PENDING.name());
@@ -64,7 +64,7 @@ class OutboxStatusTest {
     }
 
     @Test
-    @DisplayName("OutboxStatus ordinal 테스트")
+    @DisplayName("OutboxStatus ordinal test")
     void testOrdinal() {
         // then
         assertEquals(0, OutboxStatus.PENDING.ordinal());
@@ -73,7 +73,7 @@ class OutboxStatusTest {
     }
 
     @Test
-    @DisplayName("잘못된 값으로 valueOf 호출 시 예외 발생")
+    @DisplayName("Throws exception when valueOf is called with invalid value")
     void testInvalidValueOf() {
         // when & then
         assertThrows(IllegalArgumentException.class, () ->

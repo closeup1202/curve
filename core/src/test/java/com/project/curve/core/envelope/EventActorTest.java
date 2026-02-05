@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("EventActor 테스트")
+@DisplayName("EventActor test")
 class EventActorTest {
 
     @Test
-    @DisplayName("정상적인 EventActor 생성")
+    @DisplayName("Create EventActor with valid parameters")
     void createValidEventActor() {
         // given
         String id = "user-123";
@@ -27,12 +27,12 @@ class EventActorTest {
     }
 
     @Test
-    @DisplayName("EventActor - null 값들로 생성 가능 (validation 없음)")
+    @DisplayName("EventActor - can be created with null values (no validation)")
     void createEventActorWithNullValues() {
         // when
         EventActor actor = new EventActor(null, null, null);
 
-        // then - validation이 없으므로 생성 성공
+        // then - creation succeeds because there is no validation
         assertNotNull(actor);
         assertNull(actor.id());
         assertNull(actor.role());

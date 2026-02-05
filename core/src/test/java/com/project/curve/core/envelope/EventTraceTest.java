@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("EventTrace 테스트")
+@DisplayName("EventTrace test")
 class EventTraceTest {
 
     @Test
-    @DisplayName("정상적인 EventTrace 생성")
+    @DisplayName("Create EventTrace with valid parameters")
     void createValidEventTrace() {
         // given
         String traceId = "trace-abc-123";
@@ -27,12 +27,12 @@ class EventTraceTest {
     }
 
     @Test
-    @DisplayName("EventTrace - null 값들로 생성 가능 (validation 없음)")
+    @DisplayName("EventTrace - can be created with null values (no validation)")
     void createEventTraceWithNullValues() {
         // when
         EventTrace trace = new EventTrace(null, null, null);
 
-        // then - validation이 없으므로 생성 성공
+        // then - creation succeeds because there is no validation
         assertNotNull(trace);
         assertNull(trace.traceId());
         assertNull(trace.spanId());
