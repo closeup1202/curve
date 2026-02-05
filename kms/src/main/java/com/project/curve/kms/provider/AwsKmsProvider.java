@@ -2,6 +2,8 @@ package com.project.curve.kms.provider;
 
 import com.project.curve.core.key.EnvelopeDataKey;
 import com.project.curve.core.key.KeyProvider;
+import jakarta.annotation.Nonnull;
+import lombok.EqualsAndHashCode;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.kms.model.DataKeySpec;
@@ -153,11 +155,63 @@ public class AwsKmsProvider implements KeyProvider {
         boolean isExpired(long ttlMillis) {
             return System.currentTimeMillis() - createdAt > ttlMillis;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            CachedDataKey that = (CachedDataKey) o;
+            return createdAt == that.createdAt &&
+                    Arrays.equals(plaintextKey, that.plaintextKey) &&
+                    Arrays.equals(encryptedKey, that.encryptedKey);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Arrays.hashCode(plaintextKey);
+            result = 31 * result + Arrays.hashCode(encryptedKey);
+            result = 31 * result + Long.hashCode(createdAt);
+            return result;
+        }
+
+        @Override
+        @Nonnull
+        public String toString() {
+            return "CachedDataKey{" +
+                    "plaintextKey=[PROTECTED]" +
+                    ", encryptedKey=" + Arrays.toString(encryptedKey) +
+                    ", createdAt=" + createdAt +
+                    '}';
+        }
     }
 
     record CachedPlaintextKey(byte[] plaintextKey, long createdAt) {
         boolean isExpired(long ttlMillis) {
             return System.currentTimeMillis() - createdAt > ttlMillis;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            CachedPlaintextKey that = (CachedPlaintextKey) o;
+            return createdAt == that.createdAt && Arrays.equals(plaintextKey, that.plaintextKey);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Arrays.hashCode(plaintextKey);
+            result = 31 * result + Long.hashCode(createdAt);
+            return result;
+        }
+
+        @Override
+        @Nonnull
+        public String toString() {
+            return "CachedPlaintextKey{" +
+                    "plaintextKey=[PROTECTED]" +
+                    ", createdAt=" + createdAt +
+                    '}';
         }
     }
 }
