@@ -22,7 +22,7 @@ Add Curve to your project:
 
     ```gradle title="build.gradle"
     dependencies {
-        implementation 'io.github.closeup1202:curve:0.0.4'
+        implementation 'io.github.closeup1202:curve:0.0.5'
     }
     ```
 
@@ -32,7 +32,7 @@ Add Curve to your project:
     <dependency>
         <groupId>io.github.closeup1202</groupId>
         <artifactId>curve</artifactId>
-        <version>0.0.4</version>
+        <version>0.0.5</version>
     </dependency>
     ```
 
