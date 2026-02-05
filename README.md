@@ -18,7 +18,7 @@
 
 ---
 
-## 🎬 Quick Demo
+## Quick Demo
 
 ```java
 // Just add one annotation!
@@ -34,7 +34,7 @@ public User createUser(CreateUserRequest request) {
 
 ---
 
-## 🔥 Why Curve?
+## Why Curve?
 
 <table>
 <tr>
@@ -106,7 +106,7 @@ public class UserService {
 }
 ```
 
-**90% less code** ✨
+**90% less code**
 
 Everything handled automatically:
 - ✅ Event ID generation
@@ -122,41 +122,41 @@ Everything handled automatically:
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🎯 Declarative Event Publishing
+### Declarative Event Publishing
 No more Kafka boilerplate - just add `@PublishEvent` annotation. Supports SpEL for flexible payload extraction.
 
-### 📦 Standardized Event Structure
+### Standardized Event Structure
 All events follow a unified schema with metadata (source, actor, trace, tags).
 
-### 🛡️ 3-Tier Failure Recovery
+### 3-Tier Failure Recovery
 **Main Topic → DLQ → Local File Backup**
 Zero event loss even when Kafka is down for 24 hours.
 
-### 🔐 Automatic PII Protection
+### Automatic PII Protection
 `@PiiField` annotation automatically masks/encrypts sensitive data.
 
-### ⚡ High Performance
+### High Performance
 - **Sync mode**: ~500 TPS
 - **Async mode**: ~10,000+ TPS (with MDC Context Propagation)
 - **Transactional Outbox**: Guarantees atomicity and consistency.
 
-### 🏗️ Hexagonal Architecture
+### Hexagonal Architecture
 Framework-independent core for maximum flexibility.
 
-### 📊 Built-in Observability
+### Built-in Observability
 - Spring Actuator Health Indicator
 - Custom metrics endpoint (`/actuator/curve-metrics`)
 - Detailed event tracking
 - **Async Context Propagation**: MDC (Trace ID) is preserved even in async threads.
 
-### 🧪 Testability
+### Testability
 - Provides `MockEventProducer` for easy unit/integration testing without Kafka.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Add Dependency
 
@@ -227,7 +227,7 @@ Done! 🎉
 
 ---
 
-## 📊 Comparison
+## Comparison
 
 | Feature | Spring Events | Spring Cloud Stream | Curve |
 |---------|--------------|---------------------|-------|
@@ -245,7 +245,7 @@ Done! 🎉
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ### Hexagonal Architecture (Ports & Adapters)
 
@@ -326,7 +326,7 @@ curve/
 
 ---
 
-## 🎯 Use Cases
+## Use Cases
 
 ### 1. Audit Logging
 ```java
@@ -357,7 +357,7 @@ public Customer registerCustomer(CustomerRequest request) {
 
 ---
 
-## 🛡️ Security Features
+## Security Features
 
 ### Automatic PII Protection
 
@@ -392,7 +392,7 @@ curve:
 
 ---
 
-## 📈 Observability
+## Observability
 
 ### Health Check
 
@@ -441,7 +441,7 @@ curl http://localhost:8081/actuator/curve-metrics
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 ### Full Configuration Example
 
@@ -544,7 +544,7 @@ See [Configuration Guide](docs/CONFIGURATION.md) for details.
 
 ---
 
-## 🔧 Advanced Features
+## Advanced Features
 
 ### 1. Snowflake ID Generator
 
@@ -627,7 +627,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 | Document | Description |
 |----------|-------------|
@@ -642,7 +642,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -650,13 +650,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Inspired by **Spring Cloud Stream** and **Spring Kafka**
 - Built with **Spring Boot** and **Apache Kafka**
@@ -664,7 +664,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 📬 Contact
+## Contact
 
 - **Issues**: [GitHub Issues](https://github.com/closeup1202/curve/issues)
 - **Email**: closeup1202@gmail.com

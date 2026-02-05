@@ -18,7 +18,7 @@
 
 ---
 
-## 🎬 빠른 데모
+## Quick Start
 
 ```java
 // 어노테이션 하나만 추가하면 끝!
@@ -34,7 +34,7 @@ public User createUser(CreateUserRequest request) {
 
 ---
 
-## 🔥 왜 Curve인가?
+## Why Curve?
 
 <table>
 <tr>
@@ -106,7 +106,7 @@ public class UserService {
 }
 ```
 
-**코드 90% 감소** ✨
+**코드 90% 감소**
 
 모든 것이 자동으로 처리됩니다:
 - ✅ 이벤트 ID 생성
@@ -122,41 +122,41 @@ public class UserService {
 
 ---
 
-## ✨ 주요 기능
+## Key Features
 
-### 🎯 선언적 이벤트 발행
+### 선언적 이벤트 발행
 Kafka 보일러플레이트 코드 불필요 - `@PublishEvent` 어노테이션만 추가. SpEL을 통한 유연한 페이로드 추출 지원.
 
-### 📦 표준화된 이벤트 구조
+### 표준화된 이벤트 구조
 모든 이벤트가 메타데이터(source, actor, trace, tags)를 포함한 통일된 스키마 사용
 
-### 🛡️ 3단계 장애 복구
+### 3단계 장애 복구
 **Main Topic → DLQ → 로컬 파일 백업**
 Kafka가 24시간 장애여도 이벤트 손실 제로
 
-### 🔐 자동 PII 보호
+### 자동 PII 보호
 `@PiiField` 어노테이션으로 민감 데이터 자동 마스킹/암호화
 
-### ⚡ 고성능
+### 고성능
 - **동기 모드**: ~500 TPS
 - **비동기 모드**: ~10,000+ TPS (MDC 컨텍스트 전파 포함)
 - **Transactional Outbox**: 원자성 및 일관성 보장
 
-### 🏗️ Hexagonal Architecture
+### Hexagonal Architecture
 최대 유연성을 위한 프레임워크 독립적 코어
 
-### 📊 내장 관찰성
+### 내장 관찰성
 - Spring Actuator Health Indicator
 - 커스텀 메트릭 엔드포인트 (`/actuator/curve-metrics`)
 - 상세한 이벤트 추적
 - **비동기 컨텍스트 전파**: 비동기 스레드에서도 MDC(Trace ID)가 유지됩니다.
 
-### 🧪 테스트 용이성
+### 테스트 용이성
 - Kafka 없이 단위/통합 테스트를 할 수 있는 `MockEventProducer` 제공.
 
 ---
 
-## 🚀 빠른 시작
+## Quick Start
 
 ### 1. 의존성 추가
 
@@ -223,11 +223,9 @@ docker-compose up -d
 - **Health Check**: http://localhost:8081/actuator/health/curve
 - **메트릭**: http://localhost:8081/actuator/curve-metrics
 
-완료! 🎉
-
 ---
 
-## 📊 비교
+## Comparison
 
 | 기능 | Spring Events | Spring Cloud Stream | Curve |
 |---------|--------------|---------------------|-------|
@@ -245,7 +243,7 @@ docker-compose up -d
 
 ---
 
-## 🏗️ 아키텍처
+## Architecture
 
 ### Hexagonal Architecture (Ports & Adapters)
 
@@ -282,7 +280,7 @@ graph LR
 ```
 
 
-### 모듈 구조
+### Module Structure
 
 ```
 curve/
@@ -311,7 +309,7 @@ curve/
     └── health/                    # Health indicator & 메트릭
 ```
 
-### 핵심 설계 원칙
+### Core Design Principles
 
 1. **의존성 역전 원칙 (DIP)**
    - Core 모듈은 프레임워크 의존성 제로
@@ -327,7 +325,7 @@ curve/
 
 ---
 
-## 🎯 사용 사례
+## Use Cases
 
 ### 1. 감사 로깅
 ```java
@@ -358,9 +356,9 @@ public Customer registerCustomer(CustomerRequest request) {
 
 ---
 
-## 🛡️ 보안 기능
+## Security Features
 
-### 자동 PII 보호
+### Automatic PII Protection
 
 ```java
 public class UserEventPayload implements DomainEventPayload {
@@ -393,7 +391,7 @@ curve:
 
 ---
 
-## 📈 관찰성
+## Observability
 
 ### Health Check
 
@@ -414,7 +412,7 @@ curl http://localhost:8081/actuator/health/curve
 }
 ```
 
-### 커스텀 메트릭 엔드포인트
+### Custom Metrics Endpoint
 
 ```bash
 curl http://localhost:8081/actuator/curve-metrics
@@ -442,9 +440,9 @@ curl http://localhost:8081/actuator/curve-metrics
 
 ---
 
-## ⚙️ 설정
+## Configuration
 
-### 전체 설정 예시
+### Full Configuration Example
 
 ```yaml
 curve:
@@ -492,7 +490,7 @@ curve:
     type: JSON # JSON, AVRO, PROTOBUF
 ```
 
-### Avro 직렬화 (선택)
+### Avro Serialization (Optional)
 
 Avro 직렬화(`serde.type: AVRO`)를 사용하려면 다음 의존성을 추가하세요:
 
@@ -511,7 +509,7 @@ dependencies {
 
 > **참고**: JSON 직렬화는 추가 의존성 없이 바로 사용 가능합니다.
 
-### 환경별 프로파일
+### Environment-Specific Profiles
 
 **개발:**
 ```yaml
@@ -545,7 +543,7 @@ curve:
 
 ---
 
-## 🔧 고급 기능
+## Advanced Features
 
 ### 1. Snowflake ID Generator
 
@@ -581,7 +579,7 @@ public Order createOrder(OrderRequest req) {
 }
 ```
 
-### 3. 유연한 페이로드 추출 (SpEL)
+### 3. Flexible Payload Extraction (SpEL)
 
 SpEL을 사용하여 이벤트 페이로드로 사용할 데이터를 유연하게 추출합니다.
 
@@ -595,7 +593,7 @@ public User updateUser(UserUpdateRequest request) {
 }
 ```
 
-### 4. 커스텀 이벤트 Producer
+### 4. Custom Event Producer
 
 Kafka가 아닌 다른 브로커를 위해 `EventProducer` 인터페이스 구현:
 
@@ -613,7 +611,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 }
 ```
 
-### 5. DLQ 복구
+### 5. DLQ Recovery
 
 ```bash
 # 백업 파일 목록
@@ -628,7 +626,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 ---
 
-## 📚 문서
+## Documentation
 
 | 문서 | 설명 |
 |------|------|
@@ -643,7 +641,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 ---
 
-## 🤝 기여하기
+## Contributing
 
 기여를 환영합니다! Pull Request를 자유롭게 제출해주세요.
 
@@ -651,13 +649,13 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 ---
 
-## 📄 라이선스
+## License
 
 이 프로젝트는 MIT 라이선스로 배포됩니다 - 자세한 내용은 [LICENSE](LICENSE) 파일을 참고하세요.
 
 ---
 
-## 🙏 감사의 말
+## Acknowledgments
 
 - **Spring Cloud Stream**과 **Spring Kafka**에서 영감을 받았습니다
 - **Spring Boot**와 **Apache Kafka**로 구축되었습니다
@@ -665,7 +663,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 ---
 
-## 📬 연락처
+## Contact
 
 - **이슈**: [GitHub Issues](https://github.com/closeup1202/curve/issues)
 - **이메일**: closeup1202@gmail.com
