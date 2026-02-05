@@ -135,7 +135,7 @@ Kafka 보일러플레이트 코드 불필요 - `@PublishEvent` 어노테이션�
 Kafka가 24시간 장애여도 이벤트 손실 제로
 
 ### 자동 PII 보호
-`@PiiField` 어노테이션으로 민감 데이터 자동 마스킹/암호화
+`@PiiField` 어노테이션으로 민감 데이터 자동 마스킹/암호화. **AWS KMS** 및 **HashiCorp Vault** 키 관리 지원.
 
 ### 고성능
 - **동기 모드**: ~500 TPS
@@ -233,6 +233,7 @@ docker-compose up -d
 | 선언적 사용 | ✅ | △ | ✅ |
 | 표준화된 스키마 | ❌ | ❌ | ✅ |
 | PII 보호 | ❌ | ❌ | ✅ |
+| KMS 통합 | ❌ | ❌ | ✅ |
 | DLQ 지원 | ❌ | ✅ | ✅ |
 | 로컬 파일 백업 | ❌ | ❌ | ✅ |
 | Health Check | ❌ | ❌ | ✅ |
@@ -302,6 +303,10 @@ curve/
 ├── kafka/                         # Kafka 어댑터
 │   ├── producer/                  # KafkaEventProducer
 │   └── dlq/                       # FailedEventRecord
+│
+├── kms/                           # KMS 어댑터
+│   ├── provider/                  # AwsKmsProvider, VaultKeyProvider
+│   └── autoconfigure/             # KMS 자동 설정
 │
 └── spring-boot-autoconfigure/     # Spring Boot 자동 설정
     ├── CurveAutoConfiguration     # 메인 설정
@@ -379,14 +384,21 @@ public class UserEventPayload implements DomainEventPayload {
 - **ENCRYPT**: AES-256-GCM 암호화 (복원 가능)
 - **HASH**: SHA-256 해싱 (복원 불가)
 
+**KMS 지원:**
+- **AWS KMS**: Envelope 암호화 및 DEK 캐싱 지원
+- **HashiCorp Vault**: 중앙 집중식 키 관리 지원
+
 **설정:**
 ```yaml
 curve:
   pii:
     enabled: true
-    crypto:
-      default-key: ${PII_ENCRYPTION_KEY}  # 환경 변수
-      salt: ${PII_HASH_SALT}
+    kms:
+      enabled: true
+      type: aws  # 또는 vault
+      aws:
+        region: us-east-1
+        default-key-arn: arn:aws:kms:us-east-1:123456789012:key/uuid
 ```
 
 ---
@@ -476,6 +488,9 @@ curve:
     crypto:
       default-key: ${PII_ENCRYPTION_KEY}
       salt: ${PII_HASH_SALT}
+    kms:
+      enabled: false  # KMS 사용 시 true로 설정
+      type: aws
 
   outbox:
     enabled: true
@@ -630,12 +645,12 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 | 문서 | 설명 |
 |------|------|
-| [설정 가이드](docs/CONFIGURATION.ko.md) | 상세 설정 옵션 |
-| [운영 가이드](docs/OPERATIONS.ko.md) | 프로덕션 운영 및 모범 사례 |
+| [설정 가이드](docs/CONFIGURATION.md) | 상세 설정 옵션 |
+| [운영 가이드](docs/OPERATIONS.md) | 프로덕션 운영 및 모범 사례 |
 | [문제 해결](docs/TROUBLESHOOTING.md) | 일반적인 문제 및 해결 방법 |
 | [모니터링 가이드](docs/MONITORING.md) | 메트릭, 대시보드, 알림 설정 |
 | [마이그레이션 가이드](docs/MIGRATION.md) | 버전 업그레이드 지침 |
-| [변경 이력](CHANGELOG.md) | 버전 히스토리 및 변경 사항 |
+| [변경 이력](docs/CHANGELOG.md) | 버전 히스토리 및 변경 사항 |
 | [예시 설정](application.example.yml) | 설정 예시 |
 | [샘플 애플리케이션](sample/) | 완전한 작동 예시
 
@@ -645,7 +660,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 기여를 환영합니다! Pull Request를 자유롭게 제출해주세요.
 
-가이드라인은 [CONTRIBUTING.md](CONTRIBUTING.md)를 참고하세요.
+가이드라인은 [CONTRIBUTING.md](docs/community/contributing.md)를 참고하세요.
 
 ---
 
