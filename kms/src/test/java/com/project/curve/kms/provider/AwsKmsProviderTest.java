@@ -210,4 +210,51 @@ class AwsKmsProviderTest {
         // then
         verify(kmsClient, times(3)).generateDataKey(any(GenerateDataKeyRequest.class));
     }
+
+    @Test
+    @DisplayName("CachedDataKey record equals and hashCode work correctly with array content")
+    void cachedDataKey_equalsAndHashCode_workCorrectly() {
+        // given
+        byte[] key1 = {1, 2, 3};
+        byte[] key2 = {1, 2, 3}; // Same content, different reference
+        byte[] enc1 = {4, 5, 6};
+        byte[] enc2 = {4, 5, 6}; // Same content, different reference
+        long now = System.currentTimeMillis();
+
+        // when
+        AwsKmsProvider.CachedDataKey c1 = new AwsKmsProvider.CachedDataKey(key1, enc1, now);
+        AwsKmsProvider.CachedDataKey c2 = new AwsKmsProvider.CachedDataKey(key2, enc2, now);
+        AwsKmsProvider.CachedDataKey c3 = new AwsKmsProvider.CachedDataKey(key1, enc1, now + 1); // Different time
+
+        // then
+        assertThat(c1).isEqualTo(c2);
+        assertThat(c1.hashCode()).isEqualTo(c2.hashCode());
+        assertThat(c1).isNotEqualTo(c3);
+        
+        // toString check
+        assertThat(c1.toString()).contains("[PROTECTED]");
+        assertThat(c1.toString()).contains(java.util.Arrays.toString(enc1));
+    }
+
+    @Test
+    @DisplayName("CachedPlaintextKey record equals and hashCode work correctly with array content")
+    void cachedPlaintextKey_equalsAndHashCode_workCorrectly() {
+        // given
+        byte[] key1 = {1, 2, 3};
+        byte[] key2 = {1, 2, 3}; // Same content, different reference
+        long now = System.currentTimeMillis();
+
+        // when
+        AwsKmsProvider.CachedPlaintextKey c1 = new AwsKmsProvider.CachedPlaintextKey(key1, now);
+        AwsKmsProvider.CachedPlaintextKey c2 = new AwsKmsProvider.CachedPlaintextKey(key2, now);
+        AwsKmsProvider.CachedPlaintextKey c3 = new AwsKmsProvider.CachedPlaintextKey(key1, now + 1); // Different time
+
+        // then
+        assertThat(c1).isEqualTo(c2);
+        assertThat(c1.hashCode()).isEqualTo(c2.hashCode());
+        assertThat(c1).isNotEqualTo(c3);
+
+        // toString check
+        assertThat(c1.toString()).contains("[PROTECTED]");
+    }
 }
