@@ -19,7 +19,7 @@
 <a id=__codelineno-2-5 name=__codelineno-2-5 href=#__codelineno-2-5></a>
 <a id=__codelineno-2-6 name=__codelineno-2-6 href=#__codelineno-2-6></a>dependencies {
 <a id=__codelineno-2-7 name=__codelineno-2-7 href=#__codelineno-2-7></a>    implementation &#39;org.apache.avro:avro:1.11.4&#39;
-<a id=__codelineno-2-8 name=__codelineno-2-8 href=#__codelineno-2-8></a>    implementation &#39;io.confluent:kafka-avro-serializer:7.5.0&#39;
+<a id=__codelineno-2-8 name=__codelineno-2-8 href=#__codelineno-2-8></a>    implementation &#39;io.confluent:kafka-avro-serializer:8.1.1&#39;
 <a id=__codelineno-2-9 name=__codelineno-2-9 href=#__codelineno-2-9></a>}
 </code></pre></div> </div> <div class=tabbed-block> <div class=highlight><span class=filename>pom.xml</span><pre><span></span><code><a id=__codelineno-3-1 name=__codelineno-3-1 href=#__codelineno-3-1></a><span class=nt>&lt;repositories&gt;</span>
 <a id=__codelineno-3-2 name=__codelineno-3-2 href=#__codelineno-3-2></a><span class=w>    </span><span class=nt>&lt;repository&gt;</span>
@@ -54,9 +54,13 @@
 </code></pre></div> <p>Expected response:</p> <div class=highlight><pre><span></span><code><a id=__codelineno-10-1 name=__codelineno-10-1 href=#__codelineno-10-1></a><span class=p>{</span>
 <a id=__codelineno-10-2 name=__codelineno-10-2 href=#__codelineno-10-2></a><span class=w>  </span><span class=nt>&quot;status&quot;</span><span class=p>:</span><span class=w> </span><span class=s2>&quot;UP&quot;</span><span class=p>,</span>
 <a id=__codelineno-10-3 name=__codelineno-10-3 href=#__codelineno-10-3></a><span class=w>  </span><span class=nt>&quot;details&quot;</span><span class=p>:</span><span class=w> </span><span class=p>{</span>
-<a id=__codelineno-10-4 name=__codelineno-10-4 href=#__codelineno-10-4></a><span class=w>    </span><span class=nt>&quot;kafkaProducerInitialized&quot;</span><span class=p>:</span><span class=w> </span><span class=kc>true</span>
-<a id=__codelineno-10-5 name=__codelineno-10-5 href=#__codelineno-10-5></a><span class=w>  </span><span class=p>}</span>
-<a id=__codelineno-10-6 name=__codelineno-10-6 href=#__codelineno-10-6></a><span class=p>}</span>
+<a id=__codelineno-10-4 name=__codelineno-10-4 href=#__codelineno-10-4></a><span class=w>    </span><span class=nt>&quot;kafkaProducerInitialized&quot;</span><span class=p>:</span><span class=w> </span><span class=kc>true</span><span class=p>,</span>
+<a id=__codelineno-10-5 name=__codelineno-10-5 href=#__codelineno-10-5></a><span class=w>    </span><span class=nt>&quot;clusterId&quot;</span><span class=p>:</span><span class=w> </span><span class=s2>&quot;lkc-abc123&quot;</span><span class=p>,</span>
+<a id=__codelineno-10-6 name=__codelineno-10-6 href=#__codelineno-10-6></a><span class=w>    </span><span class=nt>&quot;nodeCount&quot;</span><span class=p>:</span><span class=w> </span><span class=mi>3</span><span class=p>,</span>
+<a id=__codelineno-10-7 name=__codelineno-10-7 href=#__codelineno-10-7></a><span class=w>    </span><span class=nt>&quot;topic&quot;</span><span class=p>:</span><span class=w> </span><span class=s2>&quot;event.audit.v1&quot;</span><span class=p>,</span>
+<a id=__codelineno-10-8 name=__codelineno-10-8 href=#__codelineno-10-8></a><span class=w>    </span><span class=nt>&quot;dlqTopic&quot;</span><span class=p>:</span><span class=w> </span><span class=s2>&quot;event.audit.dlq.v1&quot;</span>
+<a id=__codelineno-10-9 name=__codelineno-10-9 href=#__codelineno-10-9></a><span class=w>  </span><span class=p>}</span>
+<a id=__codelineno-10-10 name=__codelineno-10-10 href=#__codelineno-10-10></a><span class=p>}</span>
 </code></pre></div> <h2 id=troubleshooting>Troubleshooting<a class=headerlink href=#troubleshooting title="Permanent link">&para;</a></h2> <h3 id=dependency-resolution-fails>Dependency Resolution Fails<a class=headerlink href=#dependency-resolution-fails title="Permanent link">&para;</a></h3> <div class="admonition failure"> <p class=admonition-title>Error: Could not find io.github.closeup1202:curve:0.0.5</p> <p><strong>Solution</strong>: Ensure Maven Central is in your repositories:</p> <div class="tabbed-set tabbed-alternate" data-tabs=3:2><input checked=checked id=__tabbed_3_1 name=__tabbed_3 type=radio><input id=__tabbed_3_2 name=__tabbed_3 type=radio><div class=tabbed-labels><label for=__tabbed_3_1>Gradle</label><label for=__tabbed_3_2>Maven</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><pre><span></span><code><a id=__codelineno-11-1 name=__codelineno-11-1 href=#__codelineno-11-1></a>repositories {
 <a id=__codelineno-11-2 name=__codelineno-11-2 href=#__codelineno-11-2></a>    mavenCentral()
 <a id=__codelineno-11-3 name=__codelineno-11-3 href=#__codelineno-11-3></a>}
