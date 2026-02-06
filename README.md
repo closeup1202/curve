@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/closeup1202/curve/actions/workflows/ci.yml/badge.svg)](https://github.com/closeup1202/curve/actions)
 [![codecov](https://codecov.io/gh/closeup1202/curve/branch/main/graph/badge.svg)](https://codecov.io/gh/closeup1202/curve)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=curve&metric=alert_status)](https://sonarcloud.io/project/overview?id=closeup1202_curve)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=closeup1202_curve&metric=alert_status)](https://sonarcloud.io/project/overview?id=closeup1202_curve)
 
 [English](README.md) | [한국어](README.ko.md)
 
