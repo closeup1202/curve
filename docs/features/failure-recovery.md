@@ -106,7 +106,7 @@ Failed events are sent to a separate DLQ topic for analysis and reprocessing.
 #### 1. Kafka Console Consumer
 
 ```bash
-kafka-console-consumer --bootstrap-server localhost:9094 \
+kafka-console-consumer --bootstrap-server localhost:9092 \
     --topic event.audit.dlq.v1 --from-beginning
 ```
 
@@ -199,13 +199,13 @@ Curve provides a recovery script for republishing backed-up events:
 # Recover all files
 ./scripts/dlq-recovery.sh \
     --topic event.audit.v1 \
-    --broker localhost:9094
+    --broker localhost:9092
 
 # Recover specific file
 ./scripts/dlq-recovery.sh \
     --file /tmp/curve-backup/failed-events/1738587000000.json \
     --topic event.audit.v1 \
-    --broker localhost:9094
+    --broker localhost:9092
 ```
 
 ### 2. Automated Recovery (Future Feature)
@@ -231,10 +231,10 @@ curl http://localhost:8080/actuator/health/curve
   "status": "UP",
   "details": {
     "kafkaProducerInitialized": true,
-    "dlqEnabled": true,
-    "backupStrategy": "CompositeBackupStrategy(S3, Local)",
-    "s3BackupEnabled": true,
-    "localBackupEnabled": true
+    "clusterId": "lkc-abc123",
+    "nodeCount": 3,
+    "topic": "event.audit.v1",
+    "dlqTopic": "event.audit.dlq.v1"
   }
 }
 ```

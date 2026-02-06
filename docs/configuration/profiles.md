@@ -38,6 +38,12 @@ curve:
       default-key: ${PII_ENCRYPTION_KEY}  # Environment variable required
       salt: ${PII_HASH_SALT}
 
+  async:
+    enabled: true
+    core-pool-size: 4
+    max-pool-size: 20
+    queue-capacity: 1000
+
   outbox:
     enabled: true
     initialize-schema: never  # Use Flyway
@@ -74,6 +80,9 @@ curve:
   outbox:
     enabled: true
     initialize-schema: always
+
+  async:
+    enabled: true
 ```
 
 ### High-Performance Environment
@@ -98,6 +107,12 @@ curve:
 
   aop:
     enabled: true
+
+  async:
+    enabled: true
+    core-pool-size: 8
+    max-pool-size: 32
+    queue-capacity: 2000
 ```
 
 ## Environment-specific Configuration Recommendations

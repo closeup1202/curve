@@ -205,7 +205,7 @@ curve:
 
 ### curve.pii.crypto.default-key
 
-Encryption key for PII (32 characters).
+Encryption key for PII (Base64-encoded 32-byte key).
 
 - **Type**: `string`
 - **Required**: For ENCRYPT strategy
@@ -377,6 +377,196 @@ curve:
 
 ---
 
+## Async Executor Configuration
+
+### curve.async.enabled
+
+Enable dedicated async executor bean (`curveAsyncExecutor`).
+
+- **Type**: `boolean`
+- **Default**: `false`
+
+```yaml
+curve:
+  async:
+    enabled: true
+```
+
+### curve.async.core-pool-size
+
+Core thread pool size for async executor.
+
+- **Type**: `integer`
+- **Default**: `2`
+
+```yaml
+curve:
+  async:
+    core-pool-size: 4
+```
+
+### curve.async.max-pool-size
+
+Maximum thread pool size for async executor.
+
+- **Type**: `integer`
+- **Default**: `10`
+
+```yaml
+curve:
+  async:
+    max-pool-size: 20
+```
+
+### curve.async.queue-capacity
+
+Task queue capacity for async executor.
+
+- **Type**: `integer`
+- **Default**: `500`
+
+```yaml
+curve:
+  async:
+    queue-capacity: 1000
+```
+
+---
+
+## Backup Configuration
+
+### curve.kafka.backup.s3-enabled
+
+Enable S3 backup for failed events.
+
+- **Type**: `boolean`
+- **Default**: `false`
+
+```yaml
+curve:
+  kafka:
+    backup:
+      s3-enabled: true
+```
+
+### curve.kafka.backup.s3-bucket
+
+S3 bucket name for backup.
+
+- **Type**: `string`
+- **Required**: When `s3-enabled=true`
+
+```yaml
+curve:
+  kafka:
+    backup:
+      s3-bucket: "my-event-backup"
+```
+
+### curve.kafka.backup.s3-prefix
+
+S3 key prefix for backup files.
+
+- **Type**: `string`
+- **Default**: `"dlq-backup"`
+
+```yaml
+curve:
+  kafka:
+    backup:
+      s3-prefix: "dlq-backup"
+```
+
+### curve.kafka.backup.local-enabled
+
+Enable local file backup.
+
+- **Type**: `boolean`
+- **Default**: `true`
+
+```yaml
+curve:
+  kafka:
+    backup:
+      local-enabled: true
+```
+
+---
+
+## Kafka Additional Properties
+
+### curve.kafka.sync-timeout-seconds
+
+Timeout for synchronous send operations (seconds).
+
+- **Type**: `integer`
+- **Default**: `10`
+
+```yaml
+curve:
+  kafka:
+    sync-timeout-seconds: 10
+```
+
+### curve.kafka.dlq-executor-threads
+
+Number of threads for DLQ executor.
+
+- **Type**: `integer`
+- **Default**: `1`
+
+```yaml
+curve:
+  kafka:
+    dlq-executor-threads: 2
+```
+
+---
+
+## Outbox Additional Properties
+
+### curve.outbox.send-timeout-seconds
+
+Timeout for outbox event send operations (seconds).
+
+- **Type**: `integer`
+- **Default**: `10`
+
+```yaml
+curve:
+  outbox:
+    send-timeout-seconds: 10
+```
+
+### curve.outbox.publisher-enabled
+
+Enable the outbox publisher (polling and sending events).
+
+- **Type**: `boolean`
+- **Default**: `true`
+
+```yaml
+curve:
+  outbox:
+    publisher-enabled: true
+```
+
+### curve.outbox.initialize-schema
+
+Database schema initialization mode.
+
+- **Type**: `string`
+- **Values**: `embedded`, `always`, `never`
+- **Default**: `embedded`
+
+```yaml
+curve:
+  outbox:
+    initialize-schema: always
+```
+
+---
+
 ## Security Configuration
 
 ### curve.security.use-forwarded-headers
@@ -425,17 +615,25 @@ curve:
   pii:
     enabled: true
     crypto:
-      default-key: ${PII_ENCRYPTION_KEY}
+      default-key: ${PII_ENCRYPTION_KEY}  # Base64-encoded 32-byte key
       salt: ${PII_HASH_SALT}
+
+  async:
+    enabled: true
+    core-pool-size: 2
+    max-pool-size: 10
+    queue-capacity: 500
 
   outbox:
     enabled: true
     poll-interval-ms: 1000
     batch-size: 100
     max-retries: 3
+    send-timeout-seconds: 10
     cleanup-enabled: true
     retention-days: 7
     cleanup-cron: "0 0 2 * * *"
+    initialize-schema: embedded
 
   serde:
     type: JSON
@@ -452,4 +650,4 @@ curve:
 
 ## Environment-Specific Profiles
 
-See [Configuration Guide](../CONFIGURATION.en.md) for environment-specific examples.
+See [Configuration Guide](../CONFIGURATION.md) for environment-specific examples.

@@ -226,11 +226,10 @@ Transactional Outbox 패턴 사용자용:
 curl http://localhost:8081/actuator/health/curve
 ```
 
-| 상태 | kafkaProducerInitialized | 의미 | 조치 |
-|--------|-------------------------|---------|--------|
-| UP | true | 정상 | 없음 |
-| DOWN | false | KafkaTemplate 초기화 실패 | Kafka 설정 확인 |
-| DOWN | true (with error) | 런타임 문제 | 예외 상세 내용 확인 |
+| 상태 | 상세 | 의미 | 조치 |
+|--------|---------|---------|--------|
+| UP | `clusterId`, `nodeCount` 포함 | 정상, 브로커 연결됨 | 없음 |
+| DOWN | 에러 메시지 | 브로커 도달 불가 또는 연결 문제 | Kafka 설정 및 네트워크 확인 |
 
 ---
 

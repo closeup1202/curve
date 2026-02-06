@@ -75,11 +75,11 @@ curl http://localhost:8080/actuator/health/curve
 {
   "status": "UP",
   "details": {
-    "kafka": "connected",
-    "outboxPublisher": "running",
-    "circuitBreaker": "CLOSED",
-    "pendingEvents": 0,
-    "failedEventsLast5Min": 0
+    "kafkaProducerInitialized": true,
+    "clusterId": "lkc-abc123",
+    "nodeCount": 3,
+    "topic": "event.audit.v1",
+    "dlqTopic": "event.audit.dlq.v1"
   }
 }
 ```
@@ -89,11 +89,7 @@ curl http://localhost:8080/actuator/health/curve
 {
   "status": "DOWN",
   "details": {
-    "kafka": "disconnected",
-    "error": "Connection refused",
-    "circuitBreaker": "OPEN",
-    "pendingEvents": 1523,
-    "failedEventsLast5Min": 47
+    "error": "Kafka broker unreachable: Connection refused"
   }
 }
 ```

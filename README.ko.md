@@ -375,14 +375,14 @@ public class UserEventPayload implements DomainEventPayload {
     private String phone;  // AES-256-GCM 암호화
 
     @PiiField(type = PiiType.NAME, strategy = PiiStrategy.HASH)
-    private String name;   // SHA-256 해싱
+    private String name;   // HMAC-SHA256 해싱
 }
 ```
 
 **지원되는 전략:**
 - **MASK**: 패턴 기반 마스킹 (예: `j***@gm***.com`)
-- **ENCRYPT**: AES-256-GCM 암호화 (복원 가능)
-- **HASH**: SHA-256 해싱 (복원 불가)
+- **ENCRYPT**: AES-256-GCM 암호화 (복원 가능, Base64 인코딩된 32바이트 키 필요)
+- **HASH**: HMAC-SHA256 해싱 (복원 불가, salt 권장)
 
 **KMS 지원:**
 - **AWS KMS**: Envelope 암호화 및 DEK 캐싱 지원
@@ -417,7 +417,8 @@ curl http://localhost:8081/actuator/health/curve
   "status": "UP",
   "details": {
     "kafkaProducerInitialized": true,
-    "producerMetrics": 42,
+    "clusterId": "lkc-abc123",
+    "nodeCount": 3,
     "topic": "event.audit.v1",
     "dlqTopic": "event.audit.dlq.v1"
   }
@@ -464,12 +465,19 @@ curve:
     worker-id: 1  # 0-1023, 인스턴스마다 고유
     auto-generate: false
 
+  async:
+    enabled: false  # 전용 비동기 실행기 활성화
+    core-pool-size: 2
+    max-pool-size: 10
+    queue-capacity: 500
+
   kafka:
     topic: event.audit.v1
     dlq-topic: event.audit.dlq.v1
     retries: 3
     retry-backoff-ms: 1000
     request-timeout-ms: 30000
+    sync-timeout-seconds: 30
     async-mode: false  # 높은 처리량을 위해 true
     async-timeout-ms: 5000
 
@@ -486,23 +494,28 @@ curve:
   pii:
     enabled: true
     crypto:
-      default-key: ${PII_ENCRYPTION_KEY}
+      default-key: ${PII_ENCRYPTION_KEY}  # Base64 인코딩된 32바이트 AES-256 키
       salt: ${PII_HASH_SALT}
     kms:
       enabled: false  # KMS 사용 시 true로 설정
-      type: aws
+      type: aws  # aws 또는 vault
 
   outbox:
     enabled: true
+    publisher-enabled: true  # CDC 기반 발행 시 false
     poll-interval-ms: 1000
     batch-size: 100
     max-retries: 3
+    send-timeout-seconds: 10
+    dynamic-batching-enabled: true
+    circuit-breaker-enabled: true
     cleanup-enabled: true
     retention-days: 7
     cleanup-cron: "0 0 2 * * *"
 
   serde:
-    type: JSON # JSON, AVRO, PROTOBUF
+    type: JSON  # JSON, AVRO, PROTOBUF
+    # schema-registry-url: http://localhost:8081  # AVRO 사용 시 필수
 ```
 
 ### Avro Serialization (Optional)

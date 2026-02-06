@@ -18,10 +18,4 @@ jmh {
     warmupIterations = 3
     iterations = 5
     fork = 2
-
-    // 특정 벤치마크만 실행하려면 아래 주석 해제
-    // includes = ['EventEnvelopeBenchmark']
-    // includes = ['SnowflakeIdGeneratorBenchmark']
-    // includes = ['JsonSerializationBenchmark']
-    // includes = ['PiiMaskingBenchmark']
 }

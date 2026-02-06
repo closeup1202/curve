@@ -65,6 +65,11 @@ Curve는 애플리케이션 시작 시 `@Validated`를 통해 설정값을 자�
 | `curve.outbox.max-retries` | 1 이상 | "maxRetries must be 1 or greater" |
 | `curve.outbox.send-timeout-seconds` | 양수 | "sendTimeoutSeconds must be positive" |
 | `curve.outbox.retention-days` | 1 이상 | "retentionDays must be 1 or greater" |
+| `curve.async.core-pool-size` | 1 이상 | "corePoolSize must be at least 1" |
+| `curve.async.max-pool-size` | 1 이상 | "maxPoolSize must be at least 1" |
+| `curve.async.queue-capacity` | 0 이상 | "queueCapacity must be at least 0" |
+| `curve.kafka.backup.s3-bucket` | s3Enabled=true일 때 필수 | "s3Bucket is required when s3Enabled=true" |
+| `curve.serde.schema-registry-url` | type=AVRO일 때 필수 | "schemaRegistryUrl is required when serde type is AVRO" |
 
 ### 검증 실패 예시
 
@@ -329,6 +334,33 @@ curve:
 
 ---
 
+## 비동기 실행기 설정
+
+Curve는 비동기 이벤트 처리를 위한 전용 `curveAsyncExecutor` 빈을 등록할 수 있습니다.
+
+> **참고:** 이 설정은 애플리케이션에 `@EnableAsync`를 강제 적용하지 않습니다. `@EnableAsync`가 필요하면 별도의 설정에서 활성화하세요.
+
+### 비동기 실행기 활성화
+
+```yaml
+curve:
+  async:
+    enabled: true  # curveAsyncExecutor 빈 등록
+    core-pool-size: 2  # 코어 스레드 풀 크기 (기본값: 2)
+    max-pool-size: 10  # 최대 스레드 풀 크기 (기본값: 10)
+    queue-capacity: 500  # 작업 큐 용량 (기본값: 500)
+```
+
+### 비동기 실행기 비활성화 (기본값)
+
+```yaml
+curve:
+  async:
+    enabled: false
+```
+
+---
+
 ## PII 보호 설정
 
 PII(개인정보) 보호 기능을 통해 민감한 데이터를 자동으로 마스킹, 암호화, 해싱할 수 있습니다.
@@ -386,7 +418,7 @@ curve:
 |------|------|----------|------|
 | `MASK` | 패턴 기반 마스킹 | 불가능 | `홍길동` → `홍**` |
 | `ENCRYPT` | AES-256-GCM 암호화 | 가능 (키 필요) | 암호화된 Base64 문자열 |
-| `HASH` | SHA-256 해싱 | 불가능 | 해싱된 Base64 문자열 |
+| `HASH` | HMAC-SHA256 해싱 | 불가능 | 해싱된 Base64 문자열 |
 
 ### PII 타입별 마스킹 패턴
 
@@ -577,6 +609,12 @@ curve:
       default-key: ${PII_ENCRYPTION_KEY}  # 환경 변수 필수
       salt: ${PII_HASH_SALT}
 
+  async:
+    enabled: true
+    core-pool-size: 4
+    max-pool-size: 20
+    queue-capacity: 1000
+
   outbox:
     enabled: true
     initialize-schema: never  # Flyway 사용
@@ -616,6 +654,9 @@ curve:
   outbox:
     enabled: true
     initialize-schema: always
+
+  async:
+    enabled: true
 ```
 
 ### 고성능 환경
@@ -640,6 +681,12 @@ curve:
 
   aop:
     enabled: true
+
+  async:
+    enabled: true
+    core-pool-size: 8
+    max-pool-size: 32
+    queue-capacity: 2000
 ```
 
 ---

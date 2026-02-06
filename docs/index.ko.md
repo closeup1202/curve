@@ -163,7 +163,7 @@ Kafka가 24시간 장애여도 이벤트 손실 제로
 **Gradle (build.gradle)**
 ```gradle
 dependencies {
-    implementation 'io.github.closeup1202:curve:0.0.3'
+    implementation 'io.github.closeup1202:curve:0.0.5'
 }
 ```
 
@@ -172,7 +172,7 @@ dependencies {
 <dependency>
     <groupId>io.github.closeup1202</groupId>
     <artifactId>curve</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.5</version>
 </dependency>
 ```
 
@@ -358,14 +358,14 @@ public class UserEventPayload implements DomainEventPayload {
     private String phone;  // AES-256-GCM 암호화
 
     @PiiField(type = PiiType.NAME, strategy = PiiStrategy.HASH)
-    private String name;   // SHA-256 해싱
+    private String name;   // HMAC-SHA256 해싱
 }
 ```
 
 **지원되는 전략:**
 - **MASK**: 패턴 기반 마스킹 (예: `j***@gm***.com`)
-- **ENCRYPT**: AES-256-GCM 암호화 (복원 가능)
-- **HASH**: SHA-256 해싱 (복원 불가)
+- **ENCRYPT**: AES-256-GCM 암호화 (복원 가능, Base64 인코딩된 32바이트 키 필요)
+- **HASH**: HMAC-SHA256 해싱 (복원 불가, salt 권장)
 
 **설정:**
 ```yaml
@@ -393,7 +393,8 @@ curl http://localhost:8081/actuator/health/curve
   "status": "UP",
   "details": {
     "kafkaProducerInitialized": true,
-    "producerMetrics": 42,
+    "clusterId": "lkc-abc123",
+    "nodeCount": 3,
     "topic": "event.audit.v1",
     "dlqTopic": "event.audit.dlq.v1"
   }

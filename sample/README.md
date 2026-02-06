@@ -342,7 +342,7 @@ Reason: workerId must be 1023 or less
 - `curve.id-generator.worker-id`: Range 0 ~ 1023
 - `curve.kafka.topic`: Cannot be empty string
 - `curve.retry.max-attempts`: Must be 1 or greater
-- See [CONFIGURATION.md](../docs/CONFIGURATION.en.md#configuration-validation) for detailed validation rules
+- See [CONFIGURATION.md](../docs/CONFIGURATION.md#configuration-validation) for detailed validation rules
 
 ## Next Steps
 
@@ -354,5 +354,5 @@ Reason: workerId must be 1023 or less
 ## References
 
 - [Curve Main README](../README.md)
-- [Curve Configuration Guide](../docs/CONFIGURATION.en.md)
+- [Curve Configuration Guide](../docs/CONFIGURATION.md)
 - [Kafka UI](http://localhost:8080)

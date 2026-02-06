@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **PII Hashing**: Changed from raw SHA-256 to HMAC-SHA256 with salt-based keyed hashing for stronger PII protection
+- **AES Key Validation**: Encryption key must be exactly 32 bytes (Base64-encoded); keys of incorrect length are rejected at startup with `Arrays.fill` cleanup
+- **Health Check**: Replaced `KafkaTemplate.metrics().size()` with `AdminClient.describeCluster()` for real broker connectivity verification (returns `clusterId` and `nodeCount`)
+- **MDC Context**: Changed from `MDC.clear()` to restoring previous MDC context to prevent context leakage in shared thread pools
+
+### Changed
+- **Thread Safety**: `KafkaEventProducer.initialized` changed from `boolean` to `AtomicBoolean` for thread-safe initialization tracking
+- **Conditional Async Executor**: Removed unconditional `@EnableAsync`; async executor bean is now conditional on `curve.async.enabled=true`
+- **Cross-Validation**: Added `@AssertTrue` validators for S3 backup (`s3-bucket` required when `s3-enabled=true`) and AVRO serde (`schema-registry-url` required when `type=AVRO`)
+- **Documentation**: Comprehensive documentation update across all files to reflect current implementation
+
 ---
 
 ## [0.0.5] - 2026-02-05
@@ -118,7 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic PII protection with `@PiiField` annotation
     - MASK strategy for pattern-based masking
     - ENCRYPT strategy using AES-256-GCM
-    - HASH strategy using SHA-256 (irreversible)
+    - HASH strategy using SHA-256 (later upgraded to HMAC-SHA256 in Unreleased)
 
 #### Event Infrastructure
 - Snowflake ID generator for distributed unique IDs (1024 workers, 4096 IDs/ms/worker)

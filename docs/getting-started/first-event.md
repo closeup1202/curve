@@ -101,7 +101,7 @@ public class UserService {
     @PublishEvent(
         eventType = "USER_REGISTERED",
         severity = EventSeverity.INFO,
-        payload = "new io.example.UserRegisteredPayload(#result)"
+        payload = "#result.toEventPayload()"
     )
     public User registerUser(UserRequest request) {
         // Business logic
@@ -156,7 +156,7 @@ curve:
   pii:
     enabled: true
     crypto:
-      default-key: ${PII_ENCRYPTION_KEY:your-32-char-secret-key-here}
+      default-key: ${PII_ENCRYPTION_KEY}  # Base64-encoded 32-byte key
 ```
 
 ## Step 5: Test Your Event

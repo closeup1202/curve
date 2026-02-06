@@ -10,6 +10,7 @@ import com.project.curve.core.envelope.EventTrace;
 import com.project.curve.core.payload.DomainEventPayload;
 import com.project.curve.core.type.EventSeverity;
 import com.project.curve.core.type.EventType;
+import lombok.Getter;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -225,6 +226,7 @@ public class EventEnvelopeBenchmark {
     /**
      * Test payload implementation with realistic data.
      */
+    @Getter
     static class TestPayload implements DomainEventPayload {
         private final String orderId;
         private final String productName;
@@ -241,18 +243,6 @@ public class EventEnvelopeBenchmark {
         @Override
         public EventType getEventType() {
             return eventType;
-        }
-
-        public String getOrderId() {
-            return orderId;
-        }
-
-        public String getProductName() {
-            return productName;
-        }
-
-        public int getQuantity() {
-            return quantity;
         }
     }
 }

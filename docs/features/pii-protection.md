@@ -35,7 +35,7 @@ flowchart LR
     Obj[Java Object] -->|Jackson Serialize| PII[PII Processor]
     PII -->|Strategy: MASK| Masked["j***@doe.com"]
     PII -->|Strategy: ENCRYPT| Encrypted["ENC(a8f9...)"]
-    PII -->|Strategy: HASH| Hashed["sha256(...)"]
+    PII -->|Strategy: HASH| Hashed["hmac-sha256(...)"]
     Masked --> Json[JSON Output]
     Encrypted --> Json
     Hashed --> Json
@@ -109,7 +109,7 @@ curve:
   pii:
     enabled: true
     crypto:
-      default-key: ${PII_ENCRYPTION_KEY}  # 32-character key
+      default-key: ${PII_ENCRYPTION_KEY}  # Base64-encoded 32-byte key
 ```
 
 !!! warning "Key Management"
@@ -119,7 +119,7 @@ curve:
 
 ### 3. HASH - Irreversible Hashing
 
-SHA-256 hashing for one-way protection.
+HMAC-SHA256 hashing for one-way protection with salt-based keyed hashing.
 
 ```java
 @PiiField(type = PiiType.NAME, strategy = PiiStrategy.HASH)
@@ -175,7 +175,7 @@ curve:
     enabled: true  # Default: true
 
     crypto:
-      # AES-256 encryption key (32 characters)
+      # AES-256 encryption key (Base64-encoded 32-byte key)
       default-key: ${PII_ENCRYPTION_KEY}
 
       # Salt for hashing (recommended)
@@ -185,9 +185,64 @@ curve:
 ### Environment Variables
 
 ```bash title=".env"
-PII_ENCRYPTION_KEY=your-32-character-secret-key!!
+PII_ENCRYPTION_KEY=K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=  # Base64-encoded 32-byte key
 PII_HASH_SALT=random-salt-for-hashing-123
 ```
+
+---
+
+## KMS Integration
+
+Curve supports external Key Management Services for enterprise-grade encryption key management.
+
+### AWS KMS (Envelope Encryption)
+
+```yaml title="application.yml"
+curve:
+  pii:
+    enabled: true
+    kms:
+      enabled: true
+      type: aws
+
+# KMS module configuration
+curve-kms:
+  aws:
+    key-id: "arn:aws:kms:us-east-1:123456789:key/abc-123"
+    region: us-east-1
+    cache-ttl-minutes: 60
+    cache-max-size: 100
+```
+
+**How it works:**
+
+1. AWS KMS generates a Data Encryption Key (DEK)
+2. DEK encrypts the PII data locally (AES-256-GCM)
+3. Encrypted DEK is stored alongside the ciphertext
+4. Decryption requests KMS to decrypt the DEK first
+
+### HashiCorp Vault (Static Key)
+
+```yaml title="application.yml"
+curve:
+  pii:
+    enabled: true
+    kms:
+      enabled: true
+      type: vault
+
+# KMS module configuration
+curve-kms:
+  vault:
+    path: "secret/data/curve/encryption-key"
+    key-field: "key"
+```
+
+**How it works:**
+
+1. Curve fetches the encryption key from Vault K/V secret engine
+2. Key is used for local AES-256-GCM encryption
+3. Key rotation is handled by updating the Vault secret
 
 ---
 
@@ -254,7 +309,7 @@ public class UserPayload {
 - Store encryption keys in source code
 - Use HASH when you need to decrypt later
 - Over-mask data (e.g., masking non-sensitive fields)
-- Use weak keys (less than 32 characters)
+- Use weak keys (must be exactly 32 bytes, Base64-encoded)
 
 ---
 

@@ -60,7 +60,7 @@ curve:
     async-timeout-ms: 5000
 ```
 
-See [Configuration Guide](../CONFIGURATION.en.md) for details.
+See [Configuration Guide](../CONFIGURATION.md) for details.
 
 ### How do I configure multiple Kafka topics?
 

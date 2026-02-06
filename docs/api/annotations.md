@@ -124,7 +124,7 @@ io.github.closeup1202.curve.spring.pii.annotation.PiiField
 
 - `MASK` - Pattern-based masking
 - `ENCRYPT` - AES-256-GCM encryption
-- `HASH` - SHA-256 hashing
+- `HASH` - HMAC-SHA256 hashing
 
 ### Example
 

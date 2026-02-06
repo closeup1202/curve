@@ -315,11 +315,11 @@ Reason: workerId must be 1023 or less
 
 - `curve.id-generator.worker-id`: 0 ~ 1023
 - `curve.kafka.topic`: Cannot be empty
-- Details: [CONFIGURATION.md](../docs/CONFIGURATION.en.md#configuration-validation)
+- Details: [CONFIGURATION.md](../docs/CONFIGURATION.md#configuration-validation)
 
 ## 11. Learn More
 
 - [Full README](README.md)
 - [Curve Main Documentation](../README.md)
-- [Curve Configuration Guide](../docs/CONFIGURATION.en.md)
+- [Curve Configuration Guide](../docs/CONFIGURATION.md)
 - [Kafka UI](http://localhost:8080)

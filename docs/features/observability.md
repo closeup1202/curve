@@ -25,11 +25,10 @@ curl http://localhost:8080/actuator/health/curve
   "status": "UP",
   "details": {
     "kafkaProducerInitialized": true,
-    "producerMetrics": 42,
+    "clusterId": "lkc-abc123",
+    "nodeCount": 3,
     "topic": "event.audit.v1",
-    "dlqTopic": "event.audit.dlq.v1",
-    "outboxEnabled": true,
-    "backupEnabled": true
+    "dlqTopic": "event.audit.dlq.v1"
   }
 }
 ```

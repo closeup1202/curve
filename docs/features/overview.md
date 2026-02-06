@@ -89,7 +89,7 @@ public class UserPayload implements DomainEventPayload {
     private String phone;  // → Encrypted with AES-256-GCM
 
     @PiiField(type = PiiType.NAME, strategy = PiiStrategy.HASH)
-    private String name;   // → SHA-256 hashed
+    private String name;   // → HMAC-SHA256 hashed
 }
 ```
 
@@ -157,8 +157,10 @@ curl http://localhost:8080/actuator/health/curve
   "status": "UP",
   "details": {
     "kafkaProducerInitialized": true,
-    "producerMetrics": 42,
-    "topic": "event.audit.v1"
+    "clusterId": "lkc-abc123",
+    "nodeCount": 3,
+    "topic": "event.audit.v1",
+    "dlqTopic": "event.audit.dlq.v1"
   }
 }
 ```

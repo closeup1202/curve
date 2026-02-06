@@ -44,6 +44,11 @@ Curve automatically validates configuration values at application startup using 
 | `curve.outbox.max-retries` | 1 or greater | "maxRetries must be 1 or greater" |
 | `curve.outbox.send-timeout-seconds` | Positive number | "sendTimeoutSeconds must be positive" |
 | `curve.outbox.retention-days` | 1 or greater | "retentionDays must be 1 or greater" |
+| `curve.async.core-pool-size` | 1 or greater | "corePoolSize must be at least 1" |
+| `curve.async.max-pool-size` | 1 or greater | "maxPoolSize must be at least 1" |
+| `curve.async.queue-capacity` | 0 or greater | "queueCapacity must be at least 0" |
+| `curve.kafka.backup.s3-bucket` | Required when s3Enabled=true | "s3Bucket is required when s3Enabled=true" |
+| `curve.serde.schema-registry-url` | Required when type=AVRO | "schemaRegistryUrl is required when serde type is AVRO" |
 
 ## Worker ID Configuration
 
@@ -165,5 +170,5 @@ By default, Curve outputs minimal logs. To see detailed configuration informatio
 ```yaml
 logging:
   level:
-    com.project.curve: DEBUG
+    io.github.closeup1202.curve: DEBUG
 ```

@@ -48,8 +48,9 @@ Example: 1.2.3
 
 | Curve Version | Spring Boot | Java | Kafka Client |
 |---------------|-------------|------|--------------|
-| 0.0.1 | 3.2.x - 3.5.x | 17, 21 | 3.0+ |
-| 0.1.x (planned) | 3.2.x - 3.6.x | 17, 21 | 3.0+ |
+| 0.0.5 | 3.5.x | 17, 21 | 3.8+ |
+| 0.0.1 - 0.0.4 | 3.4.x - 3.5.x | 17, 21 | 3.0+ |
+| 0.1.x (planned) | 3.5.x - 3.6.x | 17, 21 | 3.0+ |
 
 ### Dependency Compatibility
 
@@ -128,6 +129,21 @@ curve:
 
 All configurations introduced. See [CONFIGURATION.md](CONFIGURATION.md).
 
+#### Version 0.0.5
+
+- Added `curve.async.*` properties (enabled, core-pool-size, max-pool-size, queue-capacity)
+- Added `curve.kafka.backup.s3-*` properties for S3 backup
+- Added `curve.kafka.sync-timeout-seconds`
+- Added `curve.outbox.send-timeout-seconds`
+- Added KMS properties (`curve.pii.kms.*`)
+
+#### Unreleased (Security Improvements)
+
+- **PII HASH strategy**: Changed from SHA-256 to HMAC-SHA256. Existing hashed values will differ after upgrade.
+- **AES encryption key**: Must be exactly 32 bytes (Base64-encoded). Keys of incorrect length are now rejected.
+- **Health check**: Now uses `AdminClient.describeCluster()` instead of `KafkaTemplate.metrics()`. Health response format changed (`clusterId` and `nodeCount` instead of `producerMetrics`).
+- **Async executor**: `@EnableAsync` is no longer automatically applied. Set `curve.async.enabled=true` to register the `curveAsyncExecutor` bean.
+
 #### Version 0.1.x (Planned)
 
 | Old Property | New Property | Notes |
@@ -171,7 +187,7 @@ Breaking changes will be documented here with:
 1. **Revert dependency version**
    ```gradle
    // build.gradle
-   implementation 'com.project:curve-spring-boot-autoconfigure:0.0.1'  // Previous version
+   implementation 'io.github.closeup1202:curve:0.0.1'  // Previous version
    ```
 
 2. **Revert configuration changes** (if any)
@@ -224,7 +240,7 @@ plugins {
 }
 
 dependencies {
-    implementation 'com.project:curve-spring-boot-autoconfigure:0.0.1'  // Step 2
+    implementation 'io.github.closeup1202:curve:0.0.1'  // Step 2
 }
 ```
 

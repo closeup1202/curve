@@ -287,17 +287,19 @@ PiiEncryptionException: Encryption key not configured
 
 **Solution:**
 ```bash
-# Set environment variable
-export CURVE_PII_ENCRYPTION_KEY="your-32-byte-base64-encoded-key"
+# Set environment variable (Base64-encoded 32-byte key)
+export CURVE_PII_ENCRYPTION_KEY=$(openssl rand -base64 32)
 ```
 
 Generate a key:
 ```java
 SecureRandom random = new SecureRandom();
-byte[] key = new byte[32];
+byte[] key = new byte[32];  // Must be exactly 32 bytes for AES-256
 random.nextBytes(key);
 String base64Key = Base64.getEncoder().encodeToString(key);
 ```
+
+**Note:** The key must be exactly 32 bytes (Base64-encoded). Keys of incorrect length will be rejected at startup.
 
 ### Decryption Failure
 
@@ -496,7 +498,7 @@ If you can't resolve your issue:
    ```yaml
    logging:
      level:
-       com.project.curve: DEBUG
+       io.github.closeup1202.curve: DEBUG
    ```
 
 2. **Gather diagnostics:**

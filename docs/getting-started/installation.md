@@ -61,7 +61,7 @@ If you want to use Avro serialization (`serde.type: AVRO`), add:
 
     dependencies {
         implementation 'org.apache.avro:avro:1.11.4'
-        implementation 'io.confluent:kafka-avro-serializer:7.5.0'
+        implementation 'io.confluent:kafka-avro-serializer:8.1.1'
     }
     ```
 
@@ -157,7 +157,11 @@ Expected response:
 {
   "status": "UP",
   "details": {
-    "kafkaProducerInitialized": true
+    "kafkaProducerInitialized": true,
+    "clusterId": "lkc-abc123",
+    "nodeCount": 3,
+    "topic": "event.audit.v1",
+    "dlqTopic": "event.audit.dlq.v1"
   }
 }
 ```

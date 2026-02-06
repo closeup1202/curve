@@ -376,14 +376,14 @@ public class UserEventPayload implements DomainEventPayload {
     private String phone;  // Encrypted with AES-256-GCM
 
     @PiiField(type = PiiType.NAME, strategy = PiiStrategy.HASH)
-    private String name;   // SHA-256 hashed
+    private String name;   // HMAC-SHA256 hashed
 }
 ```
 
 **Supported Strategies:**
 - **MASK**: Pattern-based masking (e.g., `j***@gm***.com`)
-- **ENCRYPT**: AES-256-GCM encryption (reversible)
-- **HASH**: SHA-256 hashing (irreversible)
+- **ENCRYPT**: AES-256-GCM encryption (reversible, Base64-encoded 32-byte key required)
+- **HASH**: HMAC-SHA256 hashing (irreversible, salt recommended)
 
 **KMS Support:**
 - **AWS KMS**: Envelope encryption with DEK caching
@@ -418,7 +418,8 @@ curl http://localhost:8081/actuator/health/curve
   "status": "UP",
   "details": {
     "kafkaProducerInitialized": true,
-    "producerMetrics": 42,
+    "clusterId": "lkc-abc123",
+    "nodeCount": 3,
     "topic": "event.audit.v1",
     "dlqTopic": "event.audit.dlq.v1"
   }
@@ -465,12 +466,19 @@ curve:
     worker-id: 1  # 0-1023, unique per instance
     auto-generate: false
 
+  async:
+    enabled: false  # Enable dedicated async executor
+    core-pool-size: 2
+    max-pool-size: 10
+    queue-capacity: 500
+
   kafka:
     topic: event.audit.v1
     dlq-topic: event.audit.dlq.v1
     retries: 3
     retry-backoff-ms: 1000
     request-timeout-ms: 30000
+    sync-timeout-seconds: 30
     async-mode: false  # true for high throughput
     async-timeout-ms: 5000
 
@@ -487,23 +495,28 @@ curve:
   pii:
     enabled: true
     crypto:
-      default-key: ${PII_ENCRYPTION_KEY}
+      default-key: ${PII_ENCRYPTION_KEY}  # Base64-encoded 32-byte AES-256 key
       salt: ${PII_HASH_SALT}
     kms:
       enabled: false  # Set to true to use KMS
-      type: aws
-      
+      type: aws  # aws or vault
+
   outbox:
     enabled: true
+    publisher-enabled: true  # false for CDC-based publishing
     poll-interval-ms: 1000
     batch-size: 100
     max-retries: 3
+    send-timeout-seconds: 10
+    dynamic-batching-enabled: true
+    circuit-breaker-enabled: true
     cleanup-enabled: true
     retention-days: 7
     cleanup-cron: "0 0 2 * * *"
-    
+
   serde:
-    type: JSON # JSON, AVRO, PROTOBUF
+    type: JSON  # JSON, AVRO, PROTOBUF
+    # schema-registry-url: http://localhost:8081  # Required when type is AVRO
 ```
 
 ### Avro Serialization (Optional)

@@ -65,6 +65,11 @@ If invalid configuration values are entered, the application will fail to start 
 | `curve.outbox.max-retries` | 1 or greater | "maxRetries must be 1 or greater" |
 | `curve.outbox.send-timeout-seconds` | Positive number | "sendTimeoutSeconds must be positive" |
 | `curve.outbox.retention-days` | 1 or greater | "retentionDays must be 1 or greater" |
+| `curve.async.core-pool-size` | 1 or greater | "corePoolSize must be at least 1" |
+| `curve.async.max-pool-size` | 1 or greater | "maxPoolSize must be at least 1" |
+| `curve.async.queue-capacity` | 0 or greater | "queueCapacity must be at least 0" |
+| `curve.kafka.backup.s3-bucket` | Required when s3Enabled=true | "s3Bucket is required when s3Enabled=true" |
+| `curve.serde.schema-registry-url` | Required when type=AVRO | "schemaRegistryUrl is required when serde type is AVRO" |
 
 ### Validation Error Example
 
@@ -329,6 +334,33 @@ curve:
 
 ---
 
+## Async Executor Configuration
+
+Curve can register a dedicated `curveAsyncExecutor` bean for async event processing.
+
+> **Note:** This does NOT force `@EnableAsync` on the application. If you need `@EnableAsync`, enable it in your own configuration.
+
+### Enable Async Executor
+
+```yaml
+curve:
+  async:
+    enabled: true  # Register curveAsyncExecutor bean
+    core-pool-size: 2  # Core thread pool size (default: 2)
+    max-pool-size: 10  # Maximum thread pool size (default: 10)
+    queue-capacity: 500  # Task queue capacity (default: 500)
+```
+
+### Disable Async Executor (Default)
+
+```yaml
+curve:
+  async:
+    enabled: false
+```
+
+---
+
 ## PII Protection Configuration
 
 Through PII (Personally Identifiable Information) protection features, sensitive data can be automatically masked, encrypted, or hashed.
@@ -386,7 +418,7 @@ curve:
 |------|------|----------|------|
 | `MASK` | Pattern-based masking | Not possible | `John Doe` → `John **` |
 | `ENCRYPT` | AES-256-GCM encryption | Possible (key required) | Encrypted Base64 string |
-| `HASH` | SHA-256 hashing | Not possible | Hashed Base64 string |
+| `HASH` | HMAC-SHA256 hashing | Not possible | Hashed Base64 string |
 
 ### Masking Patterns by PII Type
 
@@ -577,6 +609,12 @@ curve:
       default-key: ${PII_ENCRYPTION_KEY}  # Environment variable required
       salt: ${PII_HASH_SALT}
 
+  async:
+    enabled: true
+    core-pool-size: 4
+    max-pool-size: 20
+    queue-capacity: 1000
+
   outbox:
     enabled: true
     initialize-schema: never  # Use Flyway
@@ -616,6 +654,9 @@ curve:
   outbox:
     enabled: true
     initialize-schema: always
+
+  async:
+    enabled: true
 ```
 
 ### High-Performance Environment
@@ -640,6 +681,12 @@ curve:
 
   aop:
     enabled: true
+
+  async:
+    enabled: true
+    core-pool-size: 8
+    max-pool-size: 32
+    queue-capacity: 2000
 ```
 
 ---
