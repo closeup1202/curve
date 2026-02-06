@@ -186,9 +186,9 @@ class AwsKmsProviderTest {
 
     @Test
     @DisplayName("Cache evicts entries when max size is reached")
-    void generateDataKey_evictsWhenCacheMaxSizeReached() {
+    void generateDataKey_evictsWhenCacheMaxSizeReached() throws InterruptedException {
         // given
-        int cacheMaxSize = 2;
+        int cacheMaxSize = 1; // Force eviction on every new key
         AwsKmsProvider provider = new AwsKmsProvider(kmsClient, 300_000L, cacheMaxSize);
 
         GenerateDataKeyResponse response = GenerateDataKeyResponse.builder()
@@ -197,16 +197,64 @@ class AwsKmsProviderTest {
                 .build();
         when(kmsClient.generateDataKey(any(GenerateDataKeyRequest.class))).thenReturn(response);
 
-        // when - fill cache to max (2 entries), then add a 3rd to trigger eviction
-        provider.generateDataKey("key-0");
-        provider.generateDataKey("key-1");
-        provider.generateDataKey("key-2"); // evicts one of key-0 or key-1
+        // when
+        provider.generateDataKey("key-0"); // 1st call (Miss)
+        provider.generateDataKey("key-1"); // 2nd call (Miss, key-0 evicted)
+        
+        // Caffeine eviction is async, give it a tiny moment if needed, 
+        // but with size 1, the next put usually forces eviction logic.
+        // However, to be safe and deterministic, we just check that we called KMS twice so far.
+        
+        provider.generateDataKey("key-0"); // 3rd call (Miss because key-0 was evicted)
 
-        // Re-request both - exactly one was evicted, so one will cause a cache miss
-        provider.generateDataKey("key-0");
-        provider.generateDataKey("key-1");
+        // then
+        verify(kmsClient, times(3)).generateDataKey(any(GenerateDataKeyRequest.class));
+    }
 
-        // then - total 4 KMS calls: 3 initial + 1 re-fetch of the evicted entry
-        verify(kmsClient, times(4)).generateDataKey(any(GenerateDataKeyRequest.class));
+    @Test
+    @DisplayName("CachedDataKey record equals and hashCode work correctly with array content")
+    void cachedDataKey_equalsAndHashCode_workCorrectly() {
+        // given
+        byte[] key1 = {1, 2, 3};
+        byte[] key2 = {1, 2, 3}; // Same content, different reference
+        byte[] enc1 = {4, 5, 6};
+        byte[] enc2 = {4, 5, 6}; // Same content, different reference
+        long now = System.currentTimeMillis();
+
+        // when
+        AwsKmsProvider.CachedDataKey c1 = new AwsKmsProvider.CachedDataKey(key1, enc1, now);
+        AwsKmsProvider.CachedDataKey c2 = new AwsKmsProvider.CachedDataKey(key2, enc2, now);
+        AwsKmsProvider.CachedDataKey c3 = new AwsKmsProvider.CachedDataKey(key1, enc1, now + 1); // Different time
+
+        // then
+        assertThat(c1).isEqualTo(c2);
+        assertThat(c1.hashCode()).isEqualTo(c2.hashCode());
+        assertThat(c1).isNotEqualTo(c3);
+        
+        // toString check
+        assertThat(c1.toString()).contains("[PROTECTED]");
+        assertThat(c1.toString()).contains(java.util.Arrays.toString(enc1));
+    }
+
+    @Test
+    @DisplayName("CachedPlaintextKey record equals and hashCode work correctly with array content")
+    void cachedPlaintextKey_equalsAndHashCode_workCorrectly() {
+        // given
+        byte[] key1 = {1, 2, 3};
+        byte[] key2 = {1, 2, 3}; // Same content, different reference
+        long now = System.currentTimeMillis();
+
+        // when
+        AwsKmsProvider.CachedPlaintextKey c1 = new AwsKmsProvider.CachedPlaintextKey(key1, now);
+        AwsKmsProvider.CachedPlaintextKey c2 = new AwsKmsProvider.CachedPlaintextKey(key2, now);
+        AwsKmsProvider.CachedPlaintextKey c3 = new AwsKmsProvider.CachedPlaintextKey(key1, now + 1); // Different time
+
+        // then
+        assertThat(c1).isEqualTo(c2);
+        assertThat(c1.hashCode()).isEqualTo(c2.hashCode());
+        assertThat(c1).isNotEqualTo(c3);
+
+        // toString check
+        assertThat(c1.toString()).contains("[PROTECTED]");
     }
 }

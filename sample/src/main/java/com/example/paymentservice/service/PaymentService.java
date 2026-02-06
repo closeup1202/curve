@@ -6,6 +6,7 @@ import com.example.paymentservice.event.PaymentFailurePayload;
 import com.example.paymentservice.event.PaymentSuccessPayload;
 import com.project.curve.core.type.EventSeverity;
 import com.project.curve.spring.audit.annotation.PublishEvent;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -264,6 +265,7 @@ public class PaymentService {
     /**
      * Custom exception for payment gateway errors.
      */
+    @Getter
     public static class PaymentGatewayException extends RuntimeException {
         private final String errorCode;
 
@@ -272,8 +274,5 @@ public class PaymentService {
             this.errorCode = errorCode;
         }
 
-        public String getErrorCode() {
-            return errorCode;
-        }
     }
 }

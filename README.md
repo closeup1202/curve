@@ -135,7 +135,7 @@ All events follow a unified schema with metadata (source, actor, trace, tags).
 Zero event loss even when Kafka is down for 24 hours.
 
 ### Automatic PII Protection
-`@PiiField` annotation automatically masks/encrypts sensitive data.
+`@PiiField` annotation automatically masks/encrypts sensitive data. Supports **AWS KMS** and **HashiCorp Vault** for key management.
 
 ### High Performance
 - **Sync mode**: ~500 TPS
@@ -235,6 +235,7 @@ Done! 🎉
 | Declarative Usage | ✅ | △ | ✅ |
 | Standardized Schema | ❌ | ❌ | ✅ |
 | PII Protection | ❌ | ❌ | ✅ |
+| KMS Integration | ❌ | ❌ | ✅ |
 | DLQ Support | ❌ | ✅ | ✅ |
 | Local File Backup | ❌ | ❌ | ✅ |
 | Health Check | ❌ | ❌ | ✅ |
@@ -303,6 +304,10 @@ curve/
 ├── kafka/                         # Kafka adapter
 │   ├── producer/                  # KafkaEventProducer
 │   └── dlq/                       # FailedEventRecord
+│
+├── kms/                           # KMS adapter
+│   ├── provider/                  # AwsKmsProvider, VaultKeyProvider
+│   └── autoconfigure/             # KMS auto-configuration
 │
 └── spring-boot-autoconfigure/     # Spring Boot auto-configuration
     ├── CurveAutoConfiguration     # Main configuration
@@ -380,14 +385,21 @@ public class UserEventPayload implements DomainEventPayload {
 - **ENCRYPT**: AES-256-GCM encryption (reversible)
 - **HASH**: SHA-256 hashing (irreversible)
 
+**KMS Support:**
+- **AWS KMS**: Envelope encryption with DEK caching
+- **HashiCorp Vault**: Centralized key management
+
 **Configuration:**
 ```yaml
 curve:
   pii:
     enabled: true
-    crypto:
-      default-key: ${PII_ENCRYPTION_KEY}  # Environment variable
-      salt: ${PII_HASH_SALT}
+    kms:
+      enabled: true
+      type: aws  # or vault
+      aws:
+        region: us-east-1
+        default-key-arn: arn:aws:kms:us-east-1:123456789012:key/uuid
 ```
 
 ---
@@ -477,6 +489,9 @@ curve:
     crypto:
       default-key: ${PII_ENCRYPTION_KEY}
       salt: ${PII_HASH_SALT}
+    kms:
+      enabled: false  # Set to true to use KMS
+      type: aws
       
   outbox:
     enabled: true
@@ -631,8 +646,8 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 | Document | Description |
 |----------|-------------|
-| [Configuration Guide](docs/CONFIGURATION.en.md) | Detailed configuration options |
-| [Operations Guide](docs/OPERATIONS.en.md) | Production operations and best practices |
+| [Configuration Guide](docs/CONFIGURATION.md) | Detailed configuration options |
+| [Operations Guide](docs/OPERATIONS.md) | Production operations and best practices |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues and solutions |
 | [Monitoring Guide](docs/MONITORING.md) | Metrics, dashboards, and alerting |
 | [Migration Guide](docs/MIGRATION.md) | Version upgrade instructions |
@@ -646,7 +661,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](docs/community/contributing.md) for guidelines.
 
 ---
 
