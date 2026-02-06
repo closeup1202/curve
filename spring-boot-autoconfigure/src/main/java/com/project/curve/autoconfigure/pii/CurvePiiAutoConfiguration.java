@@ -18,6 +18,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 
 import java.util.List;
 
@@ -36,13 +37,17 @@ public class CurvePiiAutoConfiguration {
     @ConditionalOnMissingBean
     public PiiCryptoProvider piiCryptoProvider(
             CurveProperties properties,
-            ObjectProvider<KeyProvider> keyProvider
+            ObjectProvider<KeyProvider> keyProvider,
+            Environment environment
     ) {
         CurveProperties.Pii.Crypto crypto = properties.getPii().getCrypto();
         String salt = resolveSalt(crypto.getSalt());
 
+        // Check if KMS is enabled via property
+        boolean kmsEnabled = environment.getProperty("curve.pii.kms.enabled", Boolean.class, false);
+
         // Check if KMS is enabled and KeyProvider bean is available
-        if (properties.getPii().getKms().isEnabled() && keyProvider.getIfAvailable() != null) {
+        if (kmsEnabled && keyProvider.getIfAvailable() != null) {
             log.info("KMS mode enabled for PII encryption.");
             return new KmsPiiCryptoProvider(keyProvider.getIfAvailable(), salt);
         }
