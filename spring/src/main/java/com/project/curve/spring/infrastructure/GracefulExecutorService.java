@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Wrapper class that supports graceful shutdown of ExecutorService.
@@ -29,7 +30,7 @@ public class GracefulExecutorService implements ExecutorService {
     @Getter
     private final long terminationTimeoutSeconds;
 
-    private volatile boolean isShutdown = false;
+    private final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
     /**
      * Creates a GracefulExecutorService.
@@ -60,12 +61,11 @@ public class GracefulExecutorService implements ExecutorService {
     @Override
     @PreDestroy
     public void shutdown() {
-        if (isShutdown) {
+        if (!isShutdown.compareAndSet(false, true)) {
             log.debug("ExecutorService already shutdown");
             return;
         }
 
-        isShutdown = true;
         log.info("Initiating graceful shutdown of ExecutorService (timeout: {}s)", terminationTimeoutSeconds);
 
         // 1. Stop accepting new tasks
@@ -104,7 +104,7 @@ public class GracefulExecutorService implements ExecutorService {
 
     @Override
     public List<Runnable> shutdownNow() {
-        isShutdown = true;
+        isShutdown.set(true);
         log.warn("Forcing immediate shutdown of ExecutorService");
         return delegate.shutdownNow();
     }

@@ -165,8 +165,7 @@ public class PublishEventAspect {
     private Object extractPayloadUsingSpel(JoinPoint joinPoint, String expression, Object returnValue) {
         try {
             SimpleEvaluationContext.Builder contextBuilder = SimpleEvaluationContext
-                    .forReadOnlyDataBinding()
-                    .withInstanceMethods();
+                    .forReadOnlyDataBinding();
 
             MethodSignature signature = (MethodSignature) joinPoint.getSignature();
             String[] parameterNames = signature.getParameterNames();

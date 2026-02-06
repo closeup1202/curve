@@ -14,12 +14,12 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.task.TaskDecorator;
-import org.springframework.scheduling.annotation.AsyncConfigurer;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
@@ -32,7 +32,6 @@ import java.util.concurrent.Executor;
         havingValue = "true",
         matchIfMissing = true
 )
-@EnableAsync
 @Import({
         CurveJacksonAutoConfiguration.class,
         CurveRetryAutoConfiguration.class,
@@ -45,7 +44,7 @@ import java.util.concurrent.Executor;
         CurveEventSerializerAutoConfiguration.class,
         CurveMetricsAutoConfiguration.class
 })
-public class CurveAutoConfiguration implements AsyncConfigurer {
+public class CurveAutoConfiguration {
 
     @Autowired(required = false)
     private TaskDecorator taskDecorator;
@@ -55,13 +54,18 @@ public class CurveAutoConfiguration implements AsyncConfigurer {
         log.info("Curve auto-configuration enabled (disable with curve.enabled=false)");
     }
 
-    @Override
-    public Executor getAsyncExecutor() {
+    @Bean(name = "curveAsyncExecutor")
+    @ConditionalOnMissingBean(name = "curveAsyncExecutor")
+    @ConditionalOnProperty(name = "curve.async.enabled", havingValue = "true")
+    public Executor curveAsyncExecutor(CurveProperties properties) {
+        CurveProperties.Async asyncProps = properties.getAsync();
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(10);
-        executor.setQueueCapacity(500);
+        executor.setCorePoolSize(asyncProps.getCorePoolSize());
+        executor.setMaxPoolSize(asyncProps.getMaxPoolSize());
+        executor.setQueueCapacity(asyncProps.getQueueCapacity());
         executor.setThreadNamePrefix("CurveAsync-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(30);
         if (taskDecorator != null) {
             executor.setTaskDecorator(taskDecorator);
         }

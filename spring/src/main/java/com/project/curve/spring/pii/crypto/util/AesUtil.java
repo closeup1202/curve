@@ -149,8 +149,16 @@ public final class AesUtil {
         }
 
         if (keyBytes.length != 32) {
-            keyBytes = Arrays.copyOf(keyBytes, 32);
+            Arrays.fill(keyBytes, (byte) 0);
+            throw new IllegalArgumentException(
+                    "AES-256 requires exactly 32 bytes key, but got " + keyBytes.length + " bytes. " +
+                            "Please provide a Base64-encoded 32-byte key."
+            );
         }
-        return new SecretKeySpec(keyBytes, "AES");
+        try {
+            return new SecretKeySpec(keyBytes, "AES");
+        } finally {
+            Arrays.fill(keyBytes, (byte) 0);
+        }
     }
 }

@@ -24,8 +24,8 @@ public interface PiiCryptoProvider {
     String decrypt(String encryptedValue, String keyAlias);
 
     /**
-     * Hashes the value (SHA-256).
-     * Applies salt if configured.
+     * Hashes the value (HMAC-SHA256).
+     * Uses salt as the HMAC key if configured.
      *
      * @param value Original value
      * @return Hashed value (Base64 encoded)

@@ -4,10 +4,10 @@ import com.project.curve.spring.exception.PiiCryptoException;
 import com.project.curve.spring.pii.crypto.util.AesUtil;
 import lombok.Getter;
 
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
@@ -30,6 +30,7 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
     private final SecretKey defaultKey;
     private final Map<String, SecretKey> keyStore;
     private final String salt;
+    private final SecretKeySpec hmacKey;
     @Getter
     private final boolean encryptionEnabled;
 
@@ -44,6 +45,9 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
         this.defaultKey = encryptionEnabled ? createKey(defaultKeyBase64) : null;
         this.keyStore = new ConcurrentHashMap<>();
         this.salt = salt != null ? salt : "";
+        this.hmacKey = new SecretKeySpec(
+                this.salt.getBytes(StandardCharsets.UTF_8), "HmacSHA256"
+        );
     }
 
     /**
@@ -76,13 +80,18 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
             throw new IllegalArgumentException("Invalid Base64 format for encryption key.", e);
         }
 
-        // Adjust key length to 32 bytes (256 bits)
-        if (keyBytes.length < 32) {
-            keyBytes = Arrays.copyOf(keyBytes, 32);
-        } else if (keyBytes.length > 32) {
-            keyBytes = Arrays.copyOf(keyBytes, 32);
+        if (keyBytes.length != 32) {
+            Arrays.fill(keyBytes, (byte) 0);
+            throw new IllegalArgumentException(
+                    "AES-256 requires exactly 32 bytes key, but got " + keyBytes.length + " bytes. " +
+                            "Please provide a Base64-encoded 32-byte key."
+            );
         }
-        return new SecretKeySpec(keyBytes, "AES");
+        try {
+            return new SecretKeySpec(keyBytes, "AES");
+        } finally {
+            Arrays.fill(keyBytes, (byte) 0);
+        }
     }
 
     /**
@@ -139,12 +148,13 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
     }
 
     /**
-     * Hashes a value using SHA-256.
+     * Hashes a value using HMAC-SHA256.
      * <p>
-     * Hashing can be used without an encryption key, but configuring a salt is recommended.
+     * Uses the configured salt as the HMAC key for secure hashing.
+     * Hashing can be used without an encryption key, but configuring a salt is strongly recommended.
      *
      * @param value Original value to hash
-     * @return Base64-encoded hash value
+     * @return Base64-encoded HMAC hash value
      * @throws PiiCryptoException if hashing fails
      */
     @Override
@@ -152,9 +162,9 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
         if (value == null) return null;
 
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            String saltedValue = salt + value;
-            byte[] hashBytes = digest.digest(saltedValue.getBytes(StandardCharsets.UTF_8));
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(hmacKey);
+            byte[] hashBytes = mac.doFinal(value.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hashBytes);
         } catch (Exception e) {
             throw new PiiCryptoException("Hashing failed: " + e.getMessage(), e);

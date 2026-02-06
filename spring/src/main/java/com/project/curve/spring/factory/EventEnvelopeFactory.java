@@ -25,8 +25,8 @@ public record EventEnvelopeFactory(ClockProvider clock, IdGenerator idGenerator)
                 severity,
                 metadata,
                 payload,
-                now,
-                now
+                now,       // occurredAt: when the domain event occurred
+                Instant.now() // publishedAt: when the envelope is being published
         );
     }
 }

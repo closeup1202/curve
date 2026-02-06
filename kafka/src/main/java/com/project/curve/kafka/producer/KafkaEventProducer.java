@@ -118,13 +118,14 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         String eventType = envelope.eventType().getValue();
         long startTime = System.currentTimeMillis();
 
+        Object value = null;
         try {
-            Object value = eventSerializer.serialize(envelope);
+            value = eventSerializer.serialize(envelope);
             doSend(eventId, eventType, value, startTime);
         } catch (EventSerializationException e) {
             handleSerializationError(eventId, eventType, startTime, e);
         } catch (Exception e) {
-            handleSendError(eventType, startTime, e);
+            handleSendError(eventId, eventType, value, startTime, e);
         }
     }
 
@@ -152,8 +153,10 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         throw e;
     }
 
-    private void handleSendError(String eventType, long startTime, Exception e) {
+    private void handleSendError(String eventId, String eventType, Object value, long startTime, Exception e) {
+        log.error("Failed to send event to Kafka: eventId={}, topic={}, error={}", eventId, topic, e.getMessage(), e);
         recordErrorMetrics(eventType, startTime, e.getClass().getSimpleName());
+        handleSendFailure(eventId, eventType, value, e);
     }
 
     private void recordErrorMetrics(String eventType, long startTime, String errorType) {
@@ -169,10 +172,15 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                     metricsCollector.recordRetry(eventType, context.getRetryCount(), "in_progress");
                 }
                 return doSendSync(eventId, eventType, value, startTime);
+            }, context -> {
+                int retryCount = context.getRetryCount();
+                log.error("All retry attempts exhausted for event: eventId={}, attempts={}", eventId, retryCount, context.getLastThrowable());
+                metricsCollector.recordRetry(eventType, retryCount, "failure");
+                handleSendFailure(eventId, eventType, value, context.getLastThrowable());
+                return null;
             });
         } catch (Exception e) {
-            log.error("All retry attempts exhausted for event: eventId={}", eventId, e);
-            metricsCollector.recordRetry(eventType, 3, "failure");
+            log.error("Unexpected error during retry for event: eventId={}", eventId, e);
             handleSendFailure(eventId, eventType, value, e);
         }
     }
@@ -196,43 +204,31 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         Map<String, String> contextMap = MDC.getCopyOfContextMap();
 
         kafkaTemplate.send(topic, eventId, value)
+                .orTimeout(asyncTimeoutMs, TimeUnit.MILLISECONDS)
                 .whenComplete((result, ex) -> {
-                    // Restore MDC context in callback thread
+                    // Save previous MDC context for restoration
+                    Map<String, String> previousContext = MDC.getCopyOfContextMap();
                     if (contextMap != null) {
                         MDC.setContextMap(contextMap);
                     }
                     try {
                         if (ex != null) {
-                            log.error("Async send failed: eventId={}, topic={}", eventId, topic, ex);
+                            String errorType = ex instanceof java.util.concurrent.TimeoutException
+                                    ? "TimeoutException" : ex.getClass().getSimpleName();
+                            log.error("Async send failed: eventId={}, topic={}, errorType={}",
+                                    eventId, topic, errorType, ex);
                             metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
-                            metricsCollector.recordKafkaError(ex.getClass().getSimpleName());
+                            metricsCollector.recordKafkaError(errorType);
                             handleSendFailure(eventId, eventType, value, ex);
                         } else {
                             metricsCollector.recordEventPublished(eventType, true, System.currentTimeMillis() - startTime);
                             handleSendSuccess(eventId, result);
                         }
                     } finally {
-                        // Clean up MDC context
-                        if (contextMap != null) {
-                            MDC.clear();
-                        }
-                    }
-                })
-                .orTimeout(asyncTimeoutMs, TimeUnit.MILLISECONDS)
-                .exceptionally(ex -> {
-                    // Restore MDC context when handling timeout exception
-                    if (contextMap != null) {
-                        MDC.setContextMap(contextMap);
-                    }
-                    try {
-                        log.error("Async send timeout: eventId={}, topic={}, timeout={}ms",
-                                eventId, topic, asyncTimeoutMs, ex);
-                        metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
-                        metricsCollector.recordKafkaError("TimeoutException");
-                        handleSendFailure(eventId, eventType, value, ex);
-                        return null;
-                    } finally {
-                        if (contextMap != null) {
+                        // Restore previous MDC context instead of clearing
+                        if (previousContext != null) {
+                            MDC.setContextMap(previousContext);
+                        } else {
                             MDC.clear();
                         }
                     }
@@ -276,13 +272,16 @@ public class KafkaEventProducer extends AbstractEventPublisher {
 
             // Asynchronous transmission - Use separate ExecutorService to prevent callback thread blocking
             dlqExecutor.submit(() -> {
+                Map<String, String> previousContext = MDC.getCopyOfContextMap();
                 if (contextMap != null) {
                     MDC.setContextMap(contextMap);
                 }
                 try {
                     executeDlqSend(eventId, originalValue, originalException);
                 } finally {
-                    if (contextMap != null) {
+                    if (previousContext != null) {
+                        MDC.setContextMap(previousContext);
+                    } else {
                         MDC.clear();
                     }
                 }

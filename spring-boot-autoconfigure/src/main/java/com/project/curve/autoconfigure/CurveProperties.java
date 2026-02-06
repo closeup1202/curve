@@ -2,6 +2,7 @@ package com.project.curve.autoconfigure;
 
 import com.project.curve.autoconfigure.outbox.InitializeSchema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -20,6 +21,9 @@ import org.springframework.validation.annotation.Validated;
 public class CurveProperties {
 
     private boolean enabled = true;
+
+    @Valid
+    private final Async async = new Async();
 
     @Valid
     private final Kafka kafka = new Kafka();
@@ -168,6 +172,12 @@ public class CurveProperties {
              * S3 object key prefix (default: dlq-backup).
              */
             private String s3Prefix = "dlq-backup";
+
+            @AssertTrue(message = "s3Bucket is required when s3Enabled=true")
+            private boolean isS3ConfigValid() {
+                if (!s3Enabled) return true;
+                return s3Bucket != null && !s3Bucket.isBlank();
+            }
         }
     }
 
@@ -203,6 +213,38 @@ public class CurveProperties {
          */
         @Positive(message = "maxInterval must be positive")
         private long maxInterval = 10000L;
+    }
+
+    @Data
+    public static class Async {
+        /**
+         * Whether to enable Curve's async executor (default: false).
+         * <p>
+         * When enabled, registers a {@code curveAsyncExecutor} bean
+         * with a configurable thread pool for async event processing.
+         * <p>
+         * This does NOT force {@code @EnableAsync} on the application.
+         * If you need {@code @EnableAsync}, enable it in your own configuration.
+         */
+        private boolean enabled = false;
+
+        /**
+         * Core thread pool size (default: 2).
+         */
+        @Min(value = 1, message = "corePoolSize must be at least 1")
+        private int corePoolSize = 2;
+
+        /**
+         * Maximum thread pool size (default: 10).
+         */
+        @Min(value = 1, message = "maxPoolSize must be at least 1")
+        private int maxPoolSize = 10;
+
+        /**
+         * Task queue capacity (default: 500).
+         */
+        @Min(value = 0, message = "queueCapacity must be at least 0")
+        private int queueCapacity = 500;
     }
 
     @Data
@@ -435,6 +477,12 @@ public class CurveProperties {
          * Schema Registry URL (required when using Avro).
          */
         private String schemaRegistryUrl;
+
+        @AssertTrue(message = "schemaRegistryUrl is required when serde type is AVRO")
+        private boolean isSchemaRegistryConfigValid() {
+            if (type != SerdeType.AVRO) return true;
+            return schemaRegistryUrl != null && !schemaRegistryUrl.isBlank();
+        }
 
         public enum SerdeType {
             JSON, AVRO, PROTOBUF

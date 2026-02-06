@@ -1,8 +1,12 @@
 package com.project.curve.autoconfigure.health;
 
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.kafka.core.KafkaTemplate;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Health indicator for the Curve event publishing system.
@@ -11,14 +15,14 @@ import org.springframework.kafka.core.KafkaTemplate;
  *
  * <h3>Health Status Criteria</h3>
  * <ul>
- *   <li>UP: Kafka Producer is properly initialized and metrics are collectible</li>
- *   <li>DOWN: Kafka Producer is null or initialization failed</li>
+ *   <li>UP: Kafka Producer is properly initialized and the broker is reachable</li>
+ *   <li>DOWN: Kafka Producer is null, initialization failed, or broker is unreachable</li>
  * </ul>
  *
  * <h3>Health Details</h3>
  * <ul>
  *   <li>kafkaProducerInitialized: Whether Kafka Producer is initialized</li>
- *   <li>producerMetrics: Number of Producer metrics (indirect verification of connection status)</li>
+ *   <li>clusterId: Kafka cluster ID (verifies actual broker connectivity)</li>
  * </ul>
  *
  * @see HealthIndicator
@@ -29,6 +33,8 @@ public record CurveHealthIndicator(
         String topic,
         String dlqTopic) implements HealthIndicator {
 
+    private static final long HEALTH_CHECK_TIMEOUT_SECONDS = 5;
+
     @Override
     public Health health() {
         try {
@@ -38,19 +44,25 @@ public record CurveHealthIndicator(
                         .build();
             }
 
-            // Indirectly verify connection status through Producer metrics
-            int metricsCount = kafkaTemplate.metrics().size();
+            // Verify actual broker connectivity via AdminClient
+            try (AdminClient adminClient = AdminClient.create(
+                    kafkaTemplate.getProducerFactory().getConfigurationProperties())) {
+                DescribeClusterResult cluster = adminClient.describeCluster();
+                String clusterId = cluster.clusterId().get(HEALTH_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                int nodeCount = cluster.nodes().get(HEALTH_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS).size();
 
-            return Health.up()
-                    .withDetail("kafkaProducerInitialized", true)
-                    .withDetail("producerMetrics", metricsCount)
-                    .withDetail("topic", topic)
-                    .withDetail("dlqTopic", dlqTopic != null ? dlqTopic : "disabled")
-                    .build();
+                return Health.up()
+                        .withDetail("kafkaProducerInitialized", true)
+                        .withDetail("clusterId", clusterId)
+                        .withDetail("nodeCount", nodeCount)
+                        .withDetail("topic", topic)
+                        .withDetail("dlqTopic", dlqTopic != null ? dlqTopic : "disabled")
+                        .build();
+            }
 
         } catch (Exception e) {
             return Health.down()
-                    .withDetail("error", e.getMessage())
+                    .withDetail("error", "Kafka broker unreachable: " + e.getMessage())
                     .withException(e)
                     .build();
         }
