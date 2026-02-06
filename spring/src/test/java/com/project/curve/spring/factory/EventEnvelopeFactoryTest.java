@@ -144,4 +144,27 @@ class EventEnvelopeFactoryTest {
         assertThat(envelope1.payload()).isInstanceOf(TestPayload.class);
         assertThat(envelope2.payload()).isInstanceOf(AnotherPayload.class);
     }
+
+    // ── Test helper classes ──────────────────────────────────────────────────
+
+    static class TestEventType implements EventType {
+        @Override
+        public String getValue() {
+            return "TEST_EVENT";
+        }
+    }
+
+    record TestPayload(String data) implements DomainEventPayload {
+        @Override
+        public EventType getEventType() {
+            return new TestEventType();
+        }
+    }
+
+    record AnotherPayload(String value) implements DomainEventPayload {
+        @Override
+        public EventType getEventType() {
+            return new TestEventType();
+        }
+    }
 }

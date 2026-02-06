@@ -45,8 +45,11 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
         this.defaultKey = encryptionEnabled ? createKey(defaultKeyBase64) : null;
         this.keyStore = new ConcurrentHashMap<>();
         this.salt = salt != null ? salt : "";
+
+        // Use default salt if none provided to avoid "Empty key" error in SecretKeySpec
+        String effectiveSalt = this.salt.isEmpty() ? "curve-default-salt" : this.salt;
         this.hmacKey = new SecretKeySpec(
-                this.salt.getBytes(StandardCharsets.UTF_8), "HmacSHA256"
+                effectiveSalt.getBytes(StandardCharsets.UTF_8), "HmacSHA256"
         );
     }
 

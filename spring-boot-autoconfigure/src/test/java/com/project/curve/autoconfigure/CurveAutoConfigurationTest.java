@@ -160,7 +160,8 @@ class CurveAutoConfigurationTest {
                             "curve.id-generator.worker-id=100",
                             "curve.outbox.enabled=true",
                             "curve.outbox.poll-interval-ms=500",
-                            "curve.serde.type=AVRO"
+                            "curve.serde.type=AVRO",
+                            "curve.serde.schema-registry-url=http://localhost:8081"
                     )
                     .run(context -> {
                         CurveProperties props = context.getBean(CurveProperties.class);
@@ -239,7 +240,7 @@ class CurveAutoConfigurationTest {
             contextRunner
                     .withPropertyValues(
                             "curve.pii.enabled=true",
-                            "curve.pii.crypto.default-key=dGVzdC1lbmNyeXB0aW9uLWtleS0zMi1ieXRl",
+                            "curve.pii.crypto.default-key=dGVzdC1lbmNyeXB0aW9uLWtleS0zMi1ieXRlISEhISE=",
                             "curve.pii.crypto.salt=test-salt"
                     )
                     .run(context -> {
@@ -247,7 +248,7 @@ class CurveAutoConfigurationTest {
 
                         assertThat(props.getPii().isEnabled()).isTrue();
                         assertThat(props.getPii().getCrypto().getDefaultKey())
-                                .isEqualTo("dGVzdC1lbmNyeXB0aW9uLWtleS0zMi1ieXRl");
+                                .isEqualTo("dGVzdC1lbmNyeXB0aW9uLWtleS0zMi1ieXRlISEhISE=");
                         assertThat(props.getPii().getCrypto().getSalt())
                                 .isEqualTo("test-salt");
                     });

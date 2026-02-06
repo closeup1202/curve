@@ -190,7 +190,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
             doSendSync(eventId, eventType, value, startTime);
         } catch (Exception e) {
             log.error("Failed to send event to Kafka: eventId={}, topic={}", eventId, topic, e);
-            metricsCollector.recordKafkaError(e.getClass().getSimpleName());
+            recordErrorMetrics(eventType, startTime, e.getClass().getSimpleName());
             handleSendFailure(eventId, eventType, value, e);
         }
     }

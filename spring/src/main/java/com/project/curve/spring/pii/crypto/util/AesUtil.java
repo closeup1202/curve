@@ -139,6 +139,7 @@ public final class AesUtil {
 
     /**
      * Creates a SecretKey from a Base64-encoded key string.
+     * If the key is shorter than 32 bytes, it will be zero-padded.
      */
     public static SecretKey createKey(String keyBase64) {
         byte[] keyBytes;
@@ -148,17 +149,27 @@ public final class AesUtil {
             throw new IllegalArgumentException("Invalid Base64 format for key.", e);
         }
 
-        if (keyBytes.length != 32) {
+        byte[] paddedKey;
+        if (keyBytes.length < 32) {
+            // Pad with zeros to reach 32 bytes
+            paddedKey = Arrays.copyOf(keyBytes, 32);
+        } else if (keyBytes.length > 32) {
             Arrays.fill(keyBytes, (byte) 0);
             throw new IllegalArgumentException(
-                    "AES-256 requires exactly 32 bytes key, but got " + keyBytes.length + " bytes. " +
-                            "Please provide a Base64-encoded 32-byte key."
+                    "AES-256 requires at most 32 bytes key, but got " + keyBytes.length + " bytes. " +
+                            "Please provide a Base64-encoded key with 32 bytes or less."
             );
+        } else {
+            paddedKey = keyBytes;
         }
+
         try {
-            return new SecretKeySpec(keyBytes, "AES");
+            return new SecretKeySpec(paddedKey, "AES");
         } finally {
             Arrays.fill(keyBytes, (byte) 0);
+            if (paddedKey != keyBytes) {
+                Arrays.fill(paddedKey, (byte) 0);
+            }
         }
     }
 }
