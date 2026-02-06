@@ -10,11 +10,19 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/closeup1202/curve/actions/workflows/ci.yml/badge.svg)](https://github.com/closeup1202/curve/actions)
 [![codecov](https://codecov.io/gh/closeup1202/curve/branch/main/graph/badge.svg)](https://codecov.io/gh/closeup1202/curve)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=curve&metric=alert_status)](https://sonarcloud.io/dashboard?id=curve)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=curve&metric=alert_status)](https://sonarcloud.io/project/overview?id=closeup1202_curve)
 
 [English](README.md) | [한국어](README.ko.md)
 
 </div>
+
+---
+
+## Project Stats
+
+![GitHub stars](https://img.shields.io/github/stars/closeup1202/curve?style=social)
+![Maven Central](https://img.shields.io/maven-central/v/io.github.closeup1202/curve)
+![GitHub last commit](https://img.shields.io/github/last-commit/closeup1202/curve)
 
 ---
 
@@ -654,6 +662,26 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 ---
 
+## Roadmap
+
+### v0.1.0 (2026년 2분기)
+- [ ] 성능 벤치마크 & 최적화 가이드
+- [ ] GraphQL 구독 지원
+- [ ] AWS EventBridge 어댑터
+- [ ] Grafana 대시보드 템플릿
+- [ ] 추가 PII 타입 프리셋 (주민등록번호, 신용카드 등)
+
+### v1.0.0 (2026년 3분기)
+- [ ] 프로덕션 준비 릴리스
+- [ ] Spring Cloud Stream 바인더
+- [ ] Avro 스키마 진화 지원
+- [ ] gRPC 이벤트 스트리밍
+- [ ] 멀티 클라우드 KMS 지원 (GCP, Azure)
+
+**아이디어가 있으신가요?** [GitHub Discussions](https://github.com/closeup1202/curve/discussions)에서 기능에 투표하거나 새로운 기능을 제안해주세요 💡
+
+---
+
 ## Documentation
 
 | 문서 | 설명 |
@@ -666,6 +694,18 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 | [변경 이력](docs/CHANGELOG.md) | 버전 히스토리 및 변경 사항 |
 | [예시 설정](application.example.yml) | 설정 예시 |
 | [샘플 애플리케이션](sample/) | 완전한 작동 예시
+
+---
+
+## Community & Support
+
+Curve 커뮤니티에 참여하세요:
+
+- 💬 **[GitHub Discussions](https://github.com/closeup1202/curve/discussions)** - 질문하기, 아이디어 공유, 도움 받기
+- 🐛 **[Issues](https://github.com/closeup1202/curve/issues)** - 버그 신고, 기능 요청
+- 🤝 **[Contributing](docs/community/contributing.md)** - 기여 가이드라인
+
+**프로덕션에서 Curve를 사용하고 계신가요?** 여러분의 이야기를 들려주세요! [Discussions](https://github.com/closeup1202/curve/discussions)에서 공유하시면 여기에 소개해드립니다 🌟
 
 ---
 
@@ -700,6 +740,6 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 <div align="center">
 
-[⬆ 맨 위로](#curve)
+[⬆ Back to top](#curve)
 
 </div>

@@ -10,11 +10,19 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/closeup1202/curve/actions/workflows/ci.yml/badge.svg)](https://github.com/closeup1202/curve/actions)
 [![codecov](https://codecov.io/gh/closeup1202/curve/branch/main/graph/badge.svg)](https://codecov.io/gh/closeup1202/curve)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=curve&metric=alert_status)](https://sonarcloud.io/dashboard?id=curve)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=curve&metric=alert_status)](https://sonarcloud.io/project/overview?id=closeup1202_curve)
 
 [English](README.md) | [한국어](README.ko.md)
 
 </div>
+
+---
+
+## Project Stats
+
+![GitHub stars](https://img.shields.io/github/stars/closeup1202/curve?style=social)
+![Maven Central](https://img.shields.io/maven-central/v/io.github.closeup1202/curve)
+![GitHub last commit](https://img.shields.io/github/last-commit/closeup1202/curve)
 
 ---
 
@@ -655,6 +663,26 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 ---
 
+## Roadmap
+
+### v0.1.0 (Q2 2026)
+- [ ] Performance benchmarks & optimization guide
+- [ ] GraphQL subscription support
+- [ ] AWS EventBridge adapter
+- [ ] Grafana dashboard template
+- [ ] More PII type presets (SSN, Credit Card, etc.)
+
+### v1.0.0 (Q3 2026)
+- [ ] Production-ready release
+- [ ] Spring Cloud Stream binder
+- [ ] Avro schema evolution support
+- [ ] gRPC event streaming
+- [ ] Multi-cloud KMS support (GCP, Azure)
+
+**Have ideas?** Vote for features or suggest new ones in [GitHub Discussions](https://github.com/closeup1202/curve/discussions) 💡
+
+---
+
 ## Documentation
 
 | Document | Description |
@@ -667,6 +695,18 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 | [Changelog](CHANGELOG.md) | Version history and changes |
 | [Example Configuration](application.example.yml) | Configuration examples |
 | [Sample Application](sample/) | Full working example
+
+---
+
+## Community & Support
+
+Join the Curve community:
+
+- 💬 **[GitHub Discussions](https://github.com/closeup1202/curve/discussions)** - Ask questions, share ideas, get help
+- 🐛 **[Issues](https://github.com/closeup1202/curve/issues)** - Report bugs, request features
+- 🤝 **[Contributing](docs/community/contributing.md)** - Contribution guidelines
+
+**Using Curve in production?** We'd love to hear your story! Share it in [Discussions](https://github.com/closeup1202/curve/discussions) and get featured here 🌟
 
 ---
 
