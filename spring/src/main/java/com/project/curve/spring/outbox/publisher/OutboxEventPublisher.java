@@ -67,6 +67,11 @@ public class OutboxEventPublisher {
     private volatile boolean circuitOpen = false;
     private volatile long circuitOpenedAt = 0;
 
+    // Pending count cache (reduces DB query overhead)
+    private volatile long cachedPendingCount = 0;
+    private volatile long lastCountQueryTime = 0;
+    private static final long COUNT_CACHE_TTL_MS = 5000; // 5 seconds cache
+
     // Circuit Breaker configuration
     private static final int FAILURE_THRESHOLD = 5; // Open circuit after 5 consecutive failures
     private static final long CIRCUIT_OPEN_DURATION_MS = 60000L; // Attempt Half-Open after 1 minute
@@ -159,13 +164,14 @@ public class OutboxEventPublisher {
      * <p>
      * Adjusts batch size based on queue depth (number of pending events).
      * Deeper queues are processed with larger batches to increase throughput.
+     * Uses cached count to reduce DB query overhead (5-second TTL).
      */
     private int calculateEffectiveBatchSize() {
         if (!dynamicBatchingEnabled) {
             return batchSize;
         }
 
-        long pendingCount = outboxRepository.countByStatus(OutboxStatus.PENDING);
+        long pendingCount = getCachedPendingCount();
 
         // Dynamic batch size calculation logic
         // Example: Double batch size if pending count is 1000 or more
@@ -185,9 +191,24 @@ public class OutboxEventPublisher {
     }
 
     /**
-     * Circuit Breaker: Check whether to allow request.
+     * Returns cached pending count or queries DB if cache expired.
+     * Cache TTL: 5 seconds to balance freshness and performance.
      */
-    private boolean shouldAllowRequest() {
+    private long getCachedPendingCount() {
+        long now = System.currentTimeMillis();
+        if (now - lastCountQueryTime > COUNT_CACHE_TTL_MS) {
+            cachedPendingCount = outboxRepository.countByStatus(OutboxStatus.PENDING);
+            lastCountQueryTime = now;
+            log.trace("Refreshed pending count cache: {}", cachedPendingCount);
+        }
+        return cachedPendingCount;
+    }
+
+    /**
+     * Circuit Breaker: Check whether to allow request.
+     * Synchronized to prevent race conditions in circuit state transitions.
+     */
+    private synchronized boolean shouldAllowRequest() {
         if (!circuitOpen) {
             return true; // Circuit Closed (normal)
         }
@@ -204,8 +225,9 @@ public class OutboxEventPublisher {
 
     /**
      * Record success (Circuit Breaker).
+     * Synchronized to prevent race conditions in circuit state transitions.
      */
-    private void recordSuccess() {
+    private synchronized void recordSuccess() {
         consecutiveFailures.set(0);
         lastSuccessTime.set(System.currentTimeMillis());
 
@@ -218,8 +240,9 @@ public class OutboxEventPublisher {
 
     /**
      * Record failure (Circuit Breaker).
+     * Synchronized to prevent race conditions in circuit state transitions.
      */
-    private void recordFailure() {
+    private synchronized void recordFailure() {
         if (!circuitBreakerEnabled) {
             return;
         }

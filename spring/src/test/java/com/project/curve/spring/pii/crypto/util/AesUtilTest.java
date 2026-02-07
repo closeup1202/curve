@@ -207,29 +207,17 @@ class AesUtilTest {
     // ── createKey with short key (pads to 32 bytes) ───────────────────────────
 
     @Test
-    @DisplayName("Creates a SecretKey from a short key by padding to 32 bytes")
-    void createKey_withShortKey_shouldPadTo32Bytes() {
+    @DisplayName("Rejects keys shorter than 32 bytes for security")
+    void createKey_withShortKey_shouldReject() {
         // Given
         byte[] shortKeyBytes = new byte[16];
         for (int i = 0; i < 16; i++) shortKeyBytes[i] = (byte) i;
         String shortBase64Key = Base64.getEncoder().encodeToString(shortKeyBytes);
 
-        // When
-        SecretKey key = AesUtil.createKey(shortBase64Key);
-
-        // Then
-        assertThat(key).isNotNull();
-        assertThat(key.getAlgorithm()).isEqualTo("AES");
-        assertThat(key.getEncoded()).hasSize(32);
-        // First 16 bytes should match the original key
-        byte[] encoded = key.getEncoded();
-        for (int i = 0; i < 16; i++) {
-            assertThat(encoded[i]).isEqualTo(shortKeyBytes[i]);
-        }
-        // Remaining bytes should be zero-padded
-        for (int i = 16; i < 32; i++) {
-            assertThat(encoded[i]).isEqualTo((byte) 0);
-        }
+        // When & Then
+        assertThatThrownBy(() -> AesUtil.createKey(shortBase64Key))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("AES-256 requires exactly 32 bytes");
     }
 
     // ── Empty string encrypt/decrypt ──────────────────────────────────────────

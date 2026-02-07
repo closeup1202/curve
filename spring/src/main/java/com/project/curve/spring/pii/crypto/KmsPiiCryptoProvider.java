@@ -114,6 +114,15 @@ public class KmsPiiCryptoProvider implements PiiCryptoProvider {
             throw new PiiCryptoException("Invalid envelope ciphertext: bad encrypted DEK length");
         }
 
+        // Validate sufficient data for IV (12 bytes minimum for GCM)
+        int remainingAfterDek = packed.length - 2 - encDekLength;
+        if (remainingAfterDek < 12) {
+            throw new PiiCryptoException(
+                    "Invalid envelope ciphertext: insufficient data for IV. " +
+                    "Expected at least 12 bytes, got " + remainingAfterDek
+            );
+        }
+
         // Read encrypted DEK
         byte[] encryptedDek = new byte[encDekLength];
         buffer.get(encryptedDek);

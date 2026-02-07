@@ -3,6 +3,7 @@ package com.project.curve.spring.pii.crypto;
 import com.project.curve.spring.exception.PiiCryptoException;
 import com.project.curve.spring.pii.crypto.util.AesUtil;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
@@ -25,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Hashing can be used without a key, but configuring a salt is recommended.</li>
  * </ul>
  */
+@Slf4j
 public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
 
     private final SecretKey defaultKey;
@@ -38,18 +40,26 @@ public class DefaultPiiCryptoProvider implements PiiCryptoProvider {
      * Creates a DefaultPiiCryptoProvider.
      *
      * @param defaultKeyBase64 Base64-encoded AES-256 encryption key (nullable, disables encryption if null)
-     * @param salt             Salt for hashing (nullable)
+     * @param salt             Salt for hashing (strongly recommended for security)
      */
     public DefaultPiiCryptoProvider(String defaultKeyBase64, String salt) {
         this.encryptionEnabled = defaultKeyBase64 != null && !defaultKeyBase64.isBlank();
         this.defaultKey = encryptionEnabled ? createKey(defaultKeyBase64) : null;
         this.keyStore = new ConcurrentHashMap<>();
-        this.salt = salt != null ? salt : "";
 
-        // Use default salt if none provided to avoid "Empty key" error in SecretKeySpec
-        String effectiveSalt = this.salt.isEmpty() ? "curve-default-salt" : this.salt;
+        // Warn if no salt provided - use default but log security warning
+        if (salt == null || salt.isBlank()) {
+            log.warn("⚠️  SECURITY WARNING: PII HMAC salt not configured! Using default salt. " +
+                    "This is INSECURE for production. " +
+                    "Set 'curve.pii.crypto.salt' in application properties. " +
+                    "To generate: openssl rand -base64 32");
+            this.salt = "curve-default-salt-CHANGE-THIS-IN-PRODUCTION";
+        } else {
+            this.salt = salt;
+        }
+
         this.hmacKey = new SecretKeySpec(
-                effectiveSalt.getBytes(StandardCharsets.UTF_8), "HmacSHA256"
+                this.salt.getBytes(StandardCharsets.UTF_8), "HmacSHA256"
         );
     }
 
