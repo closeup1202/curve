@@ -28,7 +28,7 @@ Curve is a production-ready library that simplifies event-driven architecture in
 
     ```gradle
     dependencies {
-        implementation 'io.github.closeup1202:curve:0.0.5'
+        implementation 'io.github.closeup1202:curve:0.1.0'
     }
     ```
 
@@ -38,7 +38,7 @@ Curve is a production-ready library that simplifies event-driven architecture in
     <dependency>
         <groupId>io.github.closeup1202</groupId>
         <artifactId>curve</artifactId>
-        <version>0.0.5</version>
+        <version>0.1.0</version>
     </dependency>
     ```
 

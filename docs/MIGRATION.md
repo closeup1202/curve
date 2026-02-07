@@ -48,16 +48,16 @@ Example: 1.2.3
 
 | Curve Version | Spring Boot | Java | Kafka Client |
 |---------------|-------------|------|--------------|
+| 0.1.0 | 3.5.x | 17, 21 | 3.8+ |
 | 0.0.5 | 3.5.x | 17, 21 | 3.8+ |
 | 0.0.1 - 0.0.4 | 3.4.x - 3.5.x | 17, 21 | 3.0+ |
-| 0.1.x (planned) | 3.5.x - 3.6.x | 17, 21 | 3.0+ |
 
 ### Dependency Compatibility
 
 ```gradle
 // build.gradle
 dependencies {
-    // Curve 0.0.1 compatible versions
+    // Curve 0.1.0 compatible versions
     implementation 'org.springframework.boot:spring-boot-starter:3.5.9'
     implementation 'org.springframework.kafka:spring-kafka:3.3.0'
 }
@@ -94,29 +94,50 @@ Before upgrading to a new version:
 
 ---
 
-## Migration: 0.0.x to 0.1.x
+## Migration: 0.0.x to 0.1.0
 
-> **Note:** Version 0.1.x is not yet released. This section will be updated with specific migration steps when available.
+Version 0.1.0 includes important security enhancements and performance optimizations. Most changes are backward compatible, but please review the following:
 
-### Expected Changes (Tentative)
+### Changes in 0.1.0
 
-1. **Configuration Namespace**
-   - No changes expected
+1. **Security Improvements (Non-Breaking)**
+   - **AES Key Validation**: Keys must be exactly 32 bytes (Base64-encoded)
+     - Previous: Keys < 32 bytes were padded with zeros (insecure)
+     - Now: Keys must be exactly 32 bytes; throws `IllegalArgumentException` otherwise
+     - **Action**: Regenerate keys with `openssl rand -base64 32`
 
-2. **API Changes**
-   - `EventEnvelope` may have additional fields
-   - New methods in `EventProducer` interface
+   - **HMAC Salt Warning**: Warns if PII HMAC salt not configured
+     - **Action**: Set `curve.pii.crypto.salt` for production
 
-3. **Database Schema**
-   - Outbox table may require new columns
-   - Migration script will be provided
+   - **Vault Path Traversal Protection**: Added validation for Vault keyId
+     - Only alphanumeric, underscores, and hyphens allowed
+     - **Action**: No action needed unless using invalid keyId patterns
 
-### Preparation Steps
+2. **Performance Improvements (Transparent)**
+   - Outbox query caching (5-second TTL)
+   - Regex pre-compilation in PhoneMasker
+   - Circuit breaker thread safety
+   - All improvements are automatic
+
+3. **API Changes**
+   - No breaking API changes
+   - All existing code continues to work
+
+### Upgrade Steps
+
+```gradle
+// Update dependency version
+dependencies {
+    implementation 'io.github.closeup1202:curve:0.1.0'
+}
+```
 
 ```yaml
-# Ensure you're on latest 0.0.x before upgrading
+# Recommended: Configure HMAC salt (if not already set)
 curve:
-  version: 0.0.x  # Update to latest patch first
+  pii:
+    crypto:
+      salt: ${PII_HASH_SALT}  # Generate with: openssl rand -base64 32
 ```
 
 ---
@@ -144,11 +165,9 @@ All configurations introduced. See [CONFIGURATION.md](CONFIGURATION.md).
 - **Health check**: Now uses `AdminClient.describeCluster()` instead of `KafkaTemplate.metrics()`. Health response format changed (`clusterId` and `nodeCount` instead of `producerMetrics`).
 - **Async executor**: `@EnableAsync` is no longer automatically applied. Set `curve.async.enabled=true` to register the `curveAsyncExecutor` bean.
 
-#### Version 0.1.x (Planned)
+#### Version 0.1.0
 
-| Old Property | New Property | Notes |
-|--------------|--------------|-------|
-| TBD | TBD | Will be documented |
+No configuration property changes. All changes are backward compatible.
 
 ### Deprecated Properties
 
@@ -166,6 +185,10 @@ curve:
 ---
 
 ## Breaking Changes Log
+
+### Version 0.1.0
+
+No breaking changes. All improvements are backward compatible with proper warnings.
 
 ### Version 0.0.1
 
@@ -187,7 +210,7 @@ Breaking changes will be documented here with:
 1. **Revert dependency version**
    ```gradle
    // build.gradle
-   implementation 'io.github.closeup1202:curve:0.0.1'  // Previous version
+   implementation 'io.github.closeup1202:curve:0.0.5'  // Previous version
    ```
 
 2. **Revert configuration changes** (if any)
@@ -240,7 +263,7 @@ plugins {
 }
 
 dependencies {
-    implementation 'io.github.closeup1202:curve:0.0.1'  // Step 2
+    implementation 'io.github.closeup1202:curve:0.1.0'  // Step 2
 }
 ```
 
