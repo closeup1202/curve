@@ -692,7 +692,7 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues and solutions |
 | [Monitoring Guide](docs/MONITORING.md) | Metrics, dashboards, and alerting |
 | [Migration Guide](docs/MIGRATION.md) | Version upgrade instructions |
-| [Changelog](CHANGELOG.md) | Version history and changes |
+| [Changelog](docs/CHANGELOG.md) | Version history and changes |
 | [Example Configuration](application.example.yml) | Configuration examples |
 | [Sample Application](sample/) | Full working example
 

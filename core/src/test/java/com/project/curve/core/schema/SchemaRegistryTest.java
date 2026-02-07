@@ -417,6 +417,121 @@ class SchemaRegistryTest {
         assertTrue(names.contains("UserRegistered"));
     }
 
+    @Test
+    @DisplayName("findMigrationPath test - skipping missing intermediate version")
+    void testFindMigrationPath_skippingMissingVersion() {
+        // given
+        SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
+        SchemaVersion v3 = new SchemaVersion("OrderCreated", 3, PayloadV3.class);
+        registry.register(v1);
+        registry.register(v3);
+        // v2 is not registered
+
+        SchemaMigration<PayloadV1, PayloadV3> migration = createMigration(v1, v3);
+        registry.registerMigration(migration);
+
+        // when
+        Optional<List<SchemaMigration<?, ?>>> path = registry.findMigrationPath(v1, v3);
+
+        // then
+        assertTrue(path.isPresent());
+        assertEquals(1, path.get().size());
+        assertEquals(migration, path.get().get(0));
+    }
+
+    @Test
+    @DisplayName("findMigrationPath test - partial path (missing migration)")
+    void testFindMigrationPath_partialPath() {
+        // given
+        SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
+        SchemaVersion v2 = new SchemaVersion("OrderCreated", 2, PayloadV2.class);
+        SchemaVersion v3 = new SchemaVersion("OrderCreated", 3, PayloadV3.class);
+        registry.register(v1);
+        registry.register(v2);
+        registry.register(v3);
+
+        // Register only v1->v2 migration (v2->v3 is missing)
+        SchemaMigration<PayloadV1, PayloadV2> migration1 = createMigration(v1, v2);
+        registry.registerMigration(migration1);
+
+        // when
+        Optional<List<SchemaMigration<?, ?>>> path = registry.findMigrationPath(v1, v3);
+
+        // then
+        assertFalse(path.isPresent());
+    }
+
+    @Test
+    @DisplayName("findMigrationPath test - complex path with multiple routes")
+    void testFindMigrationPath_multipleRoutes() {
+        // given
+        SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
+        SchemaVersion v2 = new SchemaVersion("OrderCreated", 2, PayloadV2.class);
+        SchemaVersion v3 = new SchemaVersion("OrderCreated", 3, PayloadV3.class);
+        SchemaVersion v4 = new SchemaVersion("OrderCreated", 4, PayloadV1.class);
+        registry.register(v1);
+        registry.register(v2);
+        registry.register(v3);
+        registry.register(v4);
+
+        // Create two paths: v1->v2->v4 and v1->v3->v4
+        SchemaMigration<PayloadV1, PayloadV2> migration1to2 = createMigration(v1, v2);
+        SchemaMigration<PayloadV2, PayloadV1> migration2to4 = createMigration(v2, v4);
+        SchemaMigration<PayloadV1, PayloadV3> migration1to3 = createMigration(v1, v3);
+        SchemaMigration<PayloadV3, PayloadV1> migration3to4 = createMigration(v3, v4);
+
+        registry.registerMigration(migration1to2);
+        registry.registerMigration(migration2to4);
+        registry.registerMigration(migration1to3);
+        registry.registerMigration(migration3to4);
+
+        // when - BFS should find shortest path (v1->v2->v4 or v1->v3->v4, both length 2)
+        Optional<List<SchemaMigration<?, ?>>> path = registry.findMigrationPath(v1, v4);
+
+        // then
+        assertTrue(path.isPresent());
+        assertEquals(2, path.get().size());
+        // Either path is acceptable, but should be length 2
+    }
+
+    @Test
+    @DisplayName("findMigrationPath test - no cycles with revisiting")
+    void testFindMigrationPath_noCycles() {
+        // given
+        SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
+        SchemaVersion v2 = new SchemaVersion("OrderCreated", 2, PayloadV2.class);
+        registry.register(v1);
+        registry.register(v2);
+
+        SchemaMigration<PayloadV1, PayloadV2> migration = createMigration(v1, v2);
+        registry.registerMigration(migration);
+
+        // when - find path from v1 to v2 (should not infinitely loop)
+        Optional<List<SchemaMigration<?, ?>>> path = registry.findMigrationPath(v1, v2);
+
+        // then
+        assertTrue(path.isPresent());
+        assertEquals(1, path.get().size());
+    }
+
+    @Test
+    @DisplayName("findMigrationPath test - large version gap")
+    void testFindMigrationPath_largeVersionGap() {
+        // given
+        SchemaVersion v1 = new SchemaVersion("OrderCreated", 1, PayloadV1.class);
+        SchemaVersion v10 = new SchemaVersion("OrderCreated", 10, PayloadV2.class);
+        registry.register(v1);
+        registry.register(v10);
+
+        // No migrations registered, versions 2-9 don't exist
+
+        // when
+        Optional<List<SchemaMigration<?, ?>>> path = registry.findMigrationPath(v1, v10);
+
+        // then
+        assertFalse(path.isPresent());
+    }
+
     private <FROM, TO> SchemaMigration<FROM, TO> createMigration(SchemaVersion from, SchemaVersion to) {
         return new SchemaMigration<FROM, TO>() {
             @Override
