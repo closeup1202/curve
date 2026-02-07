@@ -4,8 +4,14 @@ import com.project.curve.spring.pii.type.MaskingLevel;
 import com.project.curve.spring.pii.type.PiiType;
 import org.springframework.stereotype.Component;
 
+import java.util.regex.Pattern;
+
 @Component
 public class PhoneMasker implements PiiMasker {
+
+    // Pre-compiled regex patterns for performance
+    private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^0-9]");
+    private static final Pattern PHONE_PATTERN = Pattern.compile("(\\d{3})-?(\\d{3,4})-?(\\d{4})");
 
     @Override
     public String mask(String value, MaskingLevel level) {
@@ -13,16 +19,16 @@ public class PhoneMasker implements PiiMasker {
         if (level == null) level = MaskingLevel.NORMAL;
 
         // Extract digits only
-        String digits = value.replaceAll("[^0-9]", "");
+        String digits = NON_DIGIT_PATTERN.matcher(value).replaceAll("");
         if (digits.length() < 4) return "*".repeat(value.length());
 
         return switch (level) {
             case WEAK -> // Mask last 4 digits only: "010-1234-5678" → "010-1234-****"
                     maskDigits(value, digits);
             case NORMAL -> // Mask middle 4 digits: "010-1234-5678" → "010-****-5678"
-                    value.replaceAll("(\\d{3})-?(\\d{3,4})-?(\\d{4})", "$1-****-$3");
+                    PHONE_PATTERN.matcher(value).replaceAll("$1-****-$3");
             case STRONG -> // Mask last 8 digits: "010-1234-5678" → "010-****-****"
-                    value.replaceAll("(\\d{3})-?(\\d{3,4})-?(\\d{4})", "$1-****-****");
+                    PHONE_PATTERN.matcher(value).replaceAll("$1-****-****");
         };
     }
 

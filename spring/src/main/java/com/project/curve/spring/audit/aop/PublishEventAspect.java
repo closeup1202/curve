@@ -175,11 +175,18 @@ public class PublishEventAspect {
             context.setVariable("result", returnValue);
             context.setVariable("args", args);
 
-            if (parameterNames != null) {
-                for (int i = 0; i < parameterNames.length; i++) {
+            // Always provide p0, p1, ... fallback names
+            for (int i = 0; i < args.length; i++) {
+                context.setVariable("p" + i, args[i]);
+            }
+
+            // Add actual parameter names if available
+            if (parameterNames != null && parameterNames.length > 0) {
+                for (int i = 0; i < Math.min(parameterNames.length, args.length); i++) {
                     context.setVariable(parameterNames[i], args[i]);
-                    context.setVariable("p" + i, args[i]);
                 }
+            } else {
+                log.debug("Parameter names unavailable, using fallback names (p0, p1, ...)");
             }
 
             Expression expr = spelParser.parseExpression(expression);

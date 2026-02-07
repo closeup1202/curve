@@ -110,8 +110,19 @@ public class OutboxEventSaver {
             MethodSignature signature = (MethodSignature) joinPoint.getSignature();
             String[] parameterNames = signature.getParameterNames();
             Object[] args = joinPoint.getArgs();
-            for (int i = 0; i < parameterNames.length; i++) {
-                context.setVariable(parameterNames[i], args[i]);
+
+            // Handle case where parameter names are not available (e.g., no debug info)
+            if (parameterNames == null || parameterNames.length == 0) {
+                log.warn("Parameter names unavailable for method {}. Using fallback naming (p0, p1, ...)",
+                        signature.getMethod().getName());
+                // Provide fallback parameter names
+                for (int i = 0; i < args.length; i++) {
+                    context.setVariable("p" + i, args[i]);
+                }
+            } else {
+                for (int i = 0; i < parameterNames.length; i++) {
+                    context.setVariable(parameterNames[i], args[i]);
+                }
             }
 
             Expression expr = spelParser.parseExpression(expression);

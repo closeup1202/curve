@@ -7,9 +7,11 @@ import com.project.curve.core.port.ClockProvider;
 import com.project.curve.core.port.IdGenerator;
 import com.project.curve.core.type.EventSeverity;
 import com.project.curve.core.type.EventType;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 
+@Slf4j
 public record EventEnvelopeFactory(ClockProvider clock, IdGenerator idGenerator) {
 
     public <T extends DomainEventPayload> EventEnvelope<T> create(
@@ -19,8 +21,15 @@ public record EventEnvelopeFactory(ClockProvider clock, IdGenerator idGenerator)
             T payload
     ) {
         Instant now = clock.now();
+        var eventId = idGenerator.generate();
+
+        if (log.isDebugEnabled()) {
+            log.debug("Creating event envelope: eventId={}, eventType={}, severity={}, actor={}",
+                    eventId, eventType, severity, metadata.actor());
+        }
+
         return EventEnvelope.of(
-                idGenerator.generate(),
+                eventId,
                 eventType,
                 severity,
                 metadata,

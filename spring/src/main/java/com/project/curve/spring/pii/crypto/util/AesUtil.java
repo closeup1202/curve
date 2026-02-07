@@ -149,19 +149,16 @@ public final class AesUtil {
             throw new IllegalArgumentException("Invalid Base64 format for key.", e);
         }
 
-        byte[] paddedKey;
-        if (keyBytes.length < 32) {
-            // Pad with zeros to reach 32 bytes
-            paddedKey = Arrays.copyOf(keyBytes, 32);
-        } else if (keyBytes.length > 32) {
+        // AES-256 requires exactly 32 bytes - reject keys that don't meet this requirement
+        if (keyBytes.length != 32) {
             Arrays.fill(keyBytes, (byte) 0);
             throw new IllegalArgumentException(
-                    "AES-256 requires at most 32 bytes key, but got " + keyBytes.length + " bytes. " +
-                            "Please provide a Base64-encoded key with 32 bytes or less."
+                    "AES-256 requires exactly 32 bytes key, but got " + keyBytes.length + " bytes. " +
+                            "Please provide a Base64-encoded 32-byte key. " +
+                            "To generate: openssl rand -base64 32"
             );
-        } else {
-            paddedKey = keyBytes;
         }
+        byte[] paddedKey = keyBytes;
 
         try {
             return new SecretKeySpec(paddedKey, "AES");
