@@ -107,7 +107,7 @@ runtimeOnly 'org.postgresql:postgresql'
 | Curve Version | Spring Boot | Kafka Client | Java |
 |---------------|-------------|--------------|------|
 | 0.1.0         | 3.5.x | 3.8.x | 17+ |
-| 0.0.5         | 3.5.x | 3.8.x | 17+ |
+| 0.1.0         | 3.5.x | 3.8.x | 17+ |
 | 0.0.2         | 3.5.x | 3.8.x | 17+ |
 | 0.0.1         | 3.4.x | 3.7.x | 17+ |
 
