@@ -11,6 +11,56 @@ copyright: Copyright &copy; 2026 closeup1202
 
 theme:
   name: material
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   palette:
     # Light mode
     - media: "(prefers-color-scheme: light)"
