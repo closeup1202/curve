@@ -179,41 +179,125 @@ public class SchemaRegistry {
             return Optional.of(Collections.emptyList());
         }
 
-        // Find shortest path using BFS
         Queue<PathNode> queue = new LinkedList<>();
         Set<String> visited = new HashSet<>();
 
-        queue.offer(new PathNode(from, new ArrayList<>()));
-        visited.add(from.getKey());
+        initializeBfsSearch(queue, visited, from);
+
+        return searchMigrationPath(queue, visited, from.name(), to);
+    }
+
+    /**
+     * Initializes BFS search with starting node.
+     */
+    private void initializeBfsSearch(Queue<PathNode> queue, Set<String> visited, SchemaVersion startVersion) {
+        queue.offer(new PathNode(startVersion, new ArrayList<>()));
+        visited.add(startVersion.getKey());
+    }
+
+    /**
+     * Searches for migration path using BFS.
+     */
+    private Optional<List<SchemaMigration<?, ?>>> searchMigrationPath(
+            Queue<PathNode> queue,
+            Set<String> visited,
+            String schemaName,
+            SchemaVersion targetVersion) {
 
         while (!queue.isEmpty()) {
             PathNode current = queue.poll();
 
-            // Explore all next versions reachable from the current version
-            for (int nextVersion = current.version.version() + 1;
-                 nextVersion <= to.version();
-                 nextVersion++) {
+            Optional<List<SchemaMigration<?, ?>>> result = exploreNextVersions(
+                current, queue, visited, schemaName, targetVersion
+            );
 
-                Optional<SchemaVersion> next = getVersion(from.name(), nextVersion);
-                if (next.isEmpty()) continue;
-
-                Optional<SchemaMigration<?, ?>> migration = getMigration(current.version, next.get());
-                if (migration.isEmpty()) continue;
-
-                List<SchemaMigration<?, ?>> newPath = new ArrayList<>(current.path);
-                newPath.add(migration.get());
-
-                if (next.get().equals(to)) {
-                    return Optional.of(newPath);
-                }
-
-                if (visited.add(next.get().getKey())) {
-                    queue.offer(new PathNode(next.get(), newPath));
-                }
+            if (result.isPresent()) {
+                return result;
             }
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * Explores all next versions reachable from current version.
+     */
+    private Optional<List<SchemaMigration<?, ?>>> exploreNextVersions(
+            PathNode current,
+            Queue<PathNode> queue,
+            Set<String> visited,
+            String schemaName,
+            SchemaVersion targetVersion) {
+
+        for (int nextVersion = current.version.version() + 1;
+             nextVersion <= targetVersion.version();
+             nextVersion++) {
+
+            Optional<List<SchemaMigration<?, ?>>> result = tryMigrateToVersion(
+                current, queue, visited, schemaName, nextVersion, targetVersion
+            );
+
+            if (result.isPresent()) {
+                return result;
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Attempts to migrate to a specific version.
+     */
+    private Optional<List<SchemaMigration<?, ?>>> tryMigrateToVersion(
+            PathNode current,
+            Queue<PathNode> queue,
+            Set<String> visited,
+            String schemaName,
+            int nextVersionNumber,
+            SchemaVersion targetVersion) {
+
+        Optional<SchemaVersion> nextVersion = getVersion(schemaName, nextVersionNumber);
+        if (nextVersion.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Optional<SchemaMigration<?, ?>> migration = getMigration(current.version, nextVersion.get());
+        if (migration.isEmpty()) {
+            return Optional.empty();
+        }
+
+        List<SchemaMigration<?, ?>> newPath = buildNewPath(current.path, migration.get());
+
+        if (nextVersion.get().equals(targetVersion)) {
+            return Optional.of(newPath);
+        }
+
+        enqueueIfNotVisited(queue, visited, nextVersion.get(), newPath);
+        return Optional.empty();
+    }
+
+    /**
+     * Builds new migration path by adding migration step.
+     */
+    private List<SchemaMigration<?, ?>> buildNewPath(
+            List<SchemaMigration<?, ?>> currentPath,
+            SchemaMigration<?, ?> migration) {
+        List<SchemaMigration<?, ?>> newPath = new ArrayList<>(currentPath);
+        newPath.add(migration);
+        return newPath;
+    }
+
+    /**
+     * Enqueues next version if not visited.
+     */
+    private void enqueueIfNotVisited(
+            Queue<PathNode> queue,
+            Set<String> visited,
+            SchemaVersion nextVersion,
+            List<SchemaMigration<?, ?>> path) {
+        if (visited.add(nextVersion.getKey())) {
+            queue.offer(new PathNode(nextVersion, path));
+        }
     }
 
     /**
