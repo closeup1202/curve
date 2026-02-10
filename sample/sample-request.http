@@ -1,0 +1,169 @@
+### ============================================================
+### Curve Sample API 테스트
+### IntelliJ IDEA / VS Code REST Client 에서 실행 가능
+### 추천 순서: 회원가입 → 로그인 → 주문 생성 → 주문 조회 → 상태 변경 → 주문 취소 → 결제
+### ============================================================
+
+@baseUrl = http://localhost:8081
+
+
+### =====================
+### 1. 회원 서비스 (USER)
+### =====================
+
+### 회원가입
+### Event: USER_REGISTERED
+POST {{baseUrl}}/api/users/register
+Content-Type: application/json
+
+{
+  "name": "홍길동",
+  "email": "hong@example.com",
+  "phone": "010-1234-5678",
+  "password": "SecurePass123"
+}
+###
+POST {{baseUrl}}/api/users/register2
+Content-Type: application/json
+
+{
+  "name": "홍길동",
+  "email": "hong@example.com",
+  "phone": "010-1234-5678",
+  "password": "SecurePass123"
+}
+
+### 회원가입 - 중복 이메일 테스트 (위 요청 실행 후 다시 실행하면 400 에러)
+POST {{baseUrl}}/api/users/register
+Content-Type: application/json
+
+{
+  "name": "홍길동2",
+  "email": "hong@example.com",
+  "phone": "010-9999-8888",
+  "password": "AnotherPass456"
+}
+
+### 로그인 - 성공
+### Event: USER_LOGIN
+POST {{baseUrl}}/api/users/login
+Content-Type: application/json
+
+{
+  "email": "hong@example.com",
+  "password": "SecurePass123"
+}
+
+### 로그인 - 실패 (존재하지 않는 이메일)
+POST {{baseUrl}}/api/users/login
+Content-Type: application/json
+
+{
+  "email": "nobody@example.com",
+  "password": "WrongPass"
+}
+
+
+### ======================
+### 2. 주문 서비스 (ORDER)
+### ======================
+
+### 주문 생성
+### Event: ORDER_CREATED
+### 응답의 orderId를 복사해서 아래 @orderId 변수에 붙여넣기
+POST {{baseUrl}}/api/orders
+Content-Type: application/json
+
+{
+  "customerId": "customer-001",
+  "customerName": "홍길동",
+  "email": "hong@example.com",
+  "phone": "010-1234-5678",
+  "address": "서울시 강남구 테헤란로 123",
+  "productName": "MacBook Pro 16",
+  "quantity": 1,
+  "totalAmount": 3500000
+}
+
+### !! 주문 생성 응답의 orderId 값을 여기에 붙여넣으세요 !!
+@orderId = 여기에-orderId-붙여넣기
+
+### 주문 조회
+GET {{baseUrl}}/api/orders/{{orderId}}
+
+### 주문 상태 변경 → PAID (결제 완료)
+### Event: ORDER_STATUS_CHANGED
+PATCH {{baseUrl}}/api/orders/{{orderId}}/status?newStatus=PAID
+
+### 주문 상태 변경 → SHIPPED (배송 중)
+### Event: ORDER_STATUS_CHANGED
+PATCH {{baseUrl}}/api/orders/{{orderId}}/status?newStatus=SHIPPED
+
+### 주문 상태 변경 → DELIVERED (배송 완료)
+### Event: ORDER_STATUS_CHANGED
+PATCH {{baseUrl}}/api/orders/{{orderId}}/status?newStatus=DELIVERED
+
+### 주문 취소
+### Event: ORDER_CANCELLED
+POST {{baseUrl}}/api/orders/{{orderId}}/cancel
+Content-Type: application/json
+
+{
+  "reason": "고객 변심"
+}
+
+
+### ========================
+### 3. 결제 서비스 (PAYMENT)
+### ========================
+
+### 결제 처리 (확률적으로 실패할 수 있음)
+### Event: PAYMENT_SUCCESS (성공 시) / PAYMENT_FAILED (실패 시)
+POST {{baseUrl}}/api/payments
+Content-Type: application/json
+
+{
+  "orderId": "{{orderId}}",
+  "customerId": "customer-001",
+  "amount": 3500000,
+  "currency": "KRW",
+  "paymentMethod": "CREDIT_CARD"
+}
+
+### 결제 처리 (재시도 포함, 최대 3회)
+POST {{baseUrl}}/api/payments/with-retry?maxRetries=3
+Content-Type: application/json
+
+{
+  "orderId": "{{orderId}}",
+  "customerId": "customer-001",
+  "amount": 3500000,
+  "currency": "KRW",
+  "paymentMethod": "CREDIT_CARD"
+}
+
+### 결제 처리 (재시도 포함, 최대 5회)
+POST {{baseUrl}}/api/payments/with-retry?maxRetries=5
+Content-Type: application/json
+
+{
+  "orderId": "{{orderId}}",
+  "customerId": "customer-001",
+  "amount": 500000,
+  "currency": "KRW",
+  "paymentMethod": "BANK_TRANSFER"
+}
+
+
+### ==========================
+### 4. 시스템 / 모니터링
+### ==========================
+
+### 헬스 체크 (Kafka 연결 상태 포함)
+GET {{baseUrl}}/actuator/health
+
+### Curve 이벤트 메트릭
+GET {{baseUrl}}/actuator/curve-metrics
+
+### 앱 정보
+GET {{baseUrl}}/actuator/info

@@ -5,14 +5,16 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 
 /**
- * Jackson ObjectMapper auto-configuration.
- * Registers JavaTimeModule to support Java 8 Time API (Instant, LocalDateTime, etc.) serialization.
+ * Jackson ObjectMapper customization for Curve.
+ *
+ * <p>Registers JavaTimeModule and disables timestamp serialization via
+ * {@link Jackson2ObjectMapperBuilderCustomizer}, ensuring compatibility with
+ * Spring Boot's ObjectMapper lifecycle and other customizers (e.g., PiiModule).
  */
 @Slf4j
 @Configuration
@@ -20,12 +22,11 @@ import org.springframework.context.annotation.Primary;
 public class CurveJacksonAutoConfiguration {
 
     @Bean
-    @Primary
-    @ConditionalOnMissingBean(ObjectMapper.class)
-    public ObjectMapper objectMapper() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        return objectMapper;
+    public Jackson2ObjectMapperBuilderCustomizer curveJacksonCustomizer() {
+        return builder -> {
+            builder.modules(new JavaTimeModule());
+            builder.featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            log.debug("Curve Jackson customizer applied: JavaTimeModule registered, WRITE_DATES_AS_TIMESTAMPS disabled");
+        };
     }
 }
