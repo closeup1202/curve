@@ -5,7 +5,7 @@ dependencies {
     implementation 'org.slf4j:slf4j-api'
     
     // AWS SDK for S3 Backup
-    implementation platform('software.amazon.awssdk:bom:2.41.22')
+    implementation platform('software.amazon.awssdk:bom:2.41.29')
     implementation 'software.amazon.awssdk:s3'
 
     implementation project(':core')

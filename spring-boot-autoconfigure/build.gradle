@@ -8,7 +8,7 @@ dependencies {
     implementation 'org.springframework.retry:spring-retry'
     implementation 'org.springframework:spring-aspects'
 
-    compileOnly platform('software.amazon.awssdk:bom:2.41.22')
+    compileOnly platform('software.amazon.awssdk:bom:2.41.29')
     compileOnly 'software.amazon.awssdk:s3'
 
     compileOnly 'org.springframework.boot:spring-boot-configuration-processor'
