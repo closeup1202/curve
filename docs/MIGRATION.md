@@ -128,7 +128,7 @@ Version 0.1.0 includes important security enhancements and performance optimizat
 ```gradle
 // Update dependency version
 dependencies {
-    implementation 'io.github.closeup1202:curve:0.1.0'
+    implementation 'io.github.closeup1202:curve:0.1.1'
 }
 ```
 
@@ -263,7 +263,7 @@ plugins {
 }
 
 dependencies {
-    implementation 'io.github.closeup1202:curve:0.1.0'  // Step 2
+    implementation 'io.github.closeup1202:curve:0.1.1'  // Step 2
 }
 ```
 
