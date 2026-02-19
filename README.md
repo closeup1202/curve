@@ -171,7 +171,7 @@ Framework-independent core for maximum flexibility.
 **Gradle (build.gradle)**
 ```gradle
 dependencies {
-    implementation 'io.github.closeup1202:curve:0.1.0'
+    implementation 'io.github.closeup1202:curve:0.1.1'
 }
 ```
 
@@ -180,7 +180,7 @@ dependencies {
 <dependency>
     <groupId>io.github.closeup1202</groupId>
     <artifactId>curve</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
 </dependency>
 ```
 
