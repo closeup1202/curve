@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.2] - 2026-02-20
+
+### Fixed
+- **JavaTimeModule not applied to ObjectMapper (Critical)**: `Jackson2ObjectMapperBuilder.modules()` replaces its internal module map on each call rather than appending, so `JavaTimeModule` registered by the Curve Jackson customizer was silently wiped out when the `PiiModule` customizer ran afterward
+    - Effect: Fields of type `java.time.Instant` (and other `java.time` types) in event payloads caused `InvalidDefinitionException` at serialization time
+    - Fix: `JavaTimeModule` is now registered directly on the `ObjectMapper` in `CurveEventSerializerAutoConfiguration` at serializer construction time, independent of customizer ordering
+    - Also registered `JavaTimeModule` as a Spring bean in `CurveJacksonAutoConfiguration` to align with Spring Boot's module detection convention
+- **Sample app PII configuration**: Added `curve.pii.crypto.default-key` to sample application configuration to demonstrate PII encryption setup
+
+---
+
 ## [0.1.1] - 2026-02-19
 
 ### Fixed
@@ -233,6 +244,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date       | Description |
 |---------|------------|-------------|
+| 0.1.2   | 2026-02-20 | Fix JavaTimeModule silently removed by PiiModule customizer ordering |
 | 0.1.1   | 2026-02-19 | Fix PII silent failure due to Jackson ObjectMapper builder pipeline bypass |
 | 0.1.0   | 2026-02-07 | Security & performance improvements (AES key validation, HMAC salt warning, etc.) |
 | 0.0.5   | 2026-02-05 | Add KMS module (AWS KMS / HashiCorp Vault) with envelope encryption |
@@ -267,7 +279,8 @@ When contributing, please update this changelog:
 
 ---
 
-[Unreleased]: https://github.com/closeup1202/curve/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/closeup1202/curve/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/closeup1202/curve/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/closeup1202/curve/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/closeup1202/curve/compare/v0.0.5...v0.1.0
 [0.0.5]: https://github.com/closeup1202/curve/compare/v0.0.4...v0.0.5

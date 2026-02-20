@@ -48,6 +48,8 @@ Example: 1.2.3
 
 | Curve Version | Spring Boot | Java | Kafka Client |
 |---------------|-------------|------|--------------|
+| 0.1.2 | 3.5.x | 17, 21 | 3.8+ |
+| 0.1.1 | 3.5.x | 17, 21 | 3.8+ |
 | 0.1.0 | 3.5.x | 17, 21 | 3.8+ |
 | 0.0.5 | 3.5.x | 17, 21 | 3.8+ |
 | 0.0.1 - 0.0.4 | 3.4.x - 3.5.x | 17, 21 | 3.0+ |
@@ -128,7 +130,7 @@ Version 0.1.0 includes important security enhancements and performance optimizat
 ```gradle
 // Update dependency version
 dependencies {
-    implementation 'io.github.closeup1202:curve:0.1.1'
+    implementation 'io.github.closeup1202:curve:0.1.2'
 }
 ```
 
@@ -263,7 +265,7 @@ plugins {
 }
 
 dependencies {
-    implementation 'io.github.closeup1202:curve:0.1.1'  // Step 2
+    implementation 'io.github.closeup1202:curve:0.1.2'  // Step 2
 }
 ```
 
