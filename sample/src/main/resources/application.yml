@@ -75,6 +75,8 @@ curve:
 
   pii:
     enabled: true
+    crypto:
+      default-key: dGVzdC1rZXktZm9yLXNhbXBsZS1hcHAtMzJieXRlcyE=  # DEV ONLY: "test-key-for-sample-app-32bytes!"
 
   # Transactional Outbox Pattern
   outbox:
