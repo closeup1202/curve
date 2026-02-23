@@ -1,5 +1,5 @@
 dependencies {
-    compileOnly platform('software.amazon.awssdk:bom:2.41.29')
+    compileOnly platform('software.amazon.awssdk:bom:2.41.34')
     compileOnly 'software.amazon.awssdk:kms'
 
     implementation platform('org.springframework.cloud:spring-cloud-dependencies:2025.1.1')
@@ -14,7 +14,7 @@ dependencies {
 
     implementation project(':core')
 
-    testImplementation platform('software.amazon.awssdk:bom:2.41.29')
+    testImplementation platform('software.amazon.awssdk:bom:2.41.34')
     testImplementation 'software.amazon.awssdk:kms'
 
     testImplementation 'org.springframework.boot:spring-boot-test'
