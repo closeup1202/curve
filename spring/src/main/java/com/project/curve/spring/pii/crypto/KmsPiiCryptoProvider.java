@@ -5,6 +5,8 @@ import com.project.curve.core.key.KeyProvider;
 import com.project.curve.spring.exception.PiiCryptoException;
 import com.project.curve.spring.pii.crypto.util.AesUtil;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -63,14 +65,26 @@ public class KmsPiiCryptoProvider implements PiiCryptoProvider {
         }
     }
 
+    /**
+     * Hashes a value using HMAC-SHA-256.
+     * <p>
+     * Uses the configured salt as the HMAC key for secure hashing.
+     *
+     * @param value Original value to hash
+     * @return Base64-encoded HMAC hash value
+     * @throws PiiCryptoException if hashing fails
+     */
     @Override
     public String hash(String value) {
         if (value == null) return null;
 
         try {
-            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-            String saltedValue = salt + value;
-            byte[] hashBytes = digest.digest(saltedValue.getBytes(StandardCharsets.UTF_8));
+            SecretKeySpec hmacKey = new SecretKeySpec(
+                    salt.getBytes(StandardCharsets.UTF_8), "HmacSHA256"
+            );
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(hmacKey);
+            byte[] hashBytes = mac.doFinal(value.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hashBytes);
         } catch (Exception e) {
             throw new PiiCryptoException("Hashing failed: " + e.getMessage(), e);

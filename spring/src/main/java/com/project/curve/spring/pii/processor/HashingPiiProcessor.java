@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * HASH strategy processor.
- * Performs SHA-256 hashing, which is irreversible.
+ * Performs HMAC-SHA-256 hashing, which is irreversible.
  */
 @Component
 @RequiredArgsConstructor

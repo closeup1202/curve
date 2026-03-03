@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * CurveAutoConfiguration Integration test.
- *
+ * <p>
  * Verifies that Spring Boot Auto-Configuration works correctly.
  */
 @DisplayName("CurveAutoConfiguration test")
