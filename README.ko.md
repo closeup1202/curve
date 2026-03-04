@@ -678,9 +678,9 @@ public class RabbitMqEventProducer extends AbstractEventPublisher {
 
 ## Roadmap
 
-### v0.1.0 (2026년 2분기)
+### v0.3.0 (2026년 2분기)
 - [ ] 성능 벤치마크 & 최적화 가이드
-- [ ] GraphQL 구독 지원
+- [ ] 멀티 브로커 발행 (이벤트별 다른 Kafka 클러스터로 발행)
 - [ ] AWS EventBridge 어댑터
 - [ ] Grafana 대시보드 템플릿
 - [ ] 추가 PII 타입 프리셋 (주민등록번호, 신용카드 등)
