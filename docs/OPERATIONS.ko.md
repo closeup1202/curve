@@ -6,6 +6,7 @@
 
 - [DLQ 모니터링](#dlq-모니터링)
 - [메트릭 해석](#메트릭-해석)
+- [Outbox Replay API](#outbox-replay-api)
 - [트러블슈팅 매트릭스](#트러블슈팅-매트릭스)
 - [복구 절차](#복구-절차)
 - [알림 설정](#알림-설정)
@@ -188,6 +189,112 @@ Transactional Outbox 패턴 사용자용:
 | **CLOSED** | 정상 동작 | - | 5회 연속 실패 시 열림 |
 | **OPEN** | 모든 요청 차단 | 60초 | HALF-OPEN으로 전이 |
 | **HALF-OPEN** | 테스트 요청 허용 | 성공/실패 시까지 | 성공→CLOSED, 실패→OPEN |
+
+---
+
+## Outbox Replay API
+
+`/actuator/curve-outbox` 엔드포인트를 통해 이전에 발행된 Outbox 이벤트를 재발행할 수 있습니다.
+
+### 설정
+
+설정 파일에서 엔드포인트를 활성화하세요:
+
+```yaml title="application.yml"
+management:
+  endpoints:
+    web:
+      exposure:
+        include: curve-outbox  # 기존 목록에 추가
+```
+
+### GET /actuator/curve-outbox
+
+Outbox 통계를 조회합니다:
+
+```bash
+curl http://localhost:8081/actuator/curve-outbox
+```
+
+**응답:**
+
+```json
+{
+  "total": 1523,           // Outbox의 총 이벤트 수
+  "pending": 5,            // 발행 대기 중인 이벤트
+  "published": 1516,       // 성공적으로 발행된 이벤트
+  "failed": 2,             // 모든 재시도 후 실패한 이벤트
+  "avgProcessingTimeMs": 45
+}
+```
+
+### POST /actuator/curve-outbox
+
+특정 시점부터의 이벤트를 재발행합니다:
+
+```bash
+curl -X POST http://localhost:8081/actuator/curve-outbox \
+  -H "Content-Type: application/vnd.spring-boot.actuator.v3+json" \
+  -d '{
+    "since": "2026-03-01T00:00:00Z",
+    "limit": 100
+  }'
+```
+
+**요청 파라미터:**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| `since` | String (ISO-8601) | 예 | 재발행 시작 시간 |
+| `limit` | Integer | 아니오 | 재발행할 최대 이벤트 수 (기본값: 1000) |
+
+**응답:**
+
+```json
+{
+  "since": "2026-03-01T00:00:00Z",
+  "limit": 100,
+  "total": 42,              // 해당 시간 이후 발견된 이벤트 수
+  "success": 40,            // 성공적으로 재발행된 이벤트 수
+  "failed": 2,              // 재발행 중 실패한 이벤트 수
+  "failedEventIds": [       // 실패한 이벤트 ID
+    "evt-001",
+    "evt-002"
+  ]
+}
+```
+
+### 일반적인 사용 사례
+
+**컨슈머 다운타임 복구:**
+
+```bash
+# 컨슈머가 10:00~10:30에 다운되었던 경우
+curl -X POST http://localhost:8081/actuator/curve-outbox \
+  -H "Content-Type: application/vnd.spring-boot.actuator.v3+json" \
+  -d '{
+    "since": "2026-03-04T10:00:00Z"
+  }'
+```
+
+**컨슈머 버그 수정 후 재발행:**
+
+```bash
+# 지난 1시간의 모든 이벤트 재처리
+curl -X POST http://localhost:8081/actuator/curve-outbox \
+  -H "Content-Type: application/vnd.spring-boot.actuator.v3+json" \
+  -d '{
+    "since": "2026-03-04T08:00:00Z",
+    "limit": 5000
+  }'
+```
+
+### 중요 사항
+
+1. **멱등성 필수**: 컨슈머는 이벤트 ID를 고유 키로 사용하여 중복 이벤트를 처리해야 함
+2. **이미 발행된 이벤트도 재발행됨**: Replay API는 현재 상태와 상관없이 이벤트를 재발행
+3. **기본 토픽 사용됨**: 재발행 이벤트는 원래 토픽으로 전송됨
+4. **타임스탬프 검증 없음**: 컨슈머 측에서 이전 이벤트 처리 가능성을 고려하세요
 
 ---
 

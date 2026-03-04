@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.2.0] - 2026-03-04
+
+### Added
+- **Multi-topic publishing**: `@PublishEvent` now supports a `topic` attribute to publish events to different Kafka topics per domain context
+    - When `topic` is set, overrides `curve.kafka.topic` for that specific event
+    - Fully backward-compatible; existing annotations without `topic` continue to use the default topic
+    - New `EventProducer` port methods: `publish(payload, topic)`, `publish(payload, severity, topic)`
+- **Outbox Replay API**: New `/actuator/curve-outbox` endpoint for replaying outbox events
+    - `GET /actuator/curve-outbox` — view outbox publisher statistics
+    - `POST /actuator/curve-outbox` — replay events since a given ISO-8601 timestamp with optional limit
+    - Supports JPA and JDBC outbox implementations
+    - Already-published events can be replayed; consumer side must handle idempotency
+
 ### Changed
 - **BREAKING**: PII hashing algorithm changed from SHA-256 to HMAC-SHA-256 in `KmsPiiCryptoProvider`
     - Ensures consistency with `DefaultPiiCryptoProvider` which already uses HMAC-SHA-256
@@ -14,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - **Impact**: Existing hashed values will NOT match new hashes after upgrade
     - **Migration**: Re-hashing of existing PII data may be required for verification purposes
     - See [Migration Guide](MIGRATION.md) for upgrade instructions
+- **BREAKING**: `EventProducer` interface has two new methods (`publish(T, String)`, `publish(T, EventSeverity, String)`); custom implementations must add these methods
 
 ### Fixed
 - **JavaDoc Accuracy**: Corrected documentation to reflect actual HMAC-SHA-256 implementation
@@ -21,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Updated `PiiField` annotation documentation (also clarified AES-256-GCM for encryption)
     - Updated `HashingPiiProcessor` JavaDoc
     - All documentation now accurately states HMAC-SHA-256 for hash strategy
+- `CurveJacksonAutoConfiguration`: Fixed `JavaTimeModule` always being registered
 
 ---
 
@@ -259,6 +276,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date       | Description |
 |---------|------------|-------------|
+| 0.2.0   | 2026-03-04 | Add multi-topic publishing & Outbox Replay API + HMAC-SHA-256 & JavaTimeModule fixes |
 | 0.1.2   | 2026-02-20 | Fix JavaTimeModule silently removed by PiiModule customizer ordering |
 | 0.1.1   | 2026-02-19 | Fix PII silent failure due to Jackson ObjectMapper builder pipeline bypass |
 | 0.1.0   | 2026-02-07 | Security & performance improvements (AES key validation, HMAC salt warning, etc.) |
@@ -294,7 +312,8 @@ When contributing, please update this changelog:
 
 ---
 
-[Unreleased]: https://github.com/closeup1202/curve/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/closeup1202/curve/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/closeup1202/curve/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/closeup1202/curve/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/closeup1202/curve/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/closeup1202/curve/compare/v0.0.5...v0.1.0

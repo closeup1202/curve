@@ -6,6 +6,7 @@ This document describes operational procedures for monitoring, troubleshooting, 
 
 - [DLQ Monitoring](#dlq-monitoring)
 - [Metrics Interpretation](#metrics-interpretation)
+- [Outbox Replay API](#outbox-replay-api)
 - [Troubleshooting Matrix](#troubleshooting-matrix)
 - [Recovery Procedures](#recovery-procedures)
 - [Alert Configuration](#alert-configuration)
@@ -188,6 +189,112 @@ For Transactional Outbox Pattern users:
 | **CLOSED** | Normal operation | - | Opens after 5 consecutive failures |
 | **OPEN** | All requests blocked | 60 seconds | Transitions to HALF-OPEN |
 | **HALF-OPEN** | Allows test requests | Until success/failure | Success→CLOSED, Failure→OPEN |
+
+---
+
+## Outbox Replay API
+
+The `/actuator/curve-outbox` endpoint allows you to replay previously published outbox events for recovery and testing purposes.
+
+### Setup
+
+Enable the endpoint in your configuration:
+
+```yaml title="application.yml"
+management:
+  endpoints:
+    web:
+      exposure:
+        include: curve-outbox  # Add to existing list
+```
+
+### GET /actuator/curve-outbox
+
+Retrieve outbox statistics:
+
+```bash
+curl http://localhost:8081/actuator/curve-outbox
+```
+
+**Response:**
+
+```json
+{
+  "total": 1523,           // Total events in outbox
+  "pending": 5,            // Events waiting to be published
+  "published": 1516,       // Events successfully published
+  "failed": 2,             // Events failed after all retries
+  "avgProcessingTimeMs": 45
+}
+```
+
+### POST /actuator/curve-outbox
+
+Replay events from a specific timestamp:
+
+```bash
+curl -X POST http://localhost:8081/actuator/curve-outbox \
+  -H "Content-Type: application/vnd.spring-boot.actuator.v3+json" \
+  -d '{
+    "since": "2026-03-01T00:00:00Z",
+    "limit": 100
+  }'
+```
+
+**Request Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `since` | String (ISO-8601) | Yes | Start timestamp for replay |
+| `limit` | Integer | No | Max events to replay (default: 1000) |
+
+**Response:**
+
+```json
+{
+  "since": "2026-03-01T00:00:00Z",
+  "limit": 100,
+  "total": 42,              // Events found since timestamp
+  "success": 40,            // Successfully replayed
+  "failed": 2,              // Failed during replay
+  "failedEventIds": [       // Event IDs that failed
+    "evt-001",
+    "evt-002"
+  ]
+}
+```
+
+### Common Use Cases
+
+**Recovery from consumer downtime:**
+
+```bash
+# Consumer was down from 10:00 to 10:30
+curl -X POST http://localhost:8081/actuator/curve-outbox \
+  -H "Content-Type: application/vnd.spring-boot.actuator.v3+json" \
+  -d '{
+    "since": "2026-03-04T10:00:00Z"
+  }'
+```
+
+**Replay for consumer bug fix:**
+
+```bash
+# Reprocess all events from past 1 hour
+curl -X POST http://localhost:8081/actuator/curve-outbox \
+  -H "Content-Type: application/vnd.spring-boot.actuator.v3+json" \
+  -d '{
+    "since": "2026-03-04T08:00:00Z",
+    "limit": 5000
+  }'
+```
+
+### Important Notes
+
+1. **Idempotency required**: Consumers must handle duplicate events using event IDs as unique keys
+2. **Already-published events**: Replay API will re-publish events regardless of their current status
+3. **Default topic used**: Replayed events are sent to their original topics
+4. **No timestamp validation**: Ensure consumer side can process older events appropriately
 
 ---
 

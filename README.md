@@ -135,6 +135,13 @@ Everything handled automatically:
 ### Declarative Event Publishing
 No more Kafka boilerplate - just add `@PublishEvent` annotation. Supports SpEL for flexible payload extraction.
 
+**Multi-Topic Support (v0.2.0+):**
+Route different events to different Kafka topics using the `topic` attribute:
+```java
+@PublishEvent(eventType = "ORDER_CREATED", topic = "orders.events")
+@PublishEvent(eventType = "STOCK_UPDATED", topic = "inventory.events")
+```
+
 ### Standardized Event Structure
 All events follow a unified schema with metadata (source, actor, trace, tags).
 
@@ -150,12 +157,19 @@ Zero event loss even when Kafka is down for 24 hours.
 - **Async mode**: ~10,000+ TPS (with MDC Context Propagation)
 - **Transactional Outbox**: Guarantees atomicity and consistency.
 
+### Outbox Replay API (v0.2.0+)
+Replay previously published events via `/actuator/curve-outbox` endpoint:
+- View outbox statistics
+- Replay events since a specific timestamp
+- Perfect for consumer recovery and testing
+
 ### Hexagonal Architecture
 Framework-independent core for maximum flexibility.
 
 ### Built-in Observability
 - Spring Actuator Health Indicator
 - Custom metrics endpoint (`/actuator/curve-metrics`)
+- Outbox replay endpoint (`/actuator/curve-outbox`)
 - Detailed event tracking
 - **Async Context Propagation**: MDC (Trace ID) is preserved even in async threads.
 
@@ -171,7 +185,7 @@ Framework-independent core for maximum flexibility.
 **Gradle (build.gradle)**
 ```gradle
 dependencies {
-    implementation 'io.github.closeup1202:curve:0.1.2'
+    implementation 'io.github.closeup1202:curve:0.2.0'
 }
 ```
 
@@ -180,7 +194,7 @@ dependencies {
 <dependency>
     <groupId>io.github.closeup1202</groupId>
     <artifactId>curve</artifactId>
-    <version>0.1.2</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 

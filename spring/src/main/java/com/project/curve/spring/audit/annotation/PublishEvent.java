@@ -147,6 +147,25 @@ public @interface PublishEvent {
     boolean failOnError() default false;
 
     /**
+     * The Kafka topic to publish the event to.
+     * <p>
+     * When set, overrides the default topic configured in {@code curve.kafka.topic}.
+     * Useful when a single service has multiple domain contexts publishing to different topics.
+     *
+     * <h3>Example:</h3>
+     * <pre>{@code
+     * @PublishEvent(eventType = "CART_ITEM_ADDED", topic = "cart.events")
+     * public CartItem addItem(AddItemRequest request) { ... }
+     *
+     * @PublishEvent(eventType = "STOCK_DECREASED", topic = "stock.events")
+     * public Stock decreaseStock(DecreaseRequest request) { ... }
+     * }</pre>
+     *
+     * @return the target Kafka topic (empty string means use default)
+     */
+    String topic() default "";
+
+    /**
      * Whether to use the Transactional Outbox Pattern.
      * <p>
      * When enabled, events are saved to the database within the same transaction

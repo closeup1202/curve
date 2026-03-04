@@ -7,6 +7,7 @@ This guide helps you upgrade between Curve versions safely.
 - [Versioning Strategy](#versioning-strategy)
 - [Version Compatibility Matrix](#version-compatibility-matrix)
 - [Upgrade Checklist](#upgrade-checklist)
+- [Migration: 0.1.x to 0.2.0](#migration-01x-to-020)
 - [Migration: 0.0.x to 0.1.x](#migration-00x-to-01x)
 - [Configuration Changes](#configuration-changes)
 - [Breaking Changes Log](#breaking-changes-log)
@@ -48,6 +49,7 @@ Example: 1.2.3
 
 | Curve Version | Spring Boot | Java | Kafka Client |
 |---------------|-------------|------|--------------|
+| 0.2.0 | 3.5.x | 17, 21 | 3.8+ |
 | 0.1.2 | 3.5.x | 17, 21 | 3.8+ |
 | 0.1.1 | 3.5.x | 17, 21 | 3.8+ |
 | 0.1.0 | 3.5.x | 17, 21 | 3.8+ |
@@ -96,9 +98,95 @@ Before upgrading to a new version:
 
 ---
 
-## Migration: 0.1.x to Next Version (Unreleased)
+## Migration: 0.1.x to 0.2.0
 
-Version 0.2.0 (or next minor/patch) includes a **breaking change** to PII hashing for improved security and consistency.
+Version 0.2.0 adds multi-topic publishing and Outbox Replay API. It also includes **breaking changes** to PII hashing and the `EventProducer` interface.
+
+### ⚠️ BREAKING CHANGE: EventProducer Interface
+
+**What Changed:**
+Two new methods were added to support multi-topic publishing:
+- `publish(T payload, String topic)`
+- `publish(T payload, EventSeverity severity, String topic)`
+
+**Before (v0.1.x):**
+```java
+public interface EventProducer {
+    <T extends DomainEventPayload> void publish(T payload);
+    <T extends DomainEventPayload> void publish(T payload, EventSeverity severity);
+}
+```
+
+**After (v0.2.0+):**
+```java
+public interface EventProducer {
+    <T extends DomainEventPayload> void publish(T payload);
+    <T extends DomainEventPayload> void publish(T payload, EventSeverity severity);
+    <T extends DomainEventPayload> void publish(T payload, String topic);                    // NEW
+    <T extends DomainEventPayload> void publish(T payload, EventSeverity severity, String topic); // NEW
+}
+```
+
+**Impact Assessment:**
+
+| Scenario | Impact | Action Required |
+|----------|--------|-----------------|
+| **Using built-in `KafkaEventProducer`** | ✅ No impact | None - automatically implemented |
+| **Using custom `EventProducer` implementation** | ⚠️ **BREAKING** | Implement 2 new methods (see below) |
+
+### Migration Steps for Custom EventProducer
+
+If you have a custom `EventProducer` implementation:
+
+1. **Add the two new methods**:
+   ```java
+   @Component
+   public class CustomEventProducer implements EventProducer {
+
+       private final String defaultTopic;  // Injected from curve.kafka.topic
+
+       // Existing methods
+       @Override
+       public <T extends DomainEventPayload> void publish(T payload) {
+           publish(payload, EventSeverity.INFO);
+       }
+
+       @Override
+       public <T extends DomainEventPayload> void publish(T payload, EventSeverity severity) {
+           publish(payload, severity, null);  // Use default topic
+       }
+
+       // NEW METHODS (v0.2.0+)
+       @Override
+       public <T extends DomainEventPayload> void publish(T payload, String topic) {
+           publish(payload, EventSeverity.INFO, topic);
+       }
+
+       @Override
+       public <T extends DomainEventPayload> void publish(T payload, EventSeverity severity, String topic) {
+           String resolvedTopic = (topic != null && !topic.isEmpty()) ? topic : defaultTopic;
+           // Your implementation here
+           sendToTarget(payload, resolvedTopic);
+       }
+
+       private void sendToTarget(Object payload, String topic) {
+           // Implementation specific to your event broker
+       }
+   }
+   ```
+
+2. **Topic Resolution Logic:**
+   - If `topic` parameter is provided and non-empty → use specified topic
+   - If `topic` is empty or null → use `defaultTopic` from configuration (`curve.kafka.topic`)
+
+3. **Update Gradle/Maven:**
+   ```gradle
+   dependencies {
+       implementation 'io.github.closeup1202:curve:0.2.0'
+   }
+   ```
+
+4. **No code changes needed for `@PublishEvent` users** - the annotation works the same way
 
 ### ⚠️ BREAKING CHANGE: PII Hashing Algorithm
 

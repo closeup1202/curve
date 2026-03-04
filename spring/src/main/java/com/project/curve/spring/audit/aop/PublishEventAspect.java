@@ -85,8 +85,15 @@ public class PublishEventAspect {
 
     private void publishAndRecordSuccess(String eventType, EventPayload payload, PublishEvent publishEvent, long startTime) {
         EventSeverity severity = publishEvent.severity();
-        eventProducer.publish(payload, severity);
-        log.debug("Event published: eventType={}, severity={}", eventType, severity);
+        String topic = publishEvent.topic();
+
+        if (topic.isBlank()) {
+            eventProducer.publish(payload, severity);
+            log.debug("Event published: eventType={}, severity={}, topic=(default)", eventType, severity);
+        } else {
+            eventProducer.publish(payload, severity, topic);
+            log.debug("Event published: eventType={}, severity={}, topic={}", eventType, severity, topic);
+        }
 
         recordSuccessMetrics(eventType, startTime);
     }

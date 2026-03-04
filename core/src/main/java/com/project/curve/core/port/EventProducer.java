@@ -73,4 +73,30 @@ public interface EventProducer {
      * @throws com.project.curve.core.exception.EventSerializationException if serialization fails
      */
     <T extends DomainEventPayload> void publish(T payload, EventSeverity severity);
+
+    /**
+     * Publishes a domain event to a specific Kafka topic with default severity level (INFO).
+     * <p>
+     * Use this method when a single service has multiple domain contexts that publish
+     * events to different topics (e.g., cart.events, stock.events).
+     *
+     * @param <T>     the type of the event payload
+     * @param payload the domain event payload to publish
+     * @param topic   the target Kafka topic to publish to
+     * @throws com.project.curve.core.exception.InvalidEventException if the payload is invalid
+     * @throws com.project.curve.core.exception.EventSerializationException if serialization fails
+     */
+    <T extends DomainEventPayload> void publish(T payload, String topic);
+
+    /**
+     * Publishes a domain event to a specific Kafka topic with a specified severity level.
+     *
+     * @param <T>      the type of the event payload
+     * @param payload  the domain event payload to publish
+     * @param severity the severity level of the event
+     * @param topic    the target Kafka topic to publish to
+     * @throws com.project.curve.core.exception.InvalidEventException if the payload is invalid
+     * @throws com.project.curve.core.exception.EventSerializationException if serialization fails
+     */
+    <T extends DomainEventPayload> void publish(T payload, EventSeverity severity, String topic);
 }

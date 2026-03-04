@@ -8,9 +8,36 @@ keywords: curve extensibility, custom implementation, event producer, context pr
 
 Curve's hexagonal architecture makes it easy to extend and customize.
 
+!!! warning "Breaking Change in v0.2.0"
+    The `EventProducer` interface added two new methods for multi-topic support:
+    - `publish(T payload, String topic)`
+    - `publish(T payload, EventSeverity severity, String topic)`
+
+    If you have a custom `EventProducer` implementation, you must add implementations for these methods. When `topic` is empty or null, use the default topic from configuration.
+
 ## Custom Event Producer
 
 Implement the `EventProducer` interface to support non-Kafka brokers.
+
+### EventProducer Interface
+
+The `EventProducer` interface defines the contract for publishing domain events:
+
+```java
+public interface EventProducer {
+    // Existing methods (v0.1.x and earlier)
+    <T extends DomainEventPayload> void publish(T payload);
+    <T extends DomainEventPayload> void publish(T payload, EventSeverity severity);
+
+    // New methods (v0.2.0+) for multi-topic publishing
+    <T extends DomainEventPayload> void publish(T payload, String topic);
+    <T extends DomainEventPayload> void publish(T payload, EventSeverity severity, String topic);
+}
+```
+
+**Topic Resolution Logic:**
+- If `topic` parameter is provided and non-empty → publish to specified topic
+- If `topic` is empty or null → use default topic from `curve.kafka.topic` configuration
 
 ### Example: RabbitMQ Producer
 
@@ -21,26 +48,47 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RabbitMqEventProducer extends AbstractEventPublisher {
+public class RabbitMqEventProducer implements EventProducer {
 
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
+    private final String defaultTopic;  // Injected from curve.kafka.topic
 
     public RabbitMqEventProducer(
         RabbitTemplate rabbitTemplate,
-        ObjectMapper objectMapper
+        ObjectMapper objectMapper,
+        @Value("${curve.kafka.topic}") String defaultTopic
     ) {
         this.rabbitTemplate = rabbitTemplate;
         this.objectMapper = objectMapper;
+        this.defaultTopic = defaultTopic;
     }
 
     @Override
-    protected <T extends DomainEventPayload> void send(EventEnvelope<T> envelope) {
+    public <T extends DomainEventPayload> void publish(T payload) {
+        publish(payload, EventSeverity.INFO);
+    }
+
+    @Override
+    public <T extends DomainEventPayload> void publish(T payload, EventSeverity severity) {
+        publish(payload, severity, null);  // Use default topic
+    }
+
+    @Override
+    public <T extends DomainEventPayload> void publish(T payload, String topic) {
+        publish(payload, EventSeverity.INFO, topic);
+    }
+
+    @Override
+    public <T extends DomainEventPayload> void publish(T payload, EventSeverity severity, String topic) {
         try {
-            String json = objectMapper.writeValueAsString(envelope);
+            String json = objectMapper.writeValueAsString(payload);
+            String resolvedTopic = (topic != null && !topic.isEmpty()) ? topic : defaultTopic;
+
+            // Send to RabbitMQ exchange with routing key = topic name
             rabbitTemplate.convertAndSend(
                 "events.exchange",
-                envelope.getEventType(),
+                resolvedTopic,
                 json
             );
         } catch (Exception e) {

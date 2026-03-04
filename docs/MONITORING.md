@@ -33,6 +33,57 @@ curl http://localhost:8080/actuator/curve-metrics
 }
 ```
 
+### Curve Outbox Statistics
+
+View Outbox Publisher statistics and replay events:
+
+**Get Outbox Statistics:**
+```bash
+curl http://localhost:8080/actuator/curve-outbox
+```
+
+**Response:**
+```json
+{
+  "total": 1523,           // Total events in outbox
+  "pending": 5,            // Events waiting to be published
+  "published": 1516,       // Events successfully published
+  "failed": 2,             // Events failed after all retries
+  "avgProcessingTimeMs": 45
+}
+```
+
+**Replay Outbox Events:**
+```bash
+curl -X POST http://localhost:8080/actuator/curve-outbox \
+  -H "Content-Type: application/vnd.spring-boot.actuator.v3+json" \
+  -d '{
+    "since": "2026-03-01T00:00:00Z",
+    "limit": 100
+  }'
+```
+
+**Response:**
+```json
+{
+  "since": "2026-03-01T00:00:00Z",
+  "limit": 100,
+  "total": 42,
+  "success": 40,
+  "failed": 2,
+  "failedEventIds": ["evt-001", "evt-002"]
+}
+```
+
+**Enable the Endpoint:**
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: curve-outbox  # Add to existing list
+```
+
 ### Micrometer Metrics
 
 Curve exposes the following metrics via Micrometer:

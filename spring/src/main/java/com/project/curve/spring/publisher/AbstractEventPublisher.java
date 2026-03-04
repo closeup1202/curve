@@ -40,5 +40,36 @@ public abstract class AbstractEventPublisher implements EventProducer {
         send(envelope);
     }
 
+    @Override
+    public <T extends DomainEventPayload> void publish(T payload, String topic) {
+        publish(payload, EventSeverity.INFO, topic);
+    }
+
+    @Override
+    public <T extends DomainEventPayload> void publish(T payload, EventSeverity severity, String topic) {
+        EventEnvelope<T> envelope = envelopeFactory.create(
+                payload.getEventType(),
+                severity,
+                eventContextProvider.currentMetadata(payload),
+                payload
+        );
+
+        eventValidator.validate(envelope);
+        send(envelope, topic);
+    }
+
     protected abstract <T extends DomainEventPayload> void send(EventEnvelope<T> envelope);
+
+    /**
+     * Sends an event envelope to a specific topic.
+     * <p>
+     * Subclasses can override this method to support per-event topic routing.
+     * The default implementation delegates to {@link #send(EventEnvelope)} ignoring the topic.
+     *
+     * @param envelope the event envelope to send
+     * @param topic    the target Kafka topic
+     */
+    protected <T extends DomainEventPayload> void send(EventEnvelope<T> envelope, String topic) {
+        send(envelope);
+    }
 }

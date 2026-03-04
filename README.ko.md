@@ -135,6 +135,13 @@ public class UserService {
 ### 선언적 이벤트 발행
 Kafka 보일러플레이트 코드 불필요 - `@PublishEvent` 어노테이션만 추가. SpEL을 통한 유연한 페이로드 추출 지원.
 
+**멀티 토픽 지원 (v0.2.0+):**
+다양한 이벤트를 다른 Kafka 토픽으로 라우팅:
+```java
+@PublishEvent(eventType = "ORDER_CREATED", topic = "orders.events")
+@PublishEvent(eventType = "STOCK_UPDATED", topic = "inventory.events")
+```
+
 ### 표준화된 이벤트 구조
 모든 이벤트가 메타데이터(source, actor, trace, tags)를 포함한 통일된 스키마 사용
 
@@ -150,12 +157,19 @@ Kafka가 24시간 장애여도 이벤트 손실 제로
 - **비동기 모드**: ~10,000+ TPS (MDC 컨텍스트 전파 포함)
 - **Transactional Outbox**: 원자성 및 일관성 보장
 
+### Outbox Replay API (v0.2.0+)
+`/actuator/curve-outbox` 엔드포인트를 통해 이전에 발행된 이벤트 재발행:
+- Outbox 통계 조회
+- 특정 시점 이후의 이벤트 재발행
+- 컨슈머 복구 및 테스트에 완벽
+
 ### Hexagonal Architecture
 최대 유연성을 위한 프레임워크 독립적 코어
 
 ### 내장 관찰성
 - Spring Actuator Health Indicator
 - 커스텀 메트릭 엔드포인트 (`/actuator/curve-metrics`)
+- Outbox Replay 엔드포인트 (`/actuator/curve-outbox`)
 - 상세한 이벤트 추적
 - **비동기 컨텍스트 전파**: 비동기 스레드에서도 MDC(Trace ID)가 유지됩니다.
 
@@ -171,7 +185,7 @@ Kafka가 24시간 장애여도 이벤트 손실 제로
 **Gradle (build.gradle)**
 ```gradle
 dependencies {
-    implementation 'io.github.closeup1202:curve:0.1.2'
+    implementation 'io.github.closeup1202:curve:0.2.0'
 }
 ```
 
@@ -180,7 +194,7 @@ dependencies {
 <dependency>
     <groupId>io.github.closeup1202</groupId>
     <artifactId>curve</artifactId>
-    <version>0.1.2</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
