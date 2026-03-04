@@ -12,7 +12,7 @@ import com.project.curve.autoconfigure.retry.CurveRetryAutoConfiguration;
 import com.project.curve.autoconfigure.serde.CurveEventSerializerAutoConfiguration;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -46,9 +46,6 @@ import java.util.concurrent.Executor;
 })
 public class CurveAutoConfiguration {
 
-    @Autowired(required = false)
-    private TaskDecorator taskDecorator;
-
     @PostConstruct
     public void startUp() {
         log.info("Curve auto-configuration enabled (disable with curve.enabled=false)");
@@ -57,7 +54,10 @@ public class CurveAutoConfiguration {
     @Bean(name = "curveAsyncExecutor")
     @ConditionalOnMissingBean(name = "curveAsyncExecutor")
     @ConditionalOnProperty(name = "curve.async.enabled", havingValue = "true")
-    public Executor curveAsyncExecutor(CurveProperties properties) {
+    public Executor curveAsyncExecutor(
+            CurveProperties properties,
+            ObjectProvider<TaskDecorator> taskDecoratorProvider
+    ) {
         CurveProperties.Async asyncProps = properties.getAsync();
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(asyncProps.getCorePoolSize());
@@ -66,9 +66,20 @@ public class CurveAutoConfiguration {
         executor.setThreadNamePrefix("CurveAsync-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(30);
-        if (taskDecorator != null) {
-            executor.setTaskDecorator(taskDecorator);
+
+        // Configure TaskDecorator if available for MDC context propagation
+        taskDecoratorProvider.ifAvailable(decorator -> {
+            executor.setTaskDecorator(decorator);
+            log.info("CurveAsync executor configured with TaskDecorator: {} " +
+                     "(MDC context will be propagated to async threads)",
+                    decorator.getClass().getSimpleName());
+        });
+
+        if (taskDecoratorProvider.getIfAvailable() == null) {
+            log.debug("CurveAsync executor configured without TaskDecorator - " +
+                      "MDC context (trace IDs) will NOT be propagated to async threads");
         }
+
         executor.initialize();
         return executor;
     }

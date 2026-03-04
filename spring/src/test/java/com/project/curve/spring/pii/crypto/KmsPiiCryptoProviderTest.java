@@ -10,9 +10,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -203,14 +204,18 @@ class KmsPiiCryptoProviderTest {
         }
 
         @Test
-        @DisplayName("Hash with salt produces the correct SHA-256 output")
+        @DisplayName("Hash with salt produces the correct HMAC-SHA-256 output")
         void hash_withSalt_shouldProduceCorrectOutput() throws Exception {
             // Given
             String value = "test@example.com";
-            String saltedValue = SALT + value;
 
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] expectedBytes = digest.digest(saltedValue.getBytes(StandardCharsets.UTF_8));
+            // Expected HMAC-SHA-256 calculation
+            SecretKeySpec hmacKey = new SecretKeySpec(
+                    SALT.getBytes(StandardCharsets.UTF_8), "HmacSHA256"
+            );
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(hmacKey);
+            byte[] expectedBytes = mac.doFinal(value.getBytes(StandardCharsets.UTF_8));
             String expectedHash = Base64.getEncoder().encodeToString(expectedBytes);
 
             // When

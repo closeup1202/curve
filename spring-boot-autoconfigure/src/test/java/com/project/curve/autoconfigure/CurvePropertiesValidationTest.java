@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * CurveProperties validation test.
- *
+ * <p>
  * Verifies that @Validated annotation and validation constraints work correctly.
  */
 @DisplayName("CurveProperties validation test")

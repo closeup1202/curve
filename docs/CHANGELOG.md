@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING**: PII hashing algorithm changed from SHA-256 to HMAC-SHA-256 in `KmsPiiCryptoProvider`
+    - Ensures consistency with `DefaultPiiCryptoProvider` which already uses HMAC-SHA-256
+    - Both providers now use HMAC-SHA-256 with salt as the HMAC key for secure keyed hashing
+    - **Impact**: Existing hashed values will NOT match new hashes after upgrade
+    - **Migration**: Re-hashing of existing PII data may be required for verification purposes
+    - See [Migration Guide](MIGRATION.md) for upgrade instructions
+
+### Fixed
+- **JavaDoc Accuracy**: Corrected documentation to reflect actual HMAC-SHA-256 implementation
+    - Updated `DefaultPiiCryptoProvider` class JavaDoc
+    - Updated `PiiField` annotation documentation (also clarified AES-256-GCM for encryption)
+    - Updated `HashingPiiProcessor` JavaDoc
+    - All documentation now accurately states HMAC-SHA-256 for hash strategy
+
 ---
 
 ## [0.1.2] - 2026-02-20

@@ -96,6 +96,167 @@ Before upgrading to a new version:
 
 ---
 
+## Migration: 0.1.x to Next Version (Unreleased)
+
+Version 0.2.0 (or next minor/patch) includes a **breaking change** to PII hashing for improved security and consistency.
+
+### ⚠️ BREAKING CHANGE: PII Hashing Algorithm
+
+**What Changed:**
+- `KmsPiiCryptoProvider` hashing algorithm changed from **SHA-256** to **HMAC-SHA-256**
+- Now consistent with `DefaultPiiCryptoProvider` (which already used HMAC-SHA-256)
+
+**Before (v0.1.x):**
+```java
+// KmsPiCryptoProvider used simple SHA-256 with salt concatenation
+String saltedValue = salt + value;
+MessageDigest digest = MessageDigest.getInstance("SHA-256");
+byte[] hash = digest.digest(saltedValue.getBytes());
+```
+
+**After (v0.2.0+):**
+```java
+// KmsPiiCryptoProvider now uses HMAC-SHA-256 (keyed hash)
+SecretKeySpec hmacKey = new SecretKeySpec(salt.getBytes(), "HmacSHA256");
+Mac mac = Mac.getInstance("HmacSHA256");
+mac.init(hmacKey);
+byte[] hash = mac.doFinal(value.getBytes());
+```
+
+### Impact Assessment
+
+| Scenario | Impact | Action Required |
+|----------|--------|-----------------|
+| **Using `DefaultPiiCryptoProvider`** | ✅ No impact | None - already using HMAC-SHA-256 |
+| **Using `KmsPiiCryptoProvider` for encryption only** | ✅ No impact | None - encryption unchanged |
+| **Using `KmsPiiCryptoProvider` with `PiiStrategy.HASH`** | ⚠️ **BREAKING** | See migration steps below |
+| **Not using PII features** | ✅ No impact | None |
+
+### Migration Steps
+
+#### Option 1: Accept Hash Change (Recommended)
+
+If you don't need to verify old hashes:
+
+1. **Update dependency**:
+   ```gradle
+   dependencies {
+       implementation 'io.github.closeup1202:curve:0.2.0'  // or latest
+   }
+   ```
+
+2. **No code changes required** - new hashes will be generated automatically
+
+3. **Note**: Existing hashed values will NOT match new hashes
+   - This is expected behavior
+   - Use this upgrade as an opportunity to rotate hashed data
+
+#### Option 2: Gradual Migration
+
+If you need to support both old and new hashes temporarily:
+
+1. **Implement dual-hash verification**:
+   ```java
+   @Service
+   public class MigrationHashVerifier {
+
+       // Old SHA-256 implementation (for backward compatibility)
+       private String oldHash(String value, String salt) {
+           try {
+               String saltedValue = salt + value;
+               MessageDigest digest = MessageDigest.getInstance("SHA-256");
+               byte[] hashBytes = digest.digest(saltedValue.getBytes(UTF_8));
+               return Base64.getEncoder().encodeToString(hashBytes);
+           } catch (Exception e) {
+               throw new RuntimeException(e);
+           }
+       }
+
+       public boolean verifyHash(String value, String storedHash, String salt) {
+           // Try new HMAC-SHA-256 first
+           String newHash = piiCryptoProvider.hash(value);
+           if (newHash.equals(storedHash)) {
+               return true;
+           }
+
+           // Fallback to old SHA-256 for legacy data
+           String oldHash = oldHash(value, salt);
+           if (oldHash.equals(storedHash)) {
+               // Optionally: Update to new hash
+               updateToNewHash(value, newHash);
+               return true;
+           }
+
+           return false;
+       }
+   }
+   ```
+
+2. **Gradually re-hash data**:
+   ```sql
+   -- Identify records that need re-hashing
+   -- (No direct way to detect, must be done per use case)
+
+   -- Example: Re-hash on next user login
+   UPDATE users
+   SET hashed_email = ?
+   WHERE user_id = ? AND last_login > NOW() - INTERVAL 30 DAY;
+   ```
+
+3. **Remove fallback after migration period**
+
+#### Option 3: Stay on v0.1.x
+
+If migration is not feasible immediately:
+
+- Stay on `curve:0.1.1` until ready
+- Plan migration for next maintenance window
+
+### Why This Change?
+
+**Security Benefits:**
+1. **Keyed Hashing**: HMAC uses the salt as a cryptographic key (not simple concatenation)
+2. **Resistance to Length Extension**: HMAC-SHA-256 is immune to length extension attacks
+3. **Industry Standard**: HMAC is the recommended approach for password/data hashing with salt
+4. **Consistency**: Both `DefaultPiiCryptoProvider` and `KmsPiiCryptoProvider` now use the same algorithm
+
+**Reference:**
+- NIST SP 800-107: Recommendation for Applications Using Approved Hash Algorithms
+- OWASP Cryptographic Storage Cheat Sheet
+
+### Testing the Migration
+
+```java
+@Test
+void testHashMigration() {
+    KmsPiiCryptoProvider provider = new KmsPiiCryptoProvider(keyProvider, "test-salt");
+
+    String value = "sensitive@example.com";
+    String newHash = provider.hash(value);
+
+    // Verify new hash format
+    assertThat(newHash).isNotNull();
+    assertThat(provider.hash(value)).isEqualTo(newHash); // Deterministic
+}
+```
+
+### Rollback Plan
+
+If issues occur after upgrade:
+
+1. **Downgrade dependency**:
+   ```gradle
+   dependencies {
+       implementation 'io.github.closeup1202:curve:0.1.1'
+   }
+   ```
+
+2. **Redeploy application**
+
+3. **Hashes will revert to old SHA-256 behavior**
+
+---
+
 ## Migration: 0.0.x to 0.1.0
 
 Version 0.1.0 includes important security enhancements and performance optimizations. Most changes are backward compatible, but please review the following:

@@ -41,8 +41,8 @@ public @interface PiiField {
     /**
      * PII processing strategy
      * - MASK: Replace some characters with *
-     * - ENCRYPT: AES encryption (reversible)
-     * - HASH: SHA-256 hash (irreversible)
+     * - ENCRYPT: AES-256-GCM encryption (reversible)
+     * - HASH: HMAC-SHA-256 hash (irreversible)
      * - EXCLUDE: Exclude from serialization
      */
     PiiStrategy strategy() default PiiStrategy.MASK;

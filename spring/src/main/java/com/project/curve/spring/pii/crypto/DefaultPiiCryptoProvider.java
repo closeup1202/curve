@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Default PII encryption provider.
  * <p>
- * Supports AES-256-GCM encryption and SHA-256 hashing.
+ * Supports AES-256-GCM encryption and HMAC-SHA-256 hashing.
  * <p>
  * <b>Security Notes:</b>
  * <ul>
