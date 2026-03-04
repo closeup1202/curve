@@ -2,6 +2,7 @@ package com.project.curve.autoconfigure.outbox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.curve.autoconfigure.CurveProperties;
+import com.project.curve.autoconfigure.actuator.CurveOutboxEndpoint;
 import com.project.curve.core.outbox.OutboxEventRepository;
 import com.project.curve.spring.audit.aop.OutboxEventSaver;
 import com.project.curve.spring.outbox.config.OutboxJpaRepositoryConfig;
@@ -98,6 +99,13 @@ public class CurveOutboxAutoConfiguration {
                 outboxConfig.isDynamicBatchingEnabled(),
                 outboxConfig.isCircuitBreakerEnabled()
         );
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "curve.outbox.publisher-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnClass(name = "org.springframework.boot.actuate.endpoint.annotation.Endpoint")
+    public CurveOutboxEndpoint curveOutboxEndpoint(OutboxEventPublisher outboxEventPublisher) {
+        return new CurveOutboxEndpoint(outboxEventPublisher);
     }
 
     /**

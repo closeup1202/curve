@@ -50,6 +50,16 @@ public class MockEventProducer implements EventProducer {
         severities.add(severity);
     }
 
+    @Override
+    public <T extends DomainEventPayload> void publish(T payload, String topic) {
+        publish(payload, EventSeverity.INFO);
+    }
+
+    @Override
+    public <T extends DomainEventPayload> void publish(T payload, EventSeverity severity, String topic) {
+        publish(payload, severity);
+    }
+
     public List<Object> getPayloads() {
         return Collections.unmodifiableList(payloads);
     }

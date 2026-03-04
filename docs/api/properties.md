@@ -28,7 +28,7 @@ curve:
 
 ### curve.kafka.topic
 
-Main Kafka topic for event publishing.
+Main Kafka topic for event publishing (used as default when `@PublishEvent(topic=...)` is not specified).
 
 - **Type**: `string`
 - **Required**: Yes
@@ -37,6 +37,20 @@ Main Kafka topic for event publishing.
 curve:
   kafka:
     topic: event.audit.v1
+```
+
+**Topic Override:**
+
+You can override this default topic on a per-event basis using the `@PublishEvent` annotation:
+
+```java
+// Uses curve.kafka.topic
+@PublishEvent(eventType = "ORDER_CREATED")
+public Order createOrder(OrderRequest request) { ... }
+
+// Uses "orders.events" instead of curve.kafka.topic
+@PublishEvent(eventType = "ORDER_CREATED", topic = "orders.events")
+public Order createOrder(OrderRequest request) { ... }
 ```
 
 ### curve.kafka.dlq-topic

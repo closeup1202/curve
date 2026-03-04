@@ -26,6 +26,7 @@ io.github.closeup1202.curve.spring.audit.annotation.PublishEvent
 | `severity` | EventSeverity | No | INFO | Event severity level |
 | `payloadIndex` | int | No | -1 | Parameter index for payload (-1: use return value, 0+: use parameter) |
 | `payload` | String (SpEL) | No | "" | Payload extraction SpEL expression (overrides payloadIndex) |
+| `topic` | String | No | "" | Kafka topic name (overrides `curve.kafka.topic` if set) |
 | `phase` | Phase | No | AFTER_RETURNING | When to publish (BEFORE, AFTER_RETURNING, AFTER) |
 | `failOnError` | boolean | No | false | Throw exception if event publishing fails |
 | `outbox` | boolean | No | false | Enable transactional outbox pattern |
@@ -87,7 +88,27 @@ public User updateUser(UserUpdateRequest request) { ... }
     payload = "#result.toCompletedDto()"
 )
 public Order completeOrder(String reason) { ... }
+
+// Multi-topic publishing (different topics per domain context)
+@PublishEvent(eventType = "CART_ITEM_ADDED", topic = "cart.events")
+public CartItem addItem(AddItemRequest request) { ... }
+
+@PublishEvent(eventType = "STOCK_DECREASED", topic = "stock.events")
+public Stock decreaseStock(DecreaseRequest request) { ... }
+
+// When topic is empty, uses default curve.kafka.topic
+@PublishEvent(eventType = "USER_CREATED")
+public User createUser(CreateUserRequest request) { ... }
 ```
+
+### Topic Resolution
+
+When publishing events:
+
+1. If `topic` attribute is set → publish to specified topic
+2. If `topic` is empty → use `curve.kafka.topic` (default topic from configuration)
+
+This allows different event streams to be routed to separate Kafka topics for better domain isolation.
 
 ---
 

@@ -114,6 +114,16 @@ public class KafkaEventProducer extends AbstractEventPublisher {
 
     @Override
     protected <T extends DomainEventPayload> void send(EventEnvelope<T> envelope) {
+        sendToTopic(envelope, this.topic);
+    }
+
+    @Override
+    protected <T extends DomainEventPayload> void send(EventEnvelope<T> envelope, String overrideTopic) {
+        String effectiveTopic = (overrideTopic != null && !overrideTopic.isBlank()) ? overrideTopic : this.topic;
+        sendToTopic(envelope, effectiveTopic);
+    }
+
+    private <T extends DomainEventPayload> void sendToTopic(EventEnvelope<T> envelope, String effectiveTopic) {
         String eventId = envelope.eventId().value();
         String eventType = envelope.eventType().getValue();
         long startTime = System.currentTimeMillis();
@@ -121,29 +131,29 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         Object value = null;
         try {
             value = eventSerializer.serialize(envelope);
-            doSend(eventId, eventType, value, startTime);
+            doSend(eventId, eventType, value, startTime, effectiveTopic);
         } catch (EventSerializationException e) {
             handleSerializationError(eventId, eventType, startTime, e);
         } catch (Exception e) {
-            handleSendError(eventId, eventType, value, startTime, e);
+            handleSendError(eventId, eventType, value, startTime, e, effectiveTopic);
         }
     }
 
-    private void doSend(String eventId, String eventType, Object value, long startTime) {
-        log.debug("Sending event to Kafka: eventId={}, topic={}, mode={}", eventId, topic, asyncMode ? "async" : "sync");
+    private void doSend(String eventId, String eventType, Object value, long startTime, String effectiveTopic) {
+        log.debug("Sending event to Kafka: eventId={}, topic={}, mode={}", eventId, effectiveTopic, asyncMode ? "async" : "sync");
 
         if (asyncMode) {
-            sendAsync(eventId, eventType, value, startTime);
+            sendAsync(eventId, eventType, value, startTime, effectiveTopic);
         } else {
-            sendSync(eventId, eventType, value, startTime);
+            sendSync(eventId, eventType, value, startTime, effectiveTopic);
         }
     }
 
-    private void sendSync(String eventId, String eventType, Object value, long startTime) {
+    private void sendSync(String eventId, String eventType, Object value, long startTime, String effectiveTopic) {
         if (retryTemplate != null) {
-            sendWithRetry(eventId, eventType, value, startTime);
+            sendWithRetry(eventId, eventType, value, startTime, effectiveTopic);
         } else {
-            sendWithoutRetry(eventId, eventType, value, startTime);
+            sendWithoutRetry(eventId, eventType, value, startTime, effectiveTopic);
         }
     }
 
@@ -153,8 +163,8 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         throw e;
     }
 
-    private void handleSendError(String eventId, String eventType, Object value, long startTime, Exception e) {
-        log.error("Failed to send event to Kafka: eventId={}, topic={}, error={}", eventId, topic, e.getMessage(), e);
+    private void handleSendError(String eventId, String eventType, Object value, long startTime, Exception e, String effectiveTopic) {
+        log.error("Failed to send event to Kafka: eventId={}, topic={}, error={}", eventId, effectiveTopic, e.getMessage(), e);
         recordErrorMetrics(eventType, startTime, e.getClass().getSimpleName());
         handleSendFailure(eventId, eventType, value, e);
     }
@@ -164,14 +174,14 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         metricsCollector.recordKafkaError(errorType);
     }
 
-    private void sendWithRetry(String eventId, String eventType, Object value, long startTime) {
+    private void sendWithRetry(String eventId, String eventType, Object value, long startTime, String effectiveTopic) {
         try {
             retryTemplate.execute(context -> {
                 if (context.getRetryCount() > 0) {
                     log.warn("Retrying event send: eventId={}, attempt={}", eventId, context.getRetryCount() + 1);
                     metricsCollector.recordRetry(eventType, context.getRetryCount(), "in_progress");
                 }
-                return doSendSync(eventId, eventType, value, startTime);
+                return doSendSync(eventId, eventType, value, startTime, effectiveTopic);
             }, context -> {
                 int retryCount = context.getRetryCount();
                 log.error("All retry attempts exhausted for event: eventId={}, attempts={}", eventId, retryCount, context.getLastThrowable());
@@ -185,11 +195,11 @@ public class KafkaEventProducer extends AbstractEventPublisher {
         }
     }
 
-    private void sendWithoutRetry(String eventId, String eventType, Object value, long startTime) {
+    private void sendWithoutRetry(String eventId, String eventType, Object value, long startTime, String effectiveTopic) {
         try {
-            doSendSync(eventId, eventType, value, startTime);
+            doSendSync(eventId, eventType, value, startTime, effectiveTopic);
         } catch (Exception e) {
-            log.error("Failed to send event to Kafka: eventId={}, topic={}", eventId, topic, e);
+            log.error("Failed to send event to Kafka: eventId={}, topic={}", eventId, effectiveTopic, e);
             recordErrorMetrics(eventType, startTime, e.getClass().getSimpleName());
             handleSendFailure(eventId, eventType, value, e);
         }
@@ -199,11 +209,11 @@ public class KafkaEventProducer extends AbstractEventPublisher {
      * Asynchronous transmission - CompletableFuture based
      * Handles transmission success/failure via callbacks without blocking the main thread
      */
-    private void sendAsync(String eventId, String eventType, Object value, long startTime) {
+    private void sendAsync(String eventId, String eventType, Object value, long startTime, String effectiveTopic) {
         // Capture MDC context from current thread
         Map<String, String> contextMap = MDC.getCopyOfContextMap();
 
-        kafkaTemplate.send(topic, eventId, value)
+        kafkaTemplate.send(effectiveTopic, eventId, value)
                 .orTimeout(asyncTimeoutMs, TimeUnit.MILLISECONDS)
                 .whenComplete((result, ex) -> {
                     // Save previous MDC context for restoration
@@ -216,7 +226,7 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                             String errorType = ex instanceof java.util.concurrent.TimeoutException
                                     ? "TimeoutException" : ex.getClass().getSimpleName();
                             log.error("Async send failed: eventId={}, topic={}, errorType={}",
-                                    eventId, topic, errorType, ex);
+                                    eventId, effectiveTopic, errorType, ex);
                             metricsCollector.recordEventPublished(eventType, false, System.currentTimeMillis() - startTime);
                             metricsCollector.recordKafkaError(errorType);
                             handleSendFailure(eventId, eventType, value, ex);
@@ -234,12 +244,12 @@ public class KafkaEventProducer extends AbstractEventPublisher {
                     }
                 });
 
-        log.debug("Event sent asynchronously (non-blocking): eventId={}, topic={}", eventId, topic);
+        log.debug("Event sent asynchronously (non-blocking): eventId={}, topic={}", eventId, effectiveTopic);
     }
 
-    private SendResult<String, Object> doSendSync(String eventId, String eventType, Object value, long startTime) throws Exception {
+    private SendResult<String, Object> doSendSync(String eventId, String eventType, Object value, long startTime, String effectiveTopic) throws Exception {
         SendResult<String, Object> result = kafkaTemplate
-                .send(topic, eventId, value)
+                .send(effectiveTopic, eventId, value)
                 .get(syncTimeoutSeconds, TimeUnit.SECONDS);
 
         metricsCollector.recordEventPublished(eventType, true, System.currentTimeMillis() - startTime);

@@ -106,4 +106,16 @@ public interface OutboxEventRepository {
      * @return Event count
      */
     long countByStatus(OutboxStatus status);
+
+    /**
+     * Finds all events that occurred at or after the given timestamp.
+     * <p>
+     * Used for replay operations to re-publish events from a specific point in time.
+     * Returns events ordered by occurrence time ascending, regardless of their current status.
+     *
+     * @param since the lower bound timestamp (inclusive)
+     * @param limit maximum number of events to return
+     * @return list of events ordered by occurredAt ascending
+     */
+    List<OutboxEvent> findSince(Instant since, int limit);
 }

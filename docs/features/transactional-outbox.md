@@ -307,6 +307,145 @@ ORDER BY date DESC;
 
 ---
 
+## Outbox Replay API
+
+Replay previously published events from the outbox. This is useful for:
+
+- **Consumer failure recovery**: Reprocess events after consumer downtime
+- **Data corrections**: Re-publish events to fix downstream state
+- **Testing**: Replay historical events in test environments
+
+### Endpoint
+
+```
+GET  /actuator/curve-outbox    - View outbox statistics
+POST /actuator/curve-outbox    - Replay events since timestamp
+```
+
+#### Enable the Endpoint
+
+```yaml title="application.yml"
+management:
+  endpoints:
+    web:
+      exposure:
+        include: curve-outbox
+```
+
+### GET /actuator/curve-outbox
+
+View outbox statistics:
+
+```bash
+curl http://localhost:8080/actuator/curve-outbox
+```
+
+**Response:**
+
+```json
+{
+  "total": 1523,
+  "pending": 5,
+  "published": 1516,
+  "failed": 2,
+  "avgProcessingTimeMs": 45
+}
+```
+
+### POST /actuator/curve-outbox
+
+Replay events since a given timestamp with optional limit:
+
+```bash
+curl -X POST http://localhost:8080/actuator/curve-outbox \
+  -H "Content-Type: application/vnd.spring-boot.actuator.v3+json" \
+  -d '{"since": "2026-03-01T00:00:00Z", "limit": 100}'
+```
+
+**Request Body:**
+
+```json
+{
+  "since": "2026-03-01T00:00:00Z",  // ISO-8601 timestamp (required)
+  "limit": 100                        // Max events to replay (optional, default: 1000)
+}
+```
+
+**Response:**
+
+```json
+{
+  "since": "2026-03-01T00:00:00Z",
+  "limit": 100,
+  "total": 42,          // Events found since timestamp
+  "success": 40,        // Successfully replayed
+  "failed": 2,          // Failed during replay
+  "failedEventIds": ["evt-001", "evt-002"]
+}
+```
+
+### Idempotency
+
+Since outbox events can be replayed multiple times, **consumer implementations must be idempotent**:
+
+```java
+@Service
+public class OrderEventConsumer {
+
+    @KafkaListener(topics = "orders")
+    public void handleOrderCreated(String message) {
+        OrderCreatedEvent event = parse(message);
+
+        // Idempotent check: use event ID as unique key
+        if (orderRepository.existsByEventId(event.eventId)) {
+            log.info("Event {} already processed, skipping", event.eventId);
+            return;  // Safely skip duplicate
+        }
+
+        // Process event
+        Order order = new Order(event);
+        orderRepository.save(order);
+    }
+}
+```
+
+### Replay Scenarios
+
+**Scenario 1: Recover from consumer downtime**
+
+```bash
+# Consumer was down from 10:00 to 10:30
+# Replay events from that period
+curl -X POST http://localhost:8080/actuator/curve-outbox \
+  -H "Content-Type: application/vnd.spring-boot.actuator.v3+json" \
+  -d '{
+    "since": "2026-03-04T10:00:00Z",
+    "limit": 500
+  }'
+```
+
+**Scenario 2: Fix consumer bug**
+
+```bash
+# Consumer had a bug for 1 hour
+# Re-publish all events from that period
+curl -X POST http://localhost:8080/actuator/curve-outbox \
+  -H "Content-Type: application/vnd.spring-boot.actuator.v3+json" \
+  -d '{
+    "since": "2026-03-04T09:00:00Z",
+    "limit": 5000
+  }'
+```
+
+### Important Notes
+
+1. **Already-published events can be replayed** - The replay API will re-publish events regardless of their current status
+2. **Consumers must handle duplicates** - Implement idempotent processing using event IDs
+3. **Throughput considerations** - Large replays may impact Kafka performance; adjust batch size as needed
+4. **Default topic respected** - Replayed events use the same topic as the original event
+
+---
+
 ## Best Practices
 
 ### :white_check_mark: DO

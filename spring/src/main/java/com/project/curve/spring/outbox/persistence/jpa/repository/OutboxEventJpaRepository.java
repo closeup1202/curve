@@ -95,4 +95,17 @@ public interface OutboxEventJpaRepository extends JpaRepository<OutboxEventJpaEn
     @Modifying
     @Query("DELETE FROM OutboxEventJpaEntity e WHERE e.eventId IN :ids")
     int deleteByEventIds(@Param("ids") List<String> ids);
+
+    /**
+     * Retrieves all events occurred at or after the given timestamp (for replay).
+     *
+     * @param since    lower bound timestamp (inclusive)
+     * @param pageable paging (limit setting)
+     * @return list of events ordered by occurredAt ascending
+     */
+    @Query("SELECT e FROM OutboxEventJpaEntity e WHERE e.occurredAt >= :since ORDER BY e.occurredAt ASC")
+    List<OutboxEventJpaEntity> findByOccurredAtGreaterThanEqual(
+            @Param("since") Instant since,
+            Pageable pageable
+    );
 }

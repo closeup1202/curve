@@ -4,15 +4,14 @@ import com.project.curve.core.outbox.OutboxEvent;
 import com.project.curve.core.outbox.OutboxEventRepository;
 import com.project.curve.core.outbox.OutboxStatus;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -359,6 +358,62 @@ public class OutboxEventPublisher {
 
         outboxRepository.save(event);
     }
+
+    /**
+     * Re-publishes outbox events that occurred at or after the given timestamp.
+     * <p>
+     * Useful for recovering from downstream failures or replaying events for new consumers.
+     * Events are published regardless of their current status (PENDING, PUBLISHED, FAILED).
+     * Successfully replayed events are marked as PUBLISHED.
+     *
+     * <p><b>Idempotency Note:</b> Consumers must handle duplicate events, as events that
+     * were already PUBLISHED will be sent again.
+     *
+     * @param since the lower bound timestamp (inclusive); events at or after this time are replayed
+     * @param limit maximum number of events to replay in one call
+     * @return summary of the replay operation
+     */
+    @Transactional
+    public ReplayResult replay(Instant since, int limit) {
+        List<OutboxEvent> events = outboxRepository.findSince(since, limit);
+
+        int success = 0;
+        int failed = 0;
+        List<String> failedEventIds = new ArrayList<>();
+
+        for (OutboxEvent event : events) {
+            try {
+                kafkaTemplate.send(topic, event.getEventId(), event.getPayload())
+                        .get(sendTimeoutSeconds, TimeUnit.SECONDS);
+                event.markAsPublished();
+                outboxRepository.save(event);
+                success++;
+                log.info("Replayed outbox event: eventId={}, aggregateType={}", event.getEventId(), event.getAggregateType());
+            } catch (Exception e) {
+                failed++;
+                failedEventIds.add(event.getEventId());
+                log.warn("Failed to replay outbox event: eventId={}", event.getEventId(), e);
+            }
+        }
+
+        log.info("Outbox replay completed: total={}, success={}, failed={}, since={}", events.size(), success, failed, since);
+        return new ReplayResult(events.size(), success, failed, failedEventIds);
+    }
+
+    /**
+     * Result of an outbox replay operation.
+     *
+     * @param total          total number of events found for the given time range
+     * @param success        number of events successfully re-published
+     * @param failed         number of events that failed to re-publish
+     * @param failedEventIds IDs of events that failed to re-publish
+     */
+    public record ReplayResult(
+            int total,
+            int success,
+            int failed,
+            List<String> failedEventIds
+    ) {}
 
     /**
      * Query publishing statistics.

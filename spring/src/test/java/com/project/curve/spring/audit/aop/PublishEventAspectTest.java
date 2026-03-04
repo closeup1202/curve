@@ -71,6 +71,7 @@ class PublishEventAspectTest {
         when(publishEvent.eventType()).thenReturn("");
         when(publishEvent.aggregateType()).thenReturn("");
         when(publishEvent.aggregateId()).thenReturn("");
+        when(publishEvent.topic()).thenReturn("");
     }
 
     @Nested
@@ -191,7 +192,7 @@ class PublishEventAspectTest {
             aspect.afterReturning(joinPoint, publishEvent, "result");
 
             // Then
-            verify(eventProducer).publish(payloadCaptor.capture(), any());
+            verify(eventProducer).publish(payloadCaptor.capture(), any(EventSeverity.class));
             assertThat(payloadCaptor.getValue().getEventType()).isEqualTo(new DefaultEventType("TestService.testMethod"));
         }
     }
@@ -214,7 +215,7 @@ class PublishEventAspectTest {
             aspect.afterReturning(joinPoint, publishEvent, "returnValue");
 
             // Then
-            verify(eventProducer).publish(payloadCaptor.capture(), any());
+            verify(eventProducer).publish(payloadCaptor.capture(), any(EventSeverity.class));
             assertThat(payloadCaptor.getValue().data()).isEqualTo("firstArg");
         }
 
@@ -232,7 +233,7 @@ class PublishEventAspectTest {
             aspect.afterReturning(joinPoint, publishEvent, "returnValue");
 
             // Then
-            verify(eventProducer).publish(payloadCaptor.capture(), any());
+            verify(eventProducer).publish(payloadCaptor.capture(), any(EventSeverity.class));
             assertThat(payloadCaptor.getValue().data()).isNull();
         }
     }
@@ -252,7 +253,7 @@ class PublishEventAspectTest {
             when(publishEvent.failOnError()).thenReturn(true);
 
             doThrow(new RuntimeException("Kafka connection failed"))
-                    .when(eventProducer).publish(any(), any());
+                    .when(eventProducer).publish(any(), any(EventSeverity.class));
 
             // When & Then
             assertThatThrownBy(() -> aspect.afterReturning(joinPoint, publishEvent, "result"))
@@ -271,7 +272,7 @@ class PublishEventAspectTest {
             when(publishEvent.failOnError()).thenReturn(false);
 
             doThrow(new RuntimeException("Kafka connection failed"))
-                    .when(eventProducer).publish(any(), any());
+                    .when(eventProducer).publish(any(), any(EventSeverity.class));
 
             // When & Then - Should not throw exception
             assertThatCode(() -> aspect.afterReturning(joinPoint, publishEvent, "result"))

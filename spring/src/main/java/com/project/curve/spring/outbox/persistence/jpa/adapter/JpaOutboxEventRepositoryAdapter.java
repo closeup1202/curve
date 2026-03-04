@@ -112,4 +112,14 @@ public class JpaOutboxEventRepositoryAdapter implements OutboxEventRepository {
     public long countByStatus(OutboxStatus status) {
         return jpaRepository.countByStatus(status);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OutboxEvent> findSince(Instant since, int limit) {
+        PageRequest pageRequest = PageRequest.of(0, limit);
+        return jpaRepository.findByOccurredAtGreaterThanEqual(since, pageRequest)
+                .stream()
+                .map(OutboxEventJpaEntity::toDomain)
+                .collect(Collectors.toList());
+    }
 }

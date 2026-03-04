@@ -249,6 +249,16 @@ public class JdbcOutboxEventRepository implements OutboxEventRepository {
         return count != null ? count : 0;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<OutboxEvent> findSince(Instant since, int limit) {
+        String sql = buildLimitQuery(
+                "SELECT * FROM curve_outbox_events WHERE occurred_at >= ? ORDER BY occurred_at ASC",
+                limit
+        );
+        return jdbcTemplate.query(sql, ROW_MAPPER, Timestamp.from(since));
+    }
+
     private String buildLimitQuery(String sql, int limit) {
         if (dbType == DbType.ORACLE) {
             return sql + " FETCH FIRST " + limit + " ROWS ONLY";

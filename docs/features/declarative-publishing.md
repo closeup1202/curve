@@ -309,6 +309,54 @@ public CompletableFuture<Report> generateReport(ReportRequest req) {
 !!! note "MDC Context Propagation"
     Curve automatically propagates MDC context (trace ID, etc.) to async threads.
 
+### 5. Multi-Topic Publishing
+
+Route different event types to different Kafka topics based on domain context:
+
+```java
+@Service
+public class ECommerceService {
+
+    // Route cart events to cart topic
+    @PublishEvent(
+        eventType = "CART_ITEM_ADDED",
+        topic = "cart.events",
+        payload = "#result.toCartEventDto()"
+    )
+    public CartItem addToCart(CartRequest request) {
+        return cartRepository.save(new CartItem(request));
+    }
+
+    // Route inventory events to stock topic
+    @PublishEvent(
+        eventType = "STOCK_DECREASED",
+        topic = "stock.events",
+        payload = "#result"
+    )
+    public Stock decreaseInventory(StockDecreaseRequest request) {
+        return inventoryService.decreaseStock(request);
+    }
+
+    // Uses default topic (curve.kafka.topic) when topic not specified
+    @PublishEvent(eventType = "ORDER_CREATED")
+    public Order createOrder(OrderRequest request) {
+        return orderRepository.save(new Order(request));
+    }
+}
+```
+
+**Topic Resolution:**
+
+- If `topic` attribute is set → publish to specified topic
+- If `topic` is empty or not specified → use `curve.kafka.topic` (default topic from configuration)
+
+**Benefits:**
+
+- **Domain Isolation**: Keep cart, inventory, and order events in separate streams
+- **Scalability**: Different topics can have different partition counts for throughput optimization
+- **Consumer Flexibility**: Different consumer groups can subscribe to specific topics
+- **Backward Compatibility**: Existing code without `topic` attribute continues to use the default topic
+
 ---
 
 ## Best Practices
