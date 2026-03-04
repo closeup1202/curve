@@ -317,6 +317,40 @@ class PublishEventAspectTest {
         }
     }
 
+    @Test
+    @DisplayName("Should publish with topic when topic is provided")
+    void publishEvent_withTopic_shouldUseTopicPublishMethod() {
+        // Given
+        when(publishEvent.phase()).thenReturn(PublishEvent.Phase.AFTER_RETURNING);
+        when(publishEvent.eventType()).thenReturn("TOPIC_EVENT");
+        when(publishEvent.severity()).thenReturn(EventSeverity.INFO);
+        when(publishEvent.payloadIndex()).thenReturn(-1);
+        when(publishEvent.topic()).thenReturn("my-topic");
+
+        // When
+        aspect.afterReturning(joinPoint, publishEvent, "data");
+
+        // Then
+        verify(eventProducer).publish(any(EventPayload.class), eq(EventSeverity.INFO), eq("my-topic"));
+    }
+
+    @Test
+    @DisplayName("Should throw exception if outbox=true but saver not configured")
+    void publishEvent_withOutboxTrue_withoutSaver_shouldThrow() {
+        // Given
+        when(publishEvent.phase()).thenReturn(PublishEvent.Phase.AFTER_RETURNING);
+        when(publishEvent.eventType()).thenReturn("OUTBOX_EVENT");
+        when(publishEvent.severity()).thenReturn(EventSeverity.INFO);
+        when(publishEvent.payloadIndex()).thenReturn(-1);
+        when(publishEvent.outbox()).thenReturn(true);
+        when(publishEvent.failOnError()).thenReturn(true); // ⭐ 추가
+
+        // When & Then
+        assertThatThrownBy(() ->
+                aspect.afterReturning(joinPoint, publishEvent, "data")
+        ).isInstanceOf(EventPublishException.class);
+    }
+
     // Test class
     public static class TestService {
         public String testMethod(String input) {
